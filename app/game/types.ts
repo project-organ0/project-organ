@@ -11,7 +11,7 @@ export type Telegraph = {x:number;y:number;tx:number;ty:number;life:number;max:n
 export type ToxicField = {x:number;y:number;r:number;life:number};
 export type Game = {
   w:number;h:number;worldW:number;worldH:number;t:number;stage:number;stageT:number;hp:number;maxHp:number;
-  x:number;y:number;vx:number;vy:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
+  x:number;y:number;vx:number;vy:number;touchX:number;touchY:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
   organs:Organs;mobs:Mob[];shots:Shot[];parts:Particle[];drops:Drop[];warnings:Telegraph[];fields:ToxicField[];keys:Set<string>;
   choices:string[];augments:string[];level:number;xp:number;nextXp:number;paused:boolean;
   damage:number;armor:number;fireRate:number;speed:number;projectiles:number;poison:number;pulse:number;runner:number;

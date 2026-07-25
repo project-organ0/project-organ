@@ -48,6 +48,7 @@ button { font: inherit; }
 .sound-btn:hover,.fullscreen-btn:hover { border-color:var(--acid);color:var(--acid); }
 
 canvas { display: block; width: 100%; height: 100%; }
+.mobile-controls,.rotate-device { display:none; }
 
 .screen {
   position: absolute; inset: 0; z-index: 20;
@@ -265,6 +266,32 @@ canvas { display: block; width: 100%; height: 100%; }
 .pause-actions { display:flex;flex-direction:column;justify-content:center;gap:10px;padding:30px;background:#0d1313; }
 .pause-actions>button:not(.primary) { border:1px solid rgba(255,255,255,.25);border-radius:999px;background:transparent;color:white;padding:12px;cursor:pointer; }
 .pause-actions small { color:#71807c;text-align:center;font:700 8px/1.4 monospace; }
+
+@media (pointer: coarse) {
+  html,body,.game-shell,.frame,canvas { touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none; }
+  .mobile-controls { position:absolute;z-index:18;inset:0;display:block;pointer-events:none; }
+  .touch-stick { position:absolute;left:24px;bottom:22px;width:126px;height:126px;border:2px solid rgba(255,255,255,.38);border-radius:50%;background:rgba(7,12,12,.38);box-shadow:inset 0 0 28px rgba(0,0,0,.3);pointer-events:auto;touch-action:none; }
+  .touch-stick::before { content:"MOVE";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,.34);font:800 9px/1 monospace; }
+  .touch-stick span { position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border:2px solid var(--cyan);border-radius:50%;background:rgba(78,229,225,.24);box-shadow:0 0 18px rgba(78,229,225,.28); }
+  .touch-dash { position:absolute;right:28px;bottom:25px;width:94px;height:94px;border:2px solid var(--acid);border-radius:50%;background:rgba(13,20,19,.72);color:var(--acid);font:900 13px/1 monospace;box-shadow:0 0 20px rgba(216,255,62,.18);pointer-events:auto;touch-action:none; }
+  .touch-dash span { display:flex;justify-content:center;gap:4px;margin-top:9px; }
+  .touch-dash i { width:16px;height:5px;border:1px solid rgba(255,255,255,.4);border-radius:99px; }
+  .touch-dash i.ready { border-color:var(--acid);background:var(--acid); }
+  .dash-hint { display:none; }
+  .organs { left:168px;bottom:12px;transform:scale(.82);transform-origin:left bottom; }
+  .level-hud { left:170px;bottom:72px; }
+  .defense-hud { right:135px;bottom:24px; }
+  .chemistry-panel { width:175px;top:91px;transform:scale(.9);transform-origin:left top; }
+  .sound-btn { right:105px;bottom:auto;top:14px; }
+  .fullscreen-btn { right:14px;bottom:auto;top:14px; }
+}
+
+@media (pointer: coarse) and (orientation: portrait) {
+  .rotate-device { position:absolute;z-index:100;inset:0;display:grid;place-content:center;justify-items:center;gap:15px;background:#101515;color:white;text-align:center; }
+  .rotate-device b { color:var(--acid);font-size:58px;animation:rotate-hint 1.8s ease-in-out infinite; }
+  .rotate-device span { font-weight:900; }
+}
+@keyframes rotate-hint { 50% { transform:rotate(90deg) } }
 
 @media (max-width: 780px) {
   .game-shell { padding: 0; place-items: stretch; }

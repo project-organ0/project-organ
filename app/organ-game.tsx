@@ -100,7 +100,7 @@ const ITEM_GUIDE = [
 ];
 
 function fresh(difficulty:Difficulty="normal"):Game {
-  return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
+  return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,touchX:0,touchY:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],warnings:[],fields:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,armor:3,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,runner:0,
     bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[]};
@@ -108,6 +108,8 @@ function fresh(difficulty:Difficulty="normal"):Game {
 
 export default function OrganGame() {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const joystick = useRef<HTMLDivElement>(null);
+  const touchPointer = useRef<number|null>(null);
   const game = useRef<Game>(fresh());
   const sound = useRef<ReturnType<typeof createSoundEngine>|null>(null);
   const raf = useRef(0);
@@ -117,6 +119,7 @@ export default function OrganGame() {
   const [isMuted,setIsMuted]=useState(false);
   const [menuSection,setMenuSection]=useState<"home"|"heroes"|"organs"|"items"|"archive">("home");
   const [selectedHero,setSelectedHero]=useState("brain_muscle");
+  const [stick,setStick]=useState({x:0,y:0});
   const [cards,setCards]=useState<Choice[]>([]);
   const [choiceType,setChoiceType]=useState<"생활 선택"|"세포 진화"|"빌드 각성"|"전투 증강">("생활 선택");
   const [report,setReport]=useState({win:false,kills:0,t:0,organs:game.current.organs,choices:[] as string[],augments:[] as string[]});
@@ -149,6 +152,22 @@ export default function OrganGame() {
   },[]);
   useEffect(()=>{const sync=()=>setIsFullscreen(Boolean(document.fullscreenElement));document.addEventListener("fullscreenchange",sync);return()=>document.removeEventListener("fullscreenchange",sync)},[]);
 
+  const dashNow=useCallback(()=>{
+    if(mode!=="play")return;const g=game.current;if(g.dashCharges<=0)return;
+    let dx=(g.keys.has("KeyD")?1:0)-(g.keys.has("KeyA")?1:0)+g.touchX,dy=(g.keys.has("KeyS")?1:0)-(g.keys.has("KeyW")?1:0)+g.touchY;
+    const n=Math.hypot(dx,dy)||1;dx/=n;dy/=n;if(!dx&&!dy)dy=1;
+    g.vx=dx*760;g.vy=dy*760;g.dashCharges--;if(g.dash<=0)g.dash=1.55;g.inv=.28;g.shake=7;sound.current?.play("dash");
+    if(g.chemistries.includes("brain_lung")){for(let i=0;i<8;i++){const a=i/8*6.28;g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*520,vy:Math.sin(a)*520,life:1.2,r:6})}g.effect="케미 · 기동 마법 탄막";g.effectT=1}
+  },[mode]);
+
+  const moveStick=useCallback((e:React.PointerEvent<HTMLDivElement>)=>{
+    if(touchPointer.current!==null&&touchPointer.current!==e.pointerId)return;
+    touchPointer.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);
+    const r=joystick.current!.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),limit=r.width*.34,n=Math.hypot(dx,dy)||1,scale=Math.min(1,limit/n);
+    const px=dx*scale,py=dy*scale,x=px/limit,y=py/limit;game.current.touchX=x;game.current.touchY=y;setStick({x:px,y:py});
+  },[]);
+  const releaseStick=useCallback(()=>{touchPointer.current=null;game.current.touchX=0;game.current.touchY=0;setStick({x:0,y:0})},[]);
+
   useEffect(()=>{
     const down=(e:KeyboardEvent)=>{
       if(["KeyW","KeyA","KeyS","KeyD","Space","Escape"].includes(e.code))e.preventDefault();
@@ -156,18 +175,14 @@ export default function OrganGame() {
       if(e.code==="Escape"&&mode==="play"){game.current.paused=true;setMode("pause");return}
       if(e.code==="Escape"&&mode==="pause"){game.current.paused=false;game.current.last=performance.now();setMode("play");return}
       game.current.keys.add(e.code);
-      if(e.code==="Space"&&!e.repeat&&game.current.dashCharges>0&&mode==="play"){
-        const g=game.current; let dx=(g.keys.has("KeyD")?1:0)-(g.keys.has("KeyA")?1:0),dy=(g.keys.has("KeyS")?1:0)-(g.keys.has("KeyW")?1:0);
-        const n=Math.hypot(dx,dy)||1; dx/=n;dy/=n;g.vx=dx*760;g.vy=dy*760;g.dashCharges--;if(g.dash<=0)g.dash=1.55;g.inv=.28;g.shake=7;sound.current?.play("dash");
-        if(g.chemistries.includes("brain_lung")){for(let i=0;i<8;i++){const a=i/8*6.28;g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*520,vy:Math.sin(a)*520,life:1.2,r:6})}g.effect="케미 · 기동 마법 탄막";g.effectT=1}
-      }
+      if(e.code==="Space"&&!e.repeat)dashNow();
     };
     const up=(e:KeyboardEvent)=>game.current.keys.delete(e.code);
     addEventListener("keydown",down);addEventListener("keyup",up);return()=>{removeEventListener("keydown",down);removeEventListener("keyup",up)};
-  },[mode,toggleFullscreen]);
+  },[mode,toggleFullscreen,dashNow]);
 
   useEffect(()=>{
-    const c=canvas.current;if(!c)return;const ctx=c.getContext("2d")!;
+    const c=canvas.current;if(!c)return;const ctx=c.getContext("2d")!,coarse=matchMedia("(pointer: coarse)").matches;
     const stageArt=["school","company","apartment","hospital"].map(name=>{const img=new Image();img.src=`/art/${name}-walk.png`;return img});
     const stageMaps=["school","company","apartment","hospital"].map(name=>{const img=new Image();img.src=`/art/maps/${name}.png`;return img});
     const itemArt=new Image();itemArt.src="/art/items.png";
@@ -200,15 +215,15 @@ export default function OrganGame() {
         if(!g.choiceDone&&g.stageT>38){g.choiceDone=true;openChoice("생활 선택",LIFE[g.stage]);}
         if(!g.bossSpawned&&g.stageT>100){g.bossSpawned=true;spawn(g,true);sound.current?.play("boss")}
         if(g.t>=480){const boss=g.mobs.find(m=>m.boss);if(!boss)spawn(g,true)}
-        const dx=(g.keys.has("KeyD")?1:0)-(g.keys.has("KeyA")?1:0),dy=(g.keys.has("KeyS")?1:0)-(g.keys.has("KeyW")?1:0),n=Math.hypot(dx,dy)||1;
+        const dx=(g.keys.has("KeyD")?1:0)-(g.keys.has("KeyA")?1:0)+g.touchX,dy=(g.keys.has("KeyS")?1:0)-(g.keys.has("KeyW")?1:0)+g.touchY,n=Math.hypot(dx,dy)||1;
         const lungActive=g.organs.폐>=70,lungDanger=g.organs.폐<30,moving=Boolean(dx||dy);
         g.runner=g.chemistries.includes("heart_lung")?(moving?Math.min(5,g.runner+dt):Math.max(0,g.runner-dt*2.4)):0;
         const runnerBoost=1+g.runner*.035,moveSpeed=g.speed*(lungActive&&moving ? 1.16 : lungDanger ? 0.82 : 1)*runnerBoost;
-        if(g.inv<=.12){g.vx=dx/n*moveSpeed;g.vy=dy/n*moveSpeed}
+        if(g.inv<=.12){const power=Math.min(1,n);g.vx=dx/n*moveSpeed*power;g.vy=dy/n*moveSpeed*power}
         g.x=Math.max(18,Math.min(g.worldW-18,g.x+g.vx*dt));g.y=Math.max(18,Math.min(g.worldH-18,g.y+g.vy*dt));
         if(g.chemistries.includes("heart_lung")&&moving){g.hp=Math.min(g.maxHp,g.hp+(0.55+g.runner*.42)*dt);if(Math.floor(g.t*2)%12===0){g.effect=`케미 · 심폐 러너 ${Math.ceil(g.runner)}단계`;g.effectT=.45}}
         if(g.inv>0&&lungActive&&Math.random()<dt*35){burst(g,g.x-g.vx*.035,g.y-g.vy*.035,"#4ee5e1",2);g.effect="폐 활성 · 잔상 호흡";g.effectT=.5}
-        const diff=DIFFICULTY[g.difficulty],cap=Math.min(190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count));
+        const diff=DIFFICULTY[g.difficulty],cap=Math.min(coarse?140:190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count*(coarse ? .78 : 1)));
         const takeDamage=(raw:number)=>raw*100/(100+g.armor*5);
         if(g.mobs.filter(m=>!m.boss).length<cap&&Math.random()<dt*(5+g.stage*3+g.stageT*.05)*diff.count)spawn(g);
         let nearest:Mob|undefined,nd=Infinity;for(const m of g.mobs){const d=(m.x-g.x)**2+(m.y-g.y)**2;if(d<nd){nd=d;nearest=m}}
@@ -287,7 +302,7 @@ export default function OrganGame() {
         }
         g.drops=g.drops.filter(d=>d.life>0);
         for(const w of g.warnings)w.life-=dt;g.warnings=g.warnings.filter(w=>w.life>0).slice(-40);
-        for(const p of g.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}g.parts=g.parts.filter(p=>p.life>0).slice(-280);
+        for(const p of g.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}g.parts=g.parts.filter(p=>p.life>0).slice(coarse?-190:-280);
         if(g.pulse&&Math.floor(g.t*2)%18===0){for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<115)m.hp-=g.pulse*.3}}
         if(g.t-g.hudAt>.12){g.hudAt=g.t;setHud({hp:g.hp,max:g.maxHp,t:g.t,stage:g.stage,organs:{...g.organs},level:g.level,xp:g.xp,nextXp:g.nextXp,loot:picked,effect:g.effectT>0?g.effect:"",chemistries:[...g.chemistries],dashCharges:g.dashCharges,maxDash:g.maxDash,armor:g.armor})}
       }
@@ -364,6 +379,8 @@ export default function OrganGame() {
     <canvas ref={canvas} width={1280} height={720} aria-label="장기 프로젝트 게임 화면"/>
     <button className="sound-btn" onClick={()=>{const next=!isMuted;setIsMuted(next);sound.current??=createSoundEngine();sound.current.setMuted(next);if(!next)sound.current.play("pickup")}} aria-label={isMuted?"사운드 켜기":"사운드 끄기"}>{isMuted?"🔇 소리 켜기":"🔊 사운드"}</button>
     <button className="fullscreen-btn" onClick={toggleFullscreen} aria-label={isFullscreen?"전체화면 종료":"전체화면 시작"}>{isFullscreen?"⊡ 나가기":"⛶ 전체화면"} <kbd>F</kbd></button>
+    {mode==="play"&&<div className="mobile-controls"><div ref={joystick} className="touch-stick" onPointerDown={moveStick} onPointerMove={moveStick} onPointerUp={releaseStick} onPointerCancel={releaseStick}><span style={{transform:`translate(${stick.x}px,${stick.y}px)`}}/></div><button className="touch-dash" onPointerDown={e=>{e.preventDefault();dashNow()}}><b>DASH</b><span>{Array.from({length:hud.maxDash},(_,i)=><i className={i<hud.dashCharges?"ready":""} key={i}/>)}</span></button></div>}
+    <div className="rotate-device"><b>↻</b><span>가로 화면으로 돌려주세요</span></div>
     {mode==="start"&&<div className="screen menu-screen">
       <nav className="meta-nav"><div className="nav-brand">ORGAN<br/><b>PROJECT</b></div>{([["home","생애 시작"],["heroes","영웅 도감"],["organs","장기 도감"],["items","생활 보관함"],["archive","유전 기록"]] as const).map(([id,label])=><button className={menuSection===id?"active":""} key={id} onClick={()=>setMenuSection(id)}>{label}<span>↗</span></button>)}<div className="nav-keys"><kbd>WASD</kbd> 이동<br/><kbd>SPACE</kbd> 대시<br/><kbd>ESC</kbd> 메뉴</div></nav>
       <section className="meta-content">
