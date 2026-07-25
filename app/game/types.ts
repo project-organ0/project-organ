@@ -16,5 +16,5 @@ export type Game = {
   choices:string[];augments:string[];level:number;xp:number;nextXp:number;paused:boolean;
   damage:number;fireRate:number;speed:number;projectiles:number;poison:number;pulse:number;runner:number;
   bossSpawned:boolean;choiceDone:boolean;augmentDone:boolean;last:number;shake:number;difficulty:Difficulty;
-  lastHeart:number;effect:string;effectT:number;shotCount:number;chemistries:string[];
+  lastHeart:number;effect:string;effectT:number;shotCount:number;hudAt:number;chemistries:string[];
 };
