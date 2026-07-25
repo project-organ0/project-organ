@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type OrganKey = "뇌" | "심장" | "폐" | "간" | "근육";
 type Organs = Record<OrganKey, number>;
 type Mode = "start" | "play" | "choice" | "pause" | "report";
+type Difficulty = "easy" | "normal" | "hard";
 type Choice = { name: string; desc: string; effect: string; apply: (g: Game) => void };
 type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;kind:number;hit:number };
 type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean };
@@ -16,7 +17,7 @@ type Game = {
   organs:Organs; mobs:Mob[]; shots:Shot[]; parts:Particle[]; drops:Drop[]; keys:Set<string>;
   choices:string[]; augments:string[]; level:number; xp:number; nextXp:number; paused:boolean;
   damage:number; fireRate:number; speed:number; projectiles:number; poison:number; pulse:number;
-  bossSpawned:boolean; choiceDone:boolean; augmentDone:boolean; last:number; shake:number;
+  bossSpawned:boolean; choiceDone:boolean; augmentDone:boolean; last:number; shake:number; difficulty:Difficulty;
 };
 
 const STAGES = [
@@ -26,6 +27,11 @@ const STAGES = [
   ["60—80세 · 병원", "마지막 진료"],
 ];
 const ORGAN_KEYS: OrganKey[] = ["뇌","심장","폐","간","근육"];
+const DIFFICULTY = {
+  easy: { name:"가벼움", hp:.72, speed:.88, count:.72, damage:.65 },
+  normal: { name:"표준", hp:1, speed:1, count:1, damage:1 },
+  hard: { name:"생존", hp:1.45, speed:1.13, count:1.28, damage:1.35 },
+};
 const LIFE: Choice[][] = [
   [
     {name:"밤샘 공부",desc:"시험은 잘 봤지만 잠은 거의 자지 못했습니다.",effect:"뇌 강화 · 심장 약화 · 연사 증가",apply:g=>{g.organs.뇌+=15;g.organs.심장-=8;g.fireRate*=.86}},
@@ -71,11 +77,11 @@ const BASIC: Choice[] = [
   {name:"세포막 경화",desc:"외부 충격을 버티는 막이 두꺼워집니다.",effect:"최대 체력 +8 · 모든 장기 +2",apply:g=>{g.maxHp+=8;g.hp+=8;ORGAN_KEYS.forEach(k=>g.organs[k]+=2)}},
 ];
 
-function fresh():Game {
+function fresh(difficulty:Difficulty="normal"):Game {
   return {w:1280,h:720,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:640,y:360,vx:0,vy:0,dash:0,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,
-    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0};
+    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty};
 }
 
 export default function OrganGame() {
@@ -101,8 +107,8 @@ export default function OrganGame() {
     setMode("report");
   },[]);
 
-  const start=useCallback(()=>{
-    const g=fresh(); const gene=localStorage.getItem("organ-gene") as OrganKey|null;
+  const start=useCallback((difficulty:Difficulty="normal")=>{
+    const g=fresh(difficulty); const gene=localStorage.getItem("organ-gene") as OrganKey|null;
     if(gene&&ORGAN_KEYS.includes(gene)) g.organs[gene]+=8;
     game.current=g; setHud({hp:g.hp,max:g.maxHp,t:0,stage:0,organs:{...g.organs},level:1,xp:0,nextXp:g.nextXp,loot:""}); setMode("play");
   },[]);
@@ -124,7 +130,7 @@ export default function OrganGame() {
 
   useEffect(()=>{
     const c=canvas.current;if(!c)return;const ctx=c.getContext("2d")!;
-    const stageArt=["school","company","apartment","hospital"].map(name=>{const img=new Image();img.src=`/art/${name}.png`;return img});
+    const stageArt=["school","company","apartment","hospital"].map(name=>{const img=new Image();img.src=`/art/${name}-walk.png`;return img});
     const itemArt=new Image();itemArt.src="/art/items.png";
     const drawEnvironment=(g:Game)=>{
       const floor=["#243a35","#30383d","#3c3931","#d9e4df"][g.stage];
@@ -157,8 +163,8 @@ export default function OrganGame() {
     const spawn=(g:Game,boss=false)=>{
       const side=Math.floor(Math.random()*4);let x=0,y=0;
       if(side===0){x=Math.random()*g.w;y=-25}else if(side===1){x=g.w+25;y=Math.random()*g.h}else if(side===2){x=Math.random()*g.w;y=g.h+25}else{x=-25;y=Math.random()*g.h}
-      const base=20+g.stage*12+g.t*.035;
-      g.mobs.push({x,y,r:boss?(g.stage===3?52:38):10+Math.random()*8,hp:boss?base*18:base,max:boss?base*18:base,speed:boss?58:65+Math.random()*44+g.stage*8,boss,kind:Math.floor(Math.random()*3),hit:0});
+      const diff=DIFFICULTY[g.difficulty],base=(20+g.stage*12+g.t*.035)*diff.hp;
+      g.mobs.push({x,y,r:boss?(g.stage===3?52:38):10+Math.random()*8,hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,kind:Math.floor(Math.random()*3),hit:0});
     };
     const burst=(g:Game,x:number,y:number,color:string,n=7)=>{for(let i=0;i<n;i++){const a=Math.random()*6.28,s=40+Math.random()*150;g.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.35,color})}};
     const loop=(now:number)=>{
@@ -173,14 +179,14 @@ export default function OrganGame() {
         const dx=(g.keys.has("KeyD")?1:0)-(g.keys.has("KeyA")?1:0),dy=(g.keys.has("KeyS")?1:0)-(g.keys.has("KeyW")?1:0),n=Math.hypot(dx,dy)||1;
         if(g.inv<=.12){g.vx=dx/n*g.speed;g.vy=dy/n*g.speed}
         g.x=Math.max(18,Math.min(g.w-18,g.x+g.vx*dt));g.y=Math.max(18,Math.min(g.h-18,g.y+g.vy*dt));
-        const cap=Math.min(155,26+g.stage*18+Math.floor(g.stageT/3));
-        if(g.mobs.filter(m=>!m.boss).length<cap&&Math.random()<dt*(5+g.stage*3+g.stageT*.05))spawn(g);
+        const diff=DIFFICULTY[g.difficulty],cap=Math.min(190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count));
+        if(g.mobs.filter(m=>!m.boss).length<cap&&Math.random()<dt*(5+g.stage*3+g.stageT*.05)*diff.count)spawn(g);
         let nearest:Mob|undefined,nd=Infinity;for(const m of g.mobs){const d=(m.x-g.x)**2+(m.y-g.y)**2;if(d<nd){nd=d;nearest=m}}
         if(g.fire<=0&&nearest){g.fire=g.fireRate;const a=Math.atan2(nearest.y-g.y,nearest.x-g.x);for(let j=0;j<g.projectiles;j++){const off=(j-(g.projectiles-1)/2)*.13;g.shots.push({x:g.x,y:g.y,vx:Math.cos(a+off)*560,vy:Math.sin(a+off)*560,life:1.5,r:5})}}
         for(const m of g.mobs){
           const a=Math.atan2(g.y-m.y,g.x-m.x);m.x+=Math.cos(a)*m.speed*dt;m.y+=Math.sin(a)*m.speed*dt;m.hit-=dt;
           const d=Math.hypot(m.x-g.x,m.y-g.y);
-          if(d<m.r+16&&g.inv<=0){g.hp-=m.boss?18:8;g.inv=.55;g.shake=10;burst(g,g.x,g.y,"#ff715b",12);if(g.hp<=0)endGame(false)}
+          if(d<m.r+16&&g.inv<=0){g.hp-=(m.boss?18:8)*diff.damage;g.inv=.55;g.shake=10;burst(g,g.x,g.y,"#ff715b",12);if(g.hp<=0)endGame(false)}
           if(g.poison&&d<95){m.hp-=g.poison*6*dt}
         }
         for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(!s.enemy){for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){m.hp-=g.damage;s.life=0;m.hit=.08;burst(g,s.x,s.y,"#d8ff3e",3);break}}}}
@@ -233,9 +239,14 @@ export default function OrganGame() {
       for(const s of g.shots){ctx.fillStyle="#d8ff3e";ctx.shadowBlur=13;ctx.shadowColor="#d8ff3e";ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fill()}ctx.shadowBlur=0;
       for(const m of g.mobs){
         ctx.save();ctx.translate(m.x,m.y);
-        const atlas=stageArt[g.stage],idx=m.boss?3:m.kind,cell=627,size=m.boss?138:68;
+        const atlas=stageArt[g.stage],idx=m.boss?3:m.kind,cell=1254/4,size=m.boss?138:68;
+        const frame=Math.floor(g.t*(m.boss?4.5:7)+(m.x+m.y)*.008)%4,bob=Math.sin(g.t*(m.boss?9:14)+(m.x+m.y)*.01)*(m.boss?2:3);
+        const facingRight=g.x>=m.x;
+        ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(0,size*.31,Math.max(11,size*.28)*(1-Math.abs(bob)*.025),Math.max(4,size*.075),0,0,6.28);ctx.fill();
+        ctx.translate(0,bob);ctx.rotate(Math.sin(g.t*7+(m.x+m.y)*.01)*.018);
+        if(!facingRight)ctx.scale(-1,1);
         if(m.hit>0){ctx.globalAlpha=.55;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,size*.42,0,6.28);ctx.fill();ctx.globalAlpha=1}
-        if(atlas.complete&&atlas.naturalWidth)ctx.drawImage(atlas,(idx%2)*cell,Math.floor(idx/2)*cell,cell,cell,-size/2,-size*.58,size,size);
+        if(atlas.complete&&atlas.naturalWidth)ctx.drawImage(atlas,frame*cell,idx*cell,cell,cell,-size/2,-size*.58,size,size);
         else{ctx.fillStyle=m.boss?"#ff715b":"#76c8b9";ctx.beginPath();ctx.arc(0,0,m.r,0,6.28);ctx.fill()}
         if(m.boss){ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(-m.r,-m.r-13,m.r*2,5);ctx.fillStyle="#d8ff3e";ctx.fillRect(-m.r,-m.r-13,m.r*2*(m.hp/m.max),5)}ctx.restore();
       }
@@ -258,7 +269,12 @@ export default function OrganGame() {
       <div className="eyebrow">ORGAN PROJECT / LIFE-01</div>
       <h1 className="title">장기<br/><span>프로젝트</span></h1>
       <p className="lede">매 순간 더 강해질 수 있지만, 그 대가는 몸 어딘가에 남습니다. 생활을 선택하고, 장기를 성장시키며, 마지막 적 <b>‘노화’</b>와 맞서세요.</p>
-      <div className="start-row"><button className="primary" onClick={start}>생애 시작하기 ↗</button><div className="keys"><kbd>WASD</kbd> 이동 &nbsp; <kbd>SPACE</kbd> 대시</div></div>
+      <div className="difficulty" aria-label="난이도 선택">
+        <button onClick={()=>start("easy")}><small>CASUAL</small><b>가벼움</b><span>적 체력과 수 감소</span></button>
+        <button className="recommended" onClick={()=>start("normal")}><small>RECOMMENDED</small><b>표준</b><span>기획 의도 그대로</span></button>
+        <button onClick={()=>start("hard")}><small>SURVIVAL</small><b>생존</b><span>더 빠르고 많은 적</span></button>
+      </div>
+      <div className="start-row"><div className="keys"><kbd>WASD</kbd> 이동 &nbsp; <kbd>SPACE</kbd> 대시</div></div>
       <div className="gene">{gene?`유전 특성 감지: 타고난 ${gene} +8`:"저장된 유전 특성이 없습니다. 첫 생애를 시작하세요."}</div>
     </div>}
     {(mode==="play"||mode==="pause")&&<><div className="hud"><div className="hud-top"><div className="stage"><small>LIFE STAGE 0{hud.stage+1}</small>{STAGES[hud.stage][0]}</div><div><div className="clock">{fmt(hud.t)} <small>/ 8:00</small></div><div className="hp"><i style={{width:`${Math.max(0,hud.hp/hud.max*100)}%`}}/></div></div></div></div>
@@ -267,6 +283,6 @@ export default function OrganGame() {
       <div className="dash-hint">SPACE 대시 · ESC 일시정지</div></>}
     {mode==="choice"&&<div className="choice-wrap"><div className="choice-head"><div><div className="eyebrow">{choiceType==="생활 선택"?"LIFE INTERRUPT":choiceType==="희귀 증강"?"MUTATION MILESTONE":"CELL EVOLUTION"}</div><h2>{choiceType}</h2></div><p>{choiceType==="생활 선택"?"어떤 선택도 공짜는 아닙니다. 강해진 만큼, 몸 어딘가에 흔적이 남습니다.":choiceType==="세포 진화"?"이번 생애의 전투 방향을 하나 선택하세요. 선택은 계속 누적됩니다.":"몸이 한계를 넘어 새로운 생존 방식을 제안합니다."}</p></div><div className="cards">{cards.map((c,i)=><button className="card" key={c.name} onClick={()=>choose(c)}><span className="card-no">OPTION 0{i+1}</span><h3>{c.name}</h3><p>{c.desc}</p><strong>{c.effect} ↗</strong></button>)}</div></div>}
     {mode==="pause"&&<div className="pause"><div><div className="eyebrow">SYSTEM PAUSED</div><h2>잠시 숨 고르기</h2><button className="primary" onClick={()=>{game.current.paused=false;game.current.last=performance.now();setMode("play")}}>계속하기</button></div></div>}
-    {mode==="report"&&<div className="screen report"><div className="report-grid"><div><div className="eyebrow">LIFE REPORT / COMPLETE</div><h1>{report.win?"노화를 넘어섰습니다.":"생애가 끝났습니다."}</h1><p className="report-copy"><b>{build}</b>의 삶이었습니다. {strongest}은(는) 끝까지 강하게 버텼지만, {weakest}에는 선택의 대가가 깊게 남았습니다. 다음 생애에는 <b>타고난 {strongest}</b>이 유전됩니다.</p><div className="stats"><div className="stat"><small>SURVIVAL</small><b>{fmt(report.t)}</b></div><div className="stat"><small>ZOMBIES</small><b>{report.kills} 처치</b></div><div className="stat"><small>BUILD</small><b>{build}</b></div><div className="stat"><small>GENE</small><b>타고난 {strongest}</b></div></div><div className="report-actions"><button className="primary" onClick={start}>다음 생애 시작 ↗</button></div></div><div><div className="organ-report">{ORGAN_KEYS.map(k=><div className="organ-line" key={k}><span>{k}</span><div className="bar"><i style={{width:`${report.organs[k]}%`}}/></div><b>{report.organs[k]}</b></div>)}</div><p className="gene">생활: {report.choices.join(" · ")||"기록 없음"}<br/>증강: {report.augments.join(" · ")||"기록 없음"}</p></div></div></div>}
+    {mode==="report"&&<div className="screen report"><div className="report-grid"><div><div className="eyebrow">LIFE REPORT / COMPLETE</div><h1>{report.win?"노화를 넘어섰습니다.":"생애가 끝났습니다."}</h1><p className="report-copy"><b>{build}</b>의 삶이었습니다. {strongest}은(는) 끝까지 강하게 버텼지만, {weakest}에는 선택의 대가가 깊게 남았습니다. 다음 생애에는 <b>타고난 {strongest}</b>이 유전됩니다.</p><div className="stats"><div className="stat"><small>SURVIVAL</small><b>{fmt(report.t)}</b></div><div className="stat"><small>ZOMBIES</small><b>{report.kills} 처치</b></div><div className="stat"><small>BUILD</small><b>{build}</b></div><div className="stat"><small>GENE</small><b>타고난 {strongest}</b></div></div><div className="report-actions"><button className="primary" onClick={()=>start(game.current.difficulty)}>같은 난이도로 다시 ↗</button></div></div><div><div className="organ-report">{ORGAN_KEYS.map(k=><div className="organ-line" key={k}><span>{k}</span><div className="bar"><i style={{width:`${report.organs[k]}%`}}/></div><b>{report.organs[k]}</b></div>)}</div><p className="gene">생활: {report.choices.join(" · ")||"기록 없음"}<br/>증강: {report.augments.join(" · ")||"기록 없음"}</p></div></div></div>}
   </section></main>;
 }

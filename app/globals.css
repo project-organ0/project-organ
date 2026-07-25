@@ -67,6 +67,14 @@ canvas { display: block; width: 100%; height: 100%; }
 .title span { color: var(--coral); }
 .lede { position: relative; z-index: 1; max-width: 560px; margin: 22px 0 32px; font-size: 17px; line-height: 1.65; }
 .start-row { position: relative; z-index: 2; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.difficulty { position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,minmax(130px,190px));gap:10px;margin-bottom:20px; }
+.difficulty button { border:1.5px solid var(--ink);border-radius:14px;background:rgba(255,255,255,.7);padding:13px 15px;text-align:left;cursor:pointer;transition:.15s transform,.15s background; }
+.difficulty button:hover { transform:translateY(-4px);background:white; }
+.difficulty button.recommended { background:var(--acid);box-shadow:3px 3px 0 var(--ink); }
+.difficulty small,.difficulty span { display:block;font:700 9px/1.2 monospace; }
+.difficulty small { margin-bottom:8px;letter-spacing:.08em; }
+.difficulty b { display:block;font-size:19px;margin-bottom:5px; }
+.difficulty span { color:#58615f; }
 .primary {
   border: 2px solid var(--ink); border-radius: 999px; background: var(--acid);
   color: var(--ink); padding: 14px 24px; font-weight: 900; cursor: pointer;
@@ -154,5 +162,6 @@ canvas { display: block; width: 100%; height: 100%; }
   .card h3 { margin-top: 14px; }
   .choice-head p { display:none; }
   .report-grid { grid-template-columns: 1fr; }
+  .difficulty { grid-template-columns:1fr; }
   .organs { flex-wrap: wrap; max-width: 75%; }
 }
