@@ -389,6 +389,8 @@ export default function OrganGame() {
   const discovered=typeof window!=="undefined"?JSON.parse(localStorage.getItem("organ-chemistry")||"[]") as string[]:[];
   const bestKills=typeof window!=="undefined"?Number(localStorage.getItem("organ-best-kills")||0):0;
   const bestTime=typeof window!=="undefined"?Number(localStorage.getItem("organ-best-time")||0):0;
+  const hubDx=HUB.x-game.current.x,hubDy=HUB.y-game.current.y,hubDistance=Math.round(Math.hypot(hubDx,hubDy));
+  const hubDirection=["동","남동","남","남서","서","북서","북","북동"][(Math.round(Math.atan2(hubDy,hubDx)/(Math.PI/4))+8)%8];
   const cardOrgans=(c:Choice)=>c.organs??ORGAN_KEYS.filter(k=>c.name.includes(k)||({뇌:["시냅스","신경","집중","공부","야근"],심장:["심실","맥박","아드레날린"],폐:["폐포","호흡","대시","등산"],간:["해독","독성","회식","식단"],근육:["근육","근섬유","운동","헬스","재활"]}[k] as string[]).some(v=>c.name.includes(v)));
 
   return <main className="game-shell"><section className="frame">
@@ -409,7 +411,7 @@ export default function OrganGame() {
     </div>}
     {(mode==="play"||mode==="pause")&&<><div className="hud"><div className="hud-top"><div className="stage"><small>LIFE STAGE 0{hud.stage+1}</small>{STAGES[hud.stage][0]}<span className="build-chip">주력 {leaders.map(k=>`${ORGAN_META[k].icon} ${k}`).join(" + ")}</span></div><div><div className="clock">{fmt(hud.t)} <small>/ 8:00</small></div><div className="hp"><i style={{width:`${Math.max(0,hud.hp/hud.max*100)}%`}}/></div></div></div></div>
       <aside className={`chemistry-panel ${activeChem?"awakened":""}`}><small>ACTIVE CHEMISTRY</small>{activeChem?<><div className="chemistry-icons">{activeChem.organs.map(k=><span key={k}>{ORGAN_META[k].icon}</span>)}</div><h3>{activeChem.name}</h3><p>{activeChem.effect}</p>{hud.chemistries.length>1&&<em>보유 케미 {hud.chemistries.length}개 · 최신 형태 활성</em>}</>:<><h3>아직 미각성</h3><p>레벨 5에 도달하면 두 장기가 결합해 새로운 형태로 진화합니다.</p></>}</aside>
-      <div className={`zone-hud ${hud.zone==="중앙"?"hub":""}`}>{hud.zone==="중앙"?<><b>◉ 혈관 교차로</b><span>5개의 장기 포털에서 파밍 구역을 선택하세요</span></>:<><b>{ORGAN_META[hud.zone].icon} {PORTAL_ZONES.find(p=>p.key===hud.zone)?.label}</b><span>{PORTAL_ZONES.find(p=>p.key===hud.zone)?.focus} 확률 70% · 체류 {Math.floor(hud.zoneT)}초</span></>}</div>
+      <div className={`zone-hud ${hud.zone==="중앙"?"hub":""}`}>{hud.zone==="중앙"?<><b>◉ 혈관 교차로 탐색</b><span>{hubDistance<260?"포털 신호 감지 · 주변을 확인하세요":`${hubDirection}쪽 · 약 ${hubDistance}m`}</span></>:<><b>{ORGAN_META[hud.zone].icon} {PORTAL_ZONES.find(p=>p.key===hud.zone)?.label}</b><span>{PORTAL_ZONES.find(p=>p.key===hud.zone)?.focus} 확률 70% · 체류 {Math.floor(hud.zoneT)}초</span></>}</div>
       {hud.effect&&<div className="organ-effect">{hud.effect}</div>}
       <div className="level-hud"><b>LV.{hud.level}</b><span><i style={{width:`${hud.xp/hud.nextXp*100}%`}}/></span>{hud.loot&&<em>{hud.loot}</em>}</div>
       <div className="defense-hud"><b>🛡 방어 {hud.armor.toFixed(1)}</b><span>피해 감소 {Math.round(100-10000/(100+hud.armor*5))}%</span></div>
