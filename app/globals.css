@@ -18,7 +18,7 @@ button { font: inherit; }
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 22px;
+  padding: 14px;
   overflow: hidden;
   background:
     radial-gradient(circle at 13% 20%, rgba(216,255,62,.62), transparent 27%),
@@ -29,10 +29,10 @@ button { font: inherit; }
 }
 
 .frame {
-  width: min(1280px, 100%);
+  width: min(1480px, 100%);
   aspect-ratio: 16 / 9;
-  min-height: 620px;
-  max-height: calc(100vh - 44px);
+  min-height: min(700px, calc(100vh - 28px));
+  max-height: calc(100vh - 28px);
   position: relative;
   overflow: hidden;
   border: 2px solid var(--ink);
@@ -44,6 +44,8 @@ button { font: inherit; }
 *:fullscreen .game-shell { padding:0;background:#101515; }
 .fullscreen-btn { position:absolute;z-index:45;right:18px;bottom:18px;border:1px solid rgba(255,255,255,.35);border-radius:999px;background:rgba(8,13,13,.72);color:white;padding:8px 11px;font:700 10px/1 monospace;cursor:pointer;backdrop-filter:blur(8px); }
 .fullscreen-btn kbd { margin-left:5px;color:var(--acid); }
+.sound-btn { position:absolute;z-index:45;right:118px;bottom:18px;border:1px solid rgba(255,255,255,.35);border-radius:999px;background:rgba(8,13,13,.72);color:white;padding:8px 11px;font:700 10px/1 monospace;cursor:pointer;backdrop-filter:blur(8px); }
+.sound-btn:hover,.fullscreen-btn:hover { border-color:var(--acid);color:var(--acid); }
 
 canvas { display: block; width: 100%; height: 100%; }
 
