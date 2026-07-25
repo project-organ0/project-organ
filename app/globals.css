@@ -105,6 +105,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .level-hud > span { width: 150px; height: 5px; background: rgba(255,255,255,.18); }
 .level-hud > span i { display:block; height:100%; background:var(--acid); transition:width .2s; }
 .level-hud em { color:var(--acid); font-style:normal; animation:loot-pop .35s ease-out; }
+.level-hud .chem-chip { padding:4px 7px;border:1px solid rgba(216,255,62,.35);border-radius:999px;background:rgba(0,0,0,.35); }
 @keyframes loot-pop { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
 .organ {
   min-width: 57px; padding: 7px 9px; border: 1px solid rgba(255,255,255,.28);
@@ -130,6 +131,14 @@ canvas { display: block; width: 100%; height: 100%; }
   position: absolute; z-index: 30; inset: 0; display: grid; align-content: center;
   padding: clamp(22px, 5vw, 65px); background: rgba(8,13,13,.91); color: white; backdrop-filter: blur(7px);
 }
+.choice-evolve { background:rgba(12,20,19,.93); }
+.choice-build { background:radial-gradient(circle at 50% 28%,rgba(164,155,216,.2),transparent 38%),rgba(6,10,11,.96); }
+.choice-build .choice-head h2 { color:var(--acid);font-size:clamp(40px,6vw,78px); }
+.choice-build .card { min-height:300px;border-color:rgba(216,255,62,.35);background:linear-gradient(145deg,#26302e,#141a1a);overflow:hidden; }
+.choice-build .card::after { content:"";position:absolute;inset:auto -30% -65% 10%;aspect-ratio:1;border:1px solid rgba(216,255,62,.2);border-radius:50%;pointer-events:none; }
+.choice-build .card:hover { border-color:var(--acid);box-shadow:0 0 34px rgba(216,255,62,.13); }
+.choice-evolve .card { min-height:205px;background:#17201f; }
+.choice-evolve .card h3 { font-size:22px; }
 .choice-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 23px; }
 .choice-head h2 { margin: 6px 0 0; font-size: clamp(32px, 5vw, 66px); letter-spacing: -.06em; line-height: .9; }
 .choice-head p { max-width: 320px; margin: 0; color: #b4c0be; line-height: 1.5; }
@@ -143,6 +152,13 @@ canvas { display: block; width: 100%; height: 100%; }
 .card-no { font: 700 11px/1 monospace; color: var(--acid); }
 .organ-tags { display:flex;gap:5px;position:absolute;right:17px;top:16px; }
 .organ-tags span { padding:4px 7px;border:1px solid rgba(255,255,255,.2);border-radius:999px;font:700 9px/1 monospace;color:#dbe6e3; }
+.chem-visual { display:flex;align-items:center;gap:10px;margin:31px 0 8px; }
+.chem-visual::after { content:"×";order:1;color:var(--acid);font:900 20px/1 monospace; }
+.chem-visual span { order:0;width:58px;height:58px;display:grid;place-items:center;border:2px solid var(--organ-color);border-radius:18px;background:color-mix(in srgb,var(--organ-color) 12%,#101515);font-size:27px;box-shadow:0 0 18px color-mix(in srgb,var(--organ-color) 18%,transparent); }
+.chem-visual span:nth-child(2) { order:2; }
+.chem-visual small { display:none; }
+.choice-build .card h3 { margin-top:14px;font-size:29px; }
+.synergy-hint { display:block;margin-top:13px;padding-top:11px;border-top:1px solid rgba(255,255,255,.1);color:#8ea09c;font:700 9px/1.3 monospace; }
 .card h3 { margin: 30px 0 9px; font-size: 25px; letter-spacing: -.04em; }
 .card p { margin: 0; color: #aeb9b7; font-size: 13px; line-height: 1.55; }
 .card strong { display: block; margin-top: 16px; color: var(--acid); font-size: 13px; line-height: 1.45; }
