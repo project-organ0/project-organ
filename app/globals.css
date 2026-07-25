@@ -123,6 +123,28 @@ canvas { display: block; width: 100%; height: 100%; }
 .chem-archive article>div { margin-bottom:7px;font-size:18px; }
 .chem-archive p { margin:6px 0 0;color:#65706d;font-size:9px;line-height:1.4; }
 .chem-archive .locked { filter:grayscale(1);opacity:.5; }
+.hero-layout { display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;max-width:920px; }
+.hero-list { display:grid;gap:6px;align-content:start; }
+.hero-list button { display:grid;grid-template-columns:48px 1fr;gap:2px 8px;align-items:center;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.62);padding:9px;text-align:left;cursor:pointer; }
+.hero-list button>span { grid-row:1/3;font-size:18px;text-align:center; }
+.hero-list button b { font-size:13px; }
+.hero-list button small { color:#71807c;font:700 7px/1 monospace; }
+.hero-list button.active { border-color:var(--ink);background:var(--acid);box-shadow:3px 3px 0 var(--ink); }
+.hero-list button.found small { color:#39706b; }
+.hero-detail { min-height:390px;display:grid;grid-template-columns:minmax(180px,38%) 1fr;border:2px solid var(--ink);border-radius:18px;overflow:hidden;background:rgba(255,255,255,.8);box-shadow:6px 6px 0 var(--ink); }
+.hero-visual { position:relative;display:grid;place-items:center;min-height:100%;background:radial-gradient(circle at 50% 42%,rgba(216,255,62,.9),transparent 37%),#18201f;overflow:hidden; }
+.hero-visual::after { content:"";position:absolute;inset:10%;border:1px solid rgba(216,255,62,.3);border-radius:50%; }
+.hero-visual>span { position:absolute;left:13px;bottom:13px;z-index:2;color:var(--acid);font:700 8px/1 monospace;letter-spacing:.12em; }
+.hero-portrait { position:relative;z-index:1;width:170px;height:228px;background-image:url("/art/player-forms.png");background-size:400% 200%;background-repeat:no-repeat;filter:drop-shadow(0 14px 12px rgba(0,0,0,.4)); }
+.hero-copy { padding:25px; }
+.hero-copy>small { color:var(--coral);font:800 9px/1 monospace;letter-spacing:.1em; }
+.hero-copy h3 { margin:6px 0 10px;font-size:clamp(28px,3.5vw,46px);letter-spacing:-.06em; }
+.hero-organs { display:flex;gap:6px;margin-bottom:17px; }
+.hero-organs b { padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:white;font-size:10px; }
+.hero-copy dl { display:grid;gap:10px;margin:0; }
+.hero-copy dl>div { border-top:1px solid var(--line);padding-top:9px; }
+.hero-copy dt { margin-bottom:5px;color:#66736f;font:800 8px/1 monospace;letter-spacing:.1em; }
+.hero-copy dd { margin:0;font-size:11px;line-height:1.5; }
 
 .hud { position: absolute; z-index: 5; inset: 16px 18px auto; color: white; pointer-events: none; }
 .hud-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
@@ -227,6 +249,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .bar { height: 8px; background: #dfe2d9; }
 .bar i { display:block; height:100%; background: var(--coral); }
 .report-actions { display:flex; gap: 12px; margin-top: 22px; }
+.report-menu-btn { border:2px solid var(--ink);border-radius:999px;background:white;padding:14px 22px;font-weight:900;cursor:pointer; }
 
 .pause {
   position:absolute; z-index:25; inset:0; display:grid; place-items:center;
@@ -260,6 +283,7 @@ canvas { display: block; width: 100%; height: 100%; }
   .nav-brand,.nav-keys { display:none; }
   .meta-nav button { white-space:nowrap;gap:12px; }
   .meta-content { padding:22px; }
-  .organ-guide,.item-guide,.chem-archive { grid-template-columns:1fr; }
+  .organ-guide,.item-guide,.chem-archive,.hero-layout,.hero-detail { grid-template-columns:1fr; }
+  .hero-visual { min-height:220px; }
   .archive-stats,.pause-menu { grid-template-columns:1fr; }
 }
