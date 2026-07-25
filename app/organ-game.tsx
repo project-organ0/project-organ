@@ -7,14 +7,15 @@ type Organs = Record<OrganKey, number>;
 type Mode = "start" | "play" | "choice" | "pause" | "report";
 type Difficulty = "easy" | "normal" | "hard";
 type Choice = { name: string; desc: string; effect: string; apply: (g: Game) => void; organs?:OrganKey[]; chemistry?:string };
-type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;kind:number;hit:number };
+type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number };
 type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean };
 type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
 type Drop = { x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number };
+type Telegraph = {x:number;y:number;tx:number;ty:number;life:number;max:number;kind:"line"|"circle";r:number};
 type Game = {
   w:number;h:number;worldW:number;worldH:number;t:number; stage:number; stageT:number; hp:number; maxHp:number;
   x:number;y:number; vx:number;vy:number; dash:number; dashCharges:number; maxDash:number; inv:number; fire:number; kills:number;
-  organs:Organs; mobs:Mob[]; shots:Shot[]; parts:Particle[]; drops:Drop[]; keys:Set<string>;
+  organs:Organs; mobs:Mob[]; shots:Shot[]; parts:Particle[]; drops:Drop[]; warnings:Telegraph[]; keys:Set<string>;
   choices:string[]; augments:string[]; level:number; xp:number; nextXp:number; paused:boolean;
   damage:number; fireRate:number; speed:number; projectiles:number; poison:number; pulse:number;
   bossSpawned:boolean; choiceDone:boolean; augmentDone:boolean; last:number; shake:number; difficulty:Difficulty;
@@ -133,7 +134,7 @@ const ITEM_GUIDE = [
 
 function fresh(difficulty:Difficulty="normal"):Game {
   return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
-    organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],keys:new Set(),choices:[],augments:[],
+    organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],warnings:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,
     bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,chemistries:[]};
 }
@@ -216,7 +217,7 @@ export default function OrganGame() {
       const x=Math.max(edge,Math.min(g.worldW-edge,g.x+Math.cos(angle)*distance));
       const y=Math.max(edge,Math.min(g.worldH-edge,g.y+Math.sin(angle)*distance));
       const diff=DIFFICULTY[g.difficulty],base=(20+g.stage*12+g.t*.035)*diff.hp;
-      g.mobs.push({x,y,r:boss?(g.stage===3?52:38):10+Math.random()*8,hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,kind:Math.floor(Math.random()*3),hit:0});
+      g.mobs.push({x,y,r:boss?(g.stage===3?52:38):10+Math.random()*8,hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,elite:boss||Math.random()<.08+g.stage*.025,kind:Math.floor(Math.random()*3),hit:0,skill:1.5+Math.random()*3,cast:0,charge:0,aimX:x,aimY:y});
     };
     const burst=(g:Game,x:number,y:number,color:string,n=7)=>{for(let i=0;i<n;i++){const a=Math.random()*6.28,s=40+Math.random()*150;g.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.35,color})}};
     const loop=(now:number)=>{
@@ -250,14 +251,29 @@ export default function OrganGame() {
           if(muscleActive&&g.shotCount%5===0){g.effect="근육 활성 · 근섬유 폭발";g.effectT=.7}
         }
         for(const m of g.mobs){
-          const a=Math.atan2(g.y-m.y,g.x-m.x);m.x+=Math.cos(a)*m.speed*dt;m.y+=Math.sin(a)*m.speed*dt;m.hit-=dt;
+          m.skill-=dt;m.hit-=dt;m.charge-=dt;
+          const wasCasting=m.cast>0;m.cast-=dt;
+          if(wasCasting&&m.cast<=0){
+            if(m.boss){
+              const count=12+g.stage*2,offset=(g.t%2)*.3;for(let i=0;i<count;i++){const a=i/count*Math.PI*2+offset;g.shots.push({x:m.x,y:m.y,vx:Math.cos(a)*230,vy:Math.sin(a)*230,life:3.2,r:7,enemy:true})}
+              const aim=Math.atan2(m.aimY-m.y,m.aimX-m.x);for(let i=-2;i<=2;i++)g.shots.push({x:m.x,y:m.y,vx:Math.cos(aim+i*.12)*340,vy:Math.sin(aim+i*.12)*340,life:2.5,r:8,enemy:true});
+            }else if(m.kind===1){m.charge=.42}
+            else{const a=Math.atan2(m.aimY-m.y,m.aimX-m.x);g.shots.push({x:m.x,y:m.y,vx:Math.cos(a)*285,vy:Math.sin(a)*285,life:3,r:7,enemy:true})}
+          }
+          const distanceToPlayer=Math.hypot(g.x-m.x,g.y-m.y);
+          if(m.elite&&m.skill<=0&&m.cast<=0&&m.charge<=0&&distanceToPlayer<680){
+            m.skill=m.boss?3.8:4.6+Math.random()*2.2;m.cast=m.boss ? 0.9 : 0.65;m.aimX=g.x;m.aimY=g.y;
+            g.warnings.push({x:m.x,y:m.y,tx:g.x,ty:g.y,life:m.cast,max:m.cast,kind:m.boss?"circle":"line",r:m.boss?155:34});
+          }
+          const a=m.charge>0?Math.atan2(m.aimY-m.y,m.aimX-m.x):Math.atan2(g.y-m.y,g.x-m.x);
+          const move=m.charge>0?690:m.speed*(m.cast>0 ? 0.18 : 1);m.x+=Math.cos(a)*move*dt;m.y+=Math.sin(a)*move*dt;
           const edge=m.boss?76:24;m.x=Math.max(edge,Math.min(g.worldW-edge,m.x));m.y=Math.max(edge,Math.min(g.worldH-edge,m.y));
           const d=Math.hypot(m.x-g.x,m.y-g.y);
           if(d<m.r+16&&g.inv<=0){g.hp-=(m.boss?18:8)*diff.damage;g.inv=.55;g.shake=10;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",12);if(g.chemistries.includes("heart_muscle")){for(const target of g.mobs){if(Math.hypot(target.x-g.x,target.y-g.y)<135)target.hp-=14}g.effect="케미 · 심장 버서커 반격";g.effectT=.85}if(g.hp<=0)endGame(false)}
           if(g.poison&&d<95){m.hp-=g.poison*6*dt}
         }
         const muscleDamage=g.organs.근육>=70?1.18:g.organs.근육<30?0.78:1;
-        for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(!s.enemy){for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){const hit=g.damage*muscleDamage*(s.r>9?1.65:1);m.hp-=hit;s.life=0;m.hit=.08;sound.current?.play("hit");burst(g,s.x,s.y,s.r>9?"#ff715b":"#d8ff3e",s.r>9?10:3);if(g.chemistries.includes("brain_liver")){for(const other of g.mobs){if(other!==m&&Math.hypot(other.x-m.x,other.y-m.y)<95)other.hp-=hit*.28}}if(g.chemistries.includes("liver_muscle")&&s.r>9){for(const other of g.mobs){if(Math.hypot(other.x-m.x,other.y-m.y)<115)other.hp-=hit*.38}g.effect="케미 · 독성 폭발 전파";g.effectT=.65}break}}}}
+        for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.enemy){if(Math.hypot(s.x-g.x,s.y-g.y)<s.r+15&&g.inv<=0){s.life=0;g.hp-=7*diff.damage;g.inv=.42;g.shake=7;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",8);if(g.hp<=0)endGame(false)}}else{for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){const hit=g.damage*muscleDamage*(s.r>9?1.65:1);m.hp-=hit;s.life=0;m.hit=.08;sound.current?.play("hit");burst(g,s.x,s.y,s.r>9?"#ff715b":"#d8ff3e",s.r>9?10:3);if(g.chemistries.includes("brain_liver")){for(const other of g.mobs){if(other!==m&&Math.hypot(other.x-m.x,other.y-m.y)<95)other.hp-=hit*.28}}if(g.chemistries.includes("liver_muscle")&&s.r>9){for(const other of g.mobs){if(Math.hypot(other.x-m.x,other.y-m.y)<115)other.hp-=hit*.38}g.effect="케미 · 독성 폭발 전파";g.effectT=.65}break}}}}
         if(g.organs.간>=70){for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<100)m.hp-=(2.8+g.poison*2)*dt}if(Math.floor(g.t*2)%8===0){g.effect="간 활성 · 해독 독성 오라";g.effectT=.45}}
         const heartBeat=Math.floor(g.t/8);
         if(g.organs.심장>=70&&heartBeat!==g.lastHeart){g.lastHeart=heartBeat;sound.current?.play("heart");g.hp=Math.min(g.maxHp,g.hp+5);for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<130)m.hp-=8+g.pulse*2}burst(g,g.x,g.y,"#ff715b",28);g.effect="심장 활성 · 회복 박동";g.effectT=1.1}
@@ -271,7 +287,7 @@ export default function OrganGame() {
           }
           if(m.boss){if(g.stage===3&&g.stageT>100){endGame(true)}else if(!g.augmentDone){g.augmentDone=true;const pool=[...AUG].sort(()=>Math.random()-.5).slice(0,3);openChoice("전투 증강",pool)}}
         }
-        g.mobs=g.mobs.filter(m=>m.hp>0);g.shots=g.shots.filter(s=>s.life>0&&s.x>-30&&s.x<g.worldW+30&&s.y>-30&&s.y<g.worldH+30);
+        g.mobs=g.mobs.filter(m=>m.hp>0);g.shots=g.shots.filter(s=>s.life>0&&s.x>-30&&s.x<g.worldW+30&&s.y>-30&&s.y<g.worldH+30);if(g.shots.filter(s=>s.enemy).length>100){let trim=g.shots.filter(s=>s.enemy).length-100;g.shots=g.shots.filter(s=>!s.enemy||trim--<=0)}
         let picked="";
         for(const d of g.drops){
           d.life-=dt;d.phase+=dt*4;d.x+=d.vx*dt;d.y+=d.vy*dt;d.vx*=.92;d.vy*=.92;
@@ -295,6 +311,7 @@ export default function OrganGame() {
           }
         }
         g.drops=g.drops.filter(d=>d.life>0);
+        for(const w of g.warnings)w.life-=dt;g.warnings=g.warnings.filter(w=>w.life>0).slice(-40);
         for(const p of g.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}g.parts=g.parts.filter(p=>p.life>0).slice(-280);
         if(g.pulse&&Math.floor(g.t*2)%18===0){for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<115)m.hp-=g.pulse*.3}}
         if(Math.floor(g.t*10)%3===0)setHud({hp:g.hp,max:g.maxHp,t:g.t,stage:g.stage,organs:{...g.organs},level:g.level,xp:g.xp,nextXp:g.nextXp,loot:picked,effect:g.effectT>0?g.effect:"",chemistries:[...g.chemistries],dashCharges:g.dashCharges,maxDash:g.maxDash});
@@ -304,6 +321,12 @@ export default function OrganGame() {
       const camY=Math.max(0,Math.min(g.worldH-g.h,g.y-g.h/2));
       ctx.save();ctx.translate(sx-camX,sy-camY);
       drawEnvironment(g);
+      for(const w of g.warnings){
+        const progress=1-w.life/w.max,pulse=.35+Math.sin(g.t*24)*.15;ctx.save();ctx.globalAlpha=.42+progress*.42;ctx.strokeStyle="#ff715b";ctx.fillStyle=`rgba(255,113,91,${pulse})`;ctx.lineWidth=3;
+        if(w.kind==="circle"){ctx.beginPath();ctx.arc(w.tx,w.ty,w.r*(.72+progress*.28),0,Math.PI*2);ctx.fill();ctx.stroke()}
+        else{const a=Math.atan2(w.ty-w.y,w.tx-w.x);ctx.translate(w.x,w.y);ctx.rotate(a);ctx.fillRect(20,-w.r/2,Math.min(620,Math.hypot(w.tx-w.x,w.ty-w.y)),w.r);ctx.strokeRect(20,-w.r/2,Math.min(620,Math.hypot(w.tx-w.x,w.ty-w.y)),w.r)}
+        ctx.restore();
+      }
       for(const p of g.parts){ctx.globalAlpha=Math.max(0,p.life*2);ctx.fillStyle=p.color;ctx.fillRect(p.x-2,p.y-2,4,4)}ctx.globalAlpha=1;
       for(const d of g.drops){
         const bob=Math.sin(d.phase)*3;ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(d.phase*.35);
@@ -312,7 +335,7 @@ export default function OrganGame() {
         else{ctx.fillStyle=d.kind==="xp"?"#d8ff3e":d.kind==="heal"?"#ff715b":"#4ee5e1";ctx.beginPath();ctx.arc(0,0,7,0,6.28);ctx.fill()}
         ctx.restore();
       }
-      for(const s of g.shots){ctx.fillStyle=s.r===6?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e";ctx.shadowBlur=13;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fill()}ctx.shadowBlur=0;
+      for(const s of g.shots){ctx.fillStyle=s.enemy?"#ff715b":s.r===6?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e";ctx.shadowBlur=s.enemy?18:13;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fill();if(s.enemy){ctx.strokeStyle="#fff3d1";ctx.lineWidth=2;ctx.stroke()}}ctx.shadowBlur=0;
       for(const m of g.mobs){
         ctx.save();ctx.translate(m.x,m.y);
         const atlas=stageArt[g.stage],idx=m.boss?3:m.kind;
@@ -325,6 +348,7 @@ export default function OrganGame() {
         if(m.hit>0){ctx.globalAlpha=.55;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,0,size*.42,0,6.28);ctx.fill();ctx.globalAlpha=1}
         if(atlas.complete&&atlas.naturalWidth)ctx.drawImage(atlas,frame*cell,idx*cell,cell,cell,-size/2,-size*.58,size,size);
         else{ctx.fillStyle=m.boss?"#ff715b":"#76c8b9";ctx.beginPath();ctx.arc(0,0,m.r,0,6.28);ctx.fill()}
+        if(m.elite&&!m.boss){ctx.strokeStyle="#ff715b";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-size*.26,6,0,Math.PI*2);ctx.stroke()}
         if(m.boss){ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(-m.r,-m.r-13,m.r*2,5);ctx.fillStyle="#d8ff3e";ctx.fillRect(-m.r,-m.r-13,m.r*2*(m.hp/m.max),5)}ctx.restore();
       }
       ctx.save();ctx.translate(g.x,g.y);
