@@ -88,6 +88,39 @@ canvas { display: block; width: 100%; height: 100%; }
 .keys { font: 700 12px/1 monospace; }
 .keys kbd { border: 1px solid var(--ink); border-radius: 5px; padding: 5px 8px; background: white; }
 .gene { position: relative; z-index: 2; margin-top: 26px; font: 700 12px/1.5 monospace; color: #51605d; }
+.menu-screen { display:grid;grid-template-columns:190px 1fr;align-content:stretch;padding:0; }
+.menu-screen::after { width:42%;opacity:.6; }
+.meta-nav { position:relative;z-index:3;padding:34px 20px;border-right:2px solid var(--ink);display:flex;flex-direction:column;gap:8px;background:rgba(233,234,223,.78); }
+.nav-brand { margin-bottom:35px;font:900 16px/.9 monospace;letter-spacing:-.08em; }
+.nav-brand b { color:var(--coral);font-size:22px; }
+.meta-nav button { display:flex;justify-content:space-between;border:0;border-bottom:1px solid var(--line);background:transparent;padding:13px 6px;text-align:left;font-weight:800;cursor:pointer; }
+.meta-nav button.active { color:var(--coral); }
+.nav-keys { margin-top:auto;color:#596461;font:700 9px/2.4 monospace; }
+.nav-keys kbd { padding:3px 5px;border:1px solid var(--line);border-radius:4px;background:white;color:var(--ink); }
+.meta-content { position:relative;z-index:2;padding:clamp(28px,5vw,64px);overflow:auto; }
+.home-panel .title { font-size:clamp(54px,7vw,104px); }
+.home-panel .lede { margin:18px 0 24px; }
+.codex-panel h2 { margin:10px 0 8px;font-size:clamp(40px,5vw,66px);letter-spacing:-.06em; }
+.section-lede { max-width:650px;margin:0 0 24px;color:#586461;line-height:1.6; }
+.organ-guide { display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:850px; }
+.organ-guide article { display:grid;grid-template-columns:58px 1fr;gap:14px;align-items:center;border:1.5px solid var(--ink);border-radius:14px;padding:14px;background:rgba(255,255,255,.72);box-shadow:inset 4px 0 0 var(--organ-color); }
+.organ-guide article>span { font-size:31px;text-align:center; }
+.organ-guide h3,.item-guide h3 { margin:2px 0 4px;font-size:19px; }
+.organ-guide small,.item-guide small { color:#6a7773;font:700 8px/1 monospace; }
+.organ-guide p,.item-guide p { margin:0;color:#5f6966;font-size:11px;line-height:1.35; }
+.item-guide { display:grid;grid-template-columns:repeat(4,1fr);gap:9px;max-width:900px; }
+.item-guide article { min-height:125px;border:1px solid var(--line);border-radius:13px;padding:13px;background:rgba(255,255,255,.68); }
+.item-guide article>span { display:block;margin-bottom:10px;font-size:25px; }
+.archive-stats { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0 28px; }
+.archive-stats article { border:2px solid var(--ink);border-radius:14px;padding:17px;background:white; }
+.archive-stats small { display:block;margin-bottom:10px;font:700 8px/1 monospace; }
+.archive-stats b { font-size:23px; }
+.archive-title { display:flex;justify-content:space-between;max-width:850px;border-bottom:2px solid var(--ink);padding-bottom:8px; }
+.chem-archive { display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:850px; }
+.chem-archive article { min-height:105px;border:1px solid var(--line);border-radius:12px;padding:13px;background:rgba(255,255,255,.7); }
+.chem-archive article>div { margin-bottom:7px;font-size:18px; }
+.chem-archive p { margin:6px 0 0;color:#65706d;font-size:9px;line-height:1.4; }
+.chem-archive .locked { filter:grayscale(1);opacity:.5; }
 
 .hud { position: absolute; z-index: 5; inset: 16px 18px auto; color: white; pointer-events: none; }
 .hud-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
@@ -191,6 +224,15 @@ canvas { display: block; width: 100%; height: 100%; }
   background:rgba(8,13,13,.82); color:white; text-align:center;
 }
 .pause h2 { font-size:52px; margin:0 0 8px; letter-spacing:-.06em; }
+.pause-menu { width:min(760px,90%);display:grid;grid-template-columns:1.2fr .8fr;border:1px solid rgba(255,255,255,.25);border-radius:20px;overflow:hidden;background:#151d1c;text-align:left;box-shadow:0 20px 70px rgba(0,0,0,.45); }
+.pause-summary { padding:30px; }
+.pause-summary p { color:#a8b5b2;line-height:1.5; }
+.pause-summary p b { color:var(--acid);font-size:18px; }
+.pause-organs { display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:22px; }
+.pause-organs span { padding:7px;border:1px solid rgba(255,255,255,.13);border-radius:8px;font:700 9px/1 monospace; }
+.pause-actions { display:flex;flex-direction:column;justify-content:center;gap:10px;padding:30px;background:#0d1313; }
+.pause-actions>button:not(.primary) { border:1px solid rgba(255,255,255,.25);border-radius:999px;background:transparent;color:white;padding:12px;cursor:pointer; }
+.pause-actions small { color:#71807c;text-align:center;font:700 8px/1.4 monospace; }
 
 @media (max-width: 780px) {
   .game-shell { padding: 0; place-items: stretch; }
@@ -204,4 +246,11 @@ canvas { display: block; width: 100%; height: 100%; }
   .difficulty { grid-template-columns:1fr; }
   .organs { flex-wrap: wrap; max-width: 75%; }
   .chemistry-panel { top:105px;width:180px; }
+  .menu-screen { grid-template-columns:1fr; }
+  .meta-nav { flex-direction:row;padding:10px;border-right:0;border-bottom:1px solid var(--ink);overflow:auto; }
+  .nav-brand,.nav-keys { display:none; }
+  .meta-nav button { white-space:nowrap;gap:12px; }
+  .meta-content { padding:22px; }
+  .organ-guide,.item-guide,.chem-archive { grid-template-columns:1fr; }
+  .archive-stats,.pause-menu { grid-template-columns:1fr; }
 }
