@@ -14,7 +14,7 @@ export type Game = {
   x:number;y:number;vx:number;vy:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
   organs:Organs;mobs:Mob[];shots:Shot[];parts:Particle[];drops:Drop[];warnings:Telegraph[];fields:ToxicField[];keys:Set<string>;
   choices:string[];augments:string[];level:number;xp:number;nextXp:number;paused:boolean;
-  damage:number;fireRate:number;speed:number;projectiles:number;poison:number;pulse:number;runner:number;
+  damage:number;armor:number;fireRate:number;speed:number;projectiles:number;poison:number;pulse:number;runner:number;
   bossSpawned:boolean;choiceDone:boolean;augmentDone:boolean;last:number;shake:number;difficulty:Difficulty;
   lastHeart:number;effect:string;effectT:number;shotCount:number;hudAt:number;chemistries:string[];
 };
