@@ -12,7 +12,7 @@ type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:
 type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
 type Drop = { x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number };
 type Game = {
-  w:number;h:number;t:number; stage:number; stageT:number; hp:number; maxHp:number;
+  w:number;h:number;worldW:number;worldH:number;t:number; stage:number; stageT:number; hp:number; maxHp:number;
   x:number;y:number; vx:number;vy:number; dash:number; inv:number; fire:number; kills:number;
   organs:Organs; mobs:Mob[]; shots:Shot[]; parts:Particle[]; drops:Drop[]; keys:Set<string>;
   choices:string[]; augments:string[]; level:number; xp:number; nextXp:number; paused:boolean;
@@ -109,7 +109,7 @@ const ITEM_GUIDE = [
 ];
 
 function fresh(difficulty:Difficulty="normal"):Game {
-  return {w:1280,h:720,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:640,y:360,vx:0,vy:0,dash:0,inv:0,fire:0,kills:0,
+  return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,dash:0,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,
     bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,chemistries:[]};
@@ -173,39 +173,20 @@ export default function OrganGame() {
   useEffect(()=>{
     const c=canvas.current;if(!c)return;const ctx=c.getContext("2d")!;
     const stageArt=["school","company","apartment","hospital"].map(name=>{const img=new Image();img.src=`/art/${name}-walk.png`;return img});
+    const stageMaps=["school","company","apartment","hospital"].map(name=>{const img=new Image();img.src=`/art/maps/${name}.png`;return img});
     const itemArt=new Image();itemArt.src="/art/items.png";
     const playerArt=new Image();playerArt.src="/art/player-forms.png";
     const drawEnvironment=(g:Game)=>{
-      const floor=["#243a35","#30383d","#3c3931","#d9e4df"][g.stage];
-      const line=["#315048","#424d52","#514b40","#b9cbc5"][g.stage];
-      ctx.fillStyle=floor;ctx.fillRect(-20,-20,g.w+40,g.h+40);
-      ctx.strokeStyle=line;ctx.lineWidth=1;
-      const tile=g.stage===2?80:48;
-      for(let x=0;x<g.w;x+=tile){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,g.h);ctx.stroke()}
-      for(let y=0;y<g.h;y+=tile){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(g.w,y);ctx.stroke()}
-      ctx.globalAlpha=.55;
-      if(g.stage===0){
-        ctx.fillStyle="#b89058";
-        [[110,120],[350,120],[830,120],[1070,120],[110,550],[350,550],[830,550],[1070,550]].forEach(([x,y])=>{ctx.fillRect(x-52,y-22,104,44);ctx.fillStyle="#d8ff3e";ctx.fillRect(x-42,y-17,28,3);ctx.fillStyle="#b89058"});
-        ctx.fillStyle="#58776c";ctx.fillRect(535,25,210,36);ctx.strokeStyle="#d7e6df";for(let x=555;x<730;x+=30)ctx.strokeRect(x,34,18,16);
-      }else if(g.stage===1){
-        ctx.fillStyle="#59636a";
-        [[140,140],[400,140],[880,140],[1140,140],[140,560],[400,560],[880,560],[1140,560]].forEach(([x,y])=>{ctx.fillRect(x-62,y-28,124,56);ctx.fillStyle="#4ee5e1";ctx.fillRect(x-20,y-18,40,25);ctx.fillStyle="#59636a"});
-        ctx.fillStyle="#252d31";ctx.fillRect(560,30,160,54);ctx.fillStyle="#ff715b";ctx.fillRect(575,45,130,8);
-      }else if(g.stage===2){
-        ctx.fillStyle="#60665a";for(let i=0;i<5;i++){ctx.fillRect(40+i*280,32,170,54);ctx.fillRect(40+i*280,634,170,54)}
-        ctx.fillStyle="#6e876d";[[240,210],[1040,210],[240,510],[1040,510]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,32,0,6.28);ctx.fill()});
-        ctx.strokeStyle="#d2b05f";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(540,0);ctx.lineTo(540,720);ctx.moveTo(740,0);ctx.lineTo(740,720);ctx.stroke();
-      }else{
-        ctx.fillStyle="#f3f0e7";
-        [[120,130],[370,130],[910,130],[1160,130],[120,570],[370,570],[910,570],[1160,570]].forEach(([x,y])=>{ctx.fillRect(x-58,y-24,116,48);ctx.fillStyle="#4ee5e1";ctx.fillRect(x-52,y-18,105,8);ctx.fillStyle="#f3f0e7"});
-        ctx.fillStyle="#ff715b";ctx.fillRect(605,28,70,18);ctx.fillRect(631,2,18,70);
-      }
-      ctx.globalAlpha=1;
+      const map=stageMaps[g.stage];
+      ctx.fillStyle=["#243a35","#30383d","#3c3931","#d9e4df"][g.stage];
+      ctx.fillRect(0,0,g.worldW,g.worldH);
+      if(map.complete&&map.naturalWidth)ctx.drawImage(map,0,0,g.worldW,g.worldH);
+      ctx.strokeStyle="rgba(216,255,62,.32)";ctx.lineWidth=4;ctx.strokeRect(2,2,g.worldW-4,g.worldH-4);
     };
     const spawn=(g:Game,boss=false)=>{
-      const side=Math.floor(Math.random()*4);let x=0,y=0;
-      if(side===0){x=Math.random()*g.w;y=-25}else if(side===1){x=g.w+25;y=Math.random()*g.h}else if(side===2){x=Math.random()*g.w;y=g.h+25}else{x=-25;y=Math.random()*g.h}
+      const angle=Math.random()*Math.PI*2,distance=Math.max(g.w,g.h)*(.62+Math.random()*.2);
+      const x=Math.max(24,Math.min(g.worldW-24,g.x+Math.cos(angle)*distance));
+      const y=Math.max(24,Math.min(g.worldH-24,g.y+Math.sin(angle)*distance));
       const diff=DIFFICULTY[g.difficulty],base=(20+g.stage*12+g.t*.035)*diff.hp;
       g.mobs.push({x,y,r:boss?(g.stage===3?52:38):10+Math.random()*8,hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,kind:Math.floor(Math.random()*3),hit:0});
     };
@@ -223,7 +204,7 @@ export default function OrganGame() {
         const lungActive=g.organs.폐>=70,lungDanger=g.organs.폐<30,moving=Boolean(dx||dy);
         const moveSpeed=g.speed*(lungActive&&moving ? 1.16 : lungDanger ? 0.82 : 1);
         if(g.inv<=.12){g.vx=dx/n*moveSpeed;g.vy=dy/n*moveSpeed}
-        g.x=Math.max(18,Math.min(g.w-18,g.x+g.vx*dt));g.y=Math.max(18,Math.min(g.h-18,g.y+g.vy*dt));
+        g.x=Math.max(18,Math.min(g.worldW-18,g.x+g.vx*dt));g.y=Math.max(18,Math.min(g.worldH-18,g.y+g.vy*dt));
         if(g.chemistries.includes("heart_lung")&&moving){g.hp=Math.min(g.maxHp,g.hp+1.15*dt);if(Math.floor(g.t*2)%12===0){g.effect="케미 · 심폐 순환 회복";g.effectT=.45}}
         if(g.inv>0&&lungActive&&Math.random()<dt*35){burst(g,g.x-g.vx*.035,g.y-g.vy*.035,"#4ee5e1",2);g.effect="폐 활성 · 잔상 호흡";g.effectT=.5}
         const diff=DIFFICULTY[g.difficulty],cap=Math.min(190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count));
@@ -260,7 +241,7 @@ export default function OrganGame() {
           }
           if(m.boss){if(g.stage===3&&g.stageT>100){endGame(true)}else if(!g.augmentDone){g.augmentDone=true;const pool=[...AUG].sort(()=>Math.random()-.5).slice(0,3);openChoice("전투 증강",pool)}}
         }
-        g.mobs=g.mobs.filter(m=>m.hp>0);g.shots=g.shots.filter(s=>s.life>0&&s.x>-30&&s.x<g.w+30&&s.y>-30&&s.y<g.h+30);
+        g.mobs=g.mobs.filter(m=>m.hp>0);g.shots=g.shots.filter(s=>s.life>0&&s.x>-30&&s.x<g.worldW+30&&s.y>-30&&s.y<g.worldH+30);
         let picked="";
         for(const d of g.drops){
           d.life-=dt;d.phase+=dt*4;d.x+=d.vx*dt;d.y+=d.vy*dt;d.vx*=.92;d.vy*=.92;
@@ -287,7 +268,10 @@ export default function OrganGame() {
         if(g.pulse&&Math.floor(g.t*2)%18===0){for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<115)m.hp-=g.pulse*.3}}
         if(Math.floor(g.t*10)%3===0)setHud({hp:g.hp,max:g.maxHp,t:g.t,stage:g.stage,organs:{...g.organs},level:g.level,xp:g.xp,nextXp:g.nextXp,loot:picked,effect:g.effectT>0?g.effect:"",chemistries:[...g.chemistries]});
       }
-      const sx=(Math.random()-.5)*g.shake,sy=(Math.random()-.5)*g.shake;ctx.save();ctx.translate(sx,sy);
+      const sx=(Math.random()-.5)*g.shake,sy=(Math.random()-.5)*g.shake;
+      const camX=Math.max(0,Math.min(g.worldW-g.w,g.x-g.w/2));
+      const camY=Math.max(0,Math.min(g.worldH-g.h,g.y-g.h/2));
+      ctx.save();ctx.translate(sx-camX,sy-camY);
       drawEnvironment(g);
       for(const p of g.parts){ctx.globalAlpha=Math.max(0,p.life*2);ctx.fillStyle=p.color;ctx.fillRect(p.x-2,p.y-2,4,4)}ctx.globalAlpha=1;
       for(const d of g.drops){
