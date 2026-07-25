@@ -85,6 +85,14 @@ canvas { display: block; width: 100%; height: 100%; }
 .hp { width: min(330px, 35vw); height: 10px; border: 1px solid rgba(255,255,255,.55); margin-top: 8px; background: rgba(0,0,0,.4); }
 .hp > i { display: block; height: 100%; background: var(--coral); transition: width .15s; }
 .organs { position: absolute; z-index: 6; left: 18px; bottom: 17px; display: flex; gap: 7px; }
+.level-hud {
+  position: absolute; z-index: 6; left: 18px; bottom: 91px; display: flex; align-items: center;
+  gap: 9px; color: white; font: 800 11px/1 monospace; pointer-events: none;
+}
+.level-hud > span { width: 150px; height: 5px; background: rgba(255,255,255,.18); }
+.level-hud > span i { display:block; height:100%; background:var(--acid); transition:width .2s; }
+.level-hud em { color:var(--acid); font-style:normal; animation:loot-pop .35s ease-out; }
+@keyframes loot-pop { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
 .organ {
   min-width: 57px; padding: 7px 9px; border: 1px solid rgba(255,255,255,.28);
   border-radius: 9px; background: rgba(7,12,12,.68); color: white; backdrop-filter: blur(8px);

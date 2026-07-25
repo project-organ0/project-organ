@@ -9,10 +9,11 @@ type Choice = { name: string; desc: string; effect: string; apply: (g: Game) => 
 type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;kind:number;hit:number };
 type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean };
 type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
+type Drop = { x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number };
 type Game = {
   w:number;h:number;t:number; stage:number; stageT:number; hp:number; maxHp:number;
   x:number;y:number; vx:number;vy:number; dash:number; inv:number; fire:number; kills:number;
-  organs:Organs; mobs:Mob[]; shots:Shot[]; parts:Particle[]; keys:Set<string>;
+  organs:Organs; mobs:Mob[]; shots:Shot[]; parts:Particle[]; drops:Drop[]; keys:Set<string>;
   choices:string[]; augments:string[]; level:number; xp:number; nextXp:number; paused:boolean;
   damage:number; fireRate:number; speed:number; projectiles:number; poison:number; pulse:number;
   bossSpawned:boolean; choiceDone:boolean; augmentDone:boolean; last:number; shake:number;
@@ -61,7 +62,7 @@ const AUG: Choice[] = [
 
 function fresh():Game {
   return {w:1280,h:720,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:640,y:360,vx:0,vy:0,dash:0,inv:0,fire:0,kills:0,
-    organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],keys:new Set(),choices:[],augments:[],
+    organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,
     bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0};
 }
@@ -71,7 +72,7 @@ export default function OrganGame() {
   const game = useRef<Game>(fresh());
   const raf = useRef(0);
   const [mode,setMode]=useState<Mode>("start");
-  const [hud,setHud]=useState({hp:100,max:100,t:0,stage:0,organs:game.current.organs});
+  const [hud,setHud]=useState({hp:100,max:100,t:0,stage:0,organs:game.current.organs,level:1,xp:0,nextXp:12,loot:""});
   const [cards,setCards]=useState<Choice[]>([]);
   const [choiceType,setChoiceType]=useState<"생활 선택"|"전투 증강">("생활 선택");
   const [report,setReport]=useState({win:false,kills:0,t:0,organs:game.current.organs,choices:[] as string[],augments:[] as string[]});
@@ -92,7 +93,7 @@ export default function OrganGame() {
   const start=useCallback(()=>{
     const g=fresh(); const gene=localStorage.getItem("organ-gene") as OrganKey|null;
     if(gene&&ORGAN_KEYS.includes(gene)) g.organs[gene]+=8;
-    game.current=g; setHud({hp:g.hp,max:g.maxHp,t:0,stage:0,organs:{...g.organs}}); setMode("play");
+    game.current=g; setHud({hp:g.hp,max:g.maxHp,t:0,stage:0,organs:{...g.organs},level:1,xp:0,nextXp:g.nextXp,loot:""}); setMode("play");
   },[]);
 
   useEffect(()=>{
@@ -142,11 +143,36 @@ export default function OrganGame() {
           if(g.poison&&d<95){m.hp-=g.poison*6*dt}
         }
         for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(!s.enemy){for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){m.hp-=g.damage;s.life=0;m.hit=.08;burst(g,s.x,s.y,"#d8ff3e",3);break}}}}
-        const dead=g.mobs.filter(m=>m.hp<=0);for(const m of dead){g.kills++;g.xp++;burst(g,m.x,m.y,m.boss?"#ff715b":"#4ee5e1",m.boss?30:8);if(m.boss){g.hp=Math.min(g.maxHp,g.hp+24);if(g.stage===3&&g.stageT>100){endGame(true)}else if(!g.augmentDone){g.augmentDone=true;const pool=[...AUG].sort(()=>Math.random()-.5).slice(0,3);openChoice("전투 증강",pool)}}}
+        const dead=g.mobs.filter(m=>m.hp<=0);for(const m of dead){
+          g.kills++;burst(g,m.x,m.y,m.boss?"#ff715b":"#4ee5e1",m.boss?30:8);
+          const dropCount=m.boss?7:1;
+          for(let i=0;i<dropCount;i++){
+            const roll=Math.random(),a=Math.random()*6.28,s=35+Math.random()*90;
+            const kind=m.boss?(i<3?"xp":i<5?"heal":"organ"):(roll<.72?"xp":roll<.88?"heal":"organ");
+            g.drops.push({x:m.x,y:m.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,kind,organ:kind==="organ"?ORGAN_KEYS[Math.floor(Math.random()*ORGAN_KEYS.length)]:undefined,value:kind==="xp"?(m.boss?4:1):kind==="heal"?(m.boss?18:7):(m.boss?5:2),life:14,phase:Math.random()*6.28});
+          }
+          if(m.boss){if(g.stage===3&&g.stageT>100){endGame(true)}else if(!g.augmentDone){g.augmentDone=true;const pool=[...AUG].sort(()=>Math.random()-.5).slice(0,3);openChoice("전투 증강",pool)}}
+        }
         g.mobs=g.mobs.filter(m=>m.hp>0);g.shots=g.shots.filter(s=>s.life>0&&s.x>-30&&s.x<g.w+30&&s.y>-30&&s.y<g.h+30);
+        let picked="";
+        for(const d of g.drops){
+          d.life-=dt;d.phase+=dt*4;d.x+=d.vx*dt;d.y+=d.vy*dt;d.vx*=.92;d.vy*=.92;
+          const dist=Math.hypot(g.x-d.x,g.y-d.y);
+          if(dist<150){const pull=Math.max(180,620*(1-dist/150));d.x+=(g.x-d.x)/Math.max(1,dist)*pull*dt;d.y+=(g.y-d.y)/Math.max(1,dist)*pull*dt}
+          if(dist<23){
+            d.life=0;
+            if(d.kind==="xp"){
+              g.xp+=d.value;picked=`경험 세포 +${d.value}`;
+              while(g.xp>=g.nextXp){g.xp-=g.nextXp;g.level++;g.nextXp=Math.round(g.nextXp*1.28);g.damage+=2;g.fireRate=Math.max(.18,g.fireRate*.97);g.maxHp+=3;g.hp=Math.min(g.maxHp,g.hp+3);picked=`레벨 ${g.level} · 세포 강화`}
+            }else if(d.kind==="heal"){g.hp=Math.min(g.maxHp,g.hp+d.value);picked=`회복 세포 +${d.value}`}
+            else if(d.organ){g.organs[d.organ]=Math.min(100,g.organs[d.organ]+d.value);picked=`${d.organ} 영양소 +${d.value}`}
+            burst(g,d.x,d.y,d.kind==="xp"?"#d8ff3e":d.kind==="heal"?"#ff715b":"#4ee5e1",6);
+          }
+        }
+        g.drops=g.drops.filter(d=>d.life>0);
         for(const p of g.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}g.parts=g.parts.filter(p=>p.life>0).slice(-280);
         if(g.pulse&&Math.floor(g.t*2)%18===0){for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<115)m.hp-=g.pulse*.3}}
-        if(Math.floor(g.t*10)%3===0)setHud({hp:g.hp,max:g.maxHp,t:g.t,stage:g.stage,organs:{...g.organs}});
+        if(Math.floor(g.t*10)%3===0)setHud({hp:g.hp,max:g.maxHp,t:g.t,stage:g.stage,organs:{...g.organs},level:g.level,xp:g.xp,nextXp:g.nextXp,loot:picked});
       }
       const sx=(Math.random()-.5)*g.shake,sy=(Math.random()-.5)*g.shake;ctx.save();ctx.translate(sx,sy);
       const palettes=[["#172321","#23322e"],["#1c2429","#29353b"],["#26231f","#36302a"],["#1e2324","#2c3435"]];const pal=palettes[g.stage];
@@ -154,6 +180,15 @@ export default function OrganGame() {
       for(let x=0;x<g.w;x+=48){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,g.h);ctx.stroke()}for(let y=0;y<g.h;y+=48){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(g.w,y);ctx.stroke()}
       ctx.fillStyle="rgba(255,255,255,.035)";for(let i=0;i<20;i++){ctx.beginPath();ctx.arc((i*187+g.stage*61)%g.w,(i*113+g.stage*29)%g.h,22+(i%4)*13,0,6.28);ctx.fill()}
       for(const p of g.parts){ctx.globalAlpha=Math.max(0,p.life*2);ctx.fillStyle=p.color;ctx.fillRect(p.x-2,p.y-2,4,4)}ctx.globalAlpha=1;
+      for(const d of g.drops){
+        const bob=Math.sin(d.phase)*3;ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(d.phase*.35);
+        ctx.shadowBlur=16;ctx.shadowColor=d.kind==="xp"?"#d8ff3e":d.kind==="heal"?"#ff715b":"#4ee5e1";
+        ctx.fillStyle=d.kind==="xp"?"#d8ff3e":d.kind==="heal"?"#ff715b":"#4ee5e1";
+        if(d.kind==="heal"){ctx.fillRect(-3,-9,6,18);ctx.fillRect(-9,-3,18,6)}
+        else if(d.kind==="organ"){ctx.beginPath();for(let i=0;i<6;i++){const a=i/6*6.28;ctx.lineTo(Math.cos(a)*9,Math.sin(a)*9)}ctx.closePath();ctx.fill()}
+        else{ctx.beginPath();ctx.arc(0,0,7,0,6.28);ctx.fill();ctx.strokeStyle="#101515";ctx.lineWidth=2;ctx.stroke()}
+        ctx.restore();
+      }
       for(const s of g.shots){ctx.fillStyle="#d8ff3e";ctx.shadowBlur=13;ctx.shadowColor="#d8ff3e";ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fill()}ctx.shadowBlur=0;
       for(const m of g.mobs){
         ctx.save();ctx.translate(m.x,m.y);if(m.hit>0)ctx.fillStyle="#fff";else ctx.fillStyle=m.boss?"#ff715b":m.kind===0?"#76c8b9":m.kind===1?"#a49bd8":"#d1bc7a";
@@ -184,6 +219,7 @@ export default function OrganGame() {
       <div className="gene">{gene?`유전 특성 감지: 타고난 ${gene} +8`:"저장된 유전 특성이 없습니다. 첫 생애를 시작하세요."}</div>
     </div>}
     {(mode==="play"||mode==="pause")&&<><div className="hud"><div className="hud-top"><div className="stage"><small>LIFE STAGE 0{hud.stage+1}</small>{STAGES[hud.stage][0]}</div><div><div className="clock">{fmt(hud.t)} <small>/ 8:00</small></div><div className="hp"><i style={{width:`${Math.max(0,hud.hp/hud.max*100)}%`}}/></div></div></div></div>
+      <div className="level-hud"><b>LV.{hud.level}</b><span><i style={{width:`${hud.xp/hud.nextXp*100}%`}}/></span>{hud.loot&&<em>{hud.loot}</em>}</div>
       <div className="organs">{ORGAN_KEYS.map(k=><div className={`organ ${state(hud.organs[k])}`} key={k}><i/>{k}<br/>{state(hud.organs[k])==="healthy"?"건강":state(hud.organs[k])==="normal"?"주의":"위험"}</div>)}</div>
       <div className="dash-hint">SPACE 대시 · ESC 일시정지</div></>}
     {mode==="choice"&&<div className="choice-wrap"><div className="choice-head"><div><div className="eyebrow">LIFE INTERRUPT</div><h2>{choiceType}</h2></div><p>{choiceType==="생활 선택"?"어떤 선택도 공짜는 아닙니다. 강해진 만큼, 몸 어딘가에 흔적이 남습니다.":"현재의 몸이 새로운 생존 방식을 제안합니다."}</p></div><div className="cards">{cards.map((c,i)=><button className="card" key={c.name} onClick={()=>choose(c)}><span className="card-no">OPTION 0{i+1}</span><h3>{c.name}</h3><p>{c.desc}</p><strong>{c.effect} ↗</strong></button>)}</div></div>}
