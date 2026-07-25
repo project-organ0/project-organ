@@ -16,5 +16,6 @@ export type Game = {
   choices:string[];augments:string[];level:number;xp:number;nextXp:number;paused:boolean;
   damage:number;armor:number;fireRate:number;speed:number;projectiles:number;poison:number;pulse:number;runner:number;
   bossSpawned:boolean;choiceDone:boolean;augmentDone:boolean;last:number;shake:number;difficulty:Difficulty;
+  zone:OrganKey|"중앙";zoneT:number;portalCd:number;route:OrganKey[];
   lastHeart:number;effect:string;effectT:number;shotCount:number;hudAt:number;chemistries:string[];
 };
