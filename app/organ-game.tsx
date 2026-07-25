@@ -59,6 +59,17 @@ const AUG: Choice[] = [
   {name:"심폐 순환",desc:"계속 움직일수록 다시 살아납니다.",effect:"최대 체력 +22 · 속도 증가",apply:g=>{g.maxHp+=22;g.hp+=22;g.speed+=12}},
   {name:"뇌근 동기화",desc:"판단과 힘이 같은 박자로 움직입니다.",effect:"연사·공격력 동시 강화",apply:g=>{g.fireRate*=.9;g.damage+=5}},
 ];
+const BASIC: Choice[] = [
+  {name:"세포 분열",desc:"하나의 세포탄이 둘로 갈라집니다.",effect:"투사체 +1",apply:g=>g.projectiles=Math.min(6,g.projectiles+1)},
+  {name:"고밀도 핵",desc:"세포탄의 핵이 더 무거워집니다.",effect:"공격력 +5",apply:g=>g.damage+=5},
+  {name:"신경 가속",desc:"다음 공격을 더 빠르게 준비합니다.",effect:"공격 속도 10% 증가",apply:g=>g.fireRate=Math.max(.18,g.fireRate*.9)},
+  {name:"폐포 확장",desc:"한 번의 호흡으로 더 멀리 움직입니다.",effect:"이동 속도 +18",apply:g=>g.speed+=18},
+  {name:"심실 강화",desc:"더 큰 충격을 견딜 수 있습니다.",effect:"최대 체력 +15 · 즉시 회복",apply:g=>{g.maxHp+=15;g.hp=Math.min(g.maxHp,g.hp+15)}},
+  {name:"재생 인자",desc:"손상된 조직이 빠르게 회복됩니다.",effect:"체력 35 회복",apply:g=>g.hp=Math.min(g.maxHp,g.hp+35)},
+  {name:"근육 수축",desc:"탄환에 물리적인 힘을 싣습니다.",effect:"공격력 +3 · 범위 충격 강화",apply:g=>{g.damage+=3;g.pulse+=1}},
+  {name:"간 해독 효소",desc:"위험해진 장기의 부담을 덜어냅니다.",effect:"가장 약한 장기 +10",apply:g=>{const k=ORGAN_KEYS.reduce((a,b)=>g.organs[a]<g.organs[b]?a:b);g.organs[k]+=10}},
+  {name:"세포막 경화",desc:"외부 충격을 버티는 막이 두꺼워집니다.",effect:"최대 체력 +8 · 모든 장기 +2",apply:g=>{g.maxHp+=8;g.hp+=8;ORGAN_KEYS.forEach(k=>g.organs[k]+=2)}},
+];
 
 function fresh():Game {
   return {w:1280,h:720,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:640,y:360,vx:0,vy:0,dash:0,inv:0,fire:0,kills:0,
@@ -74,10 +85,10 @@ export default function OrganGame() {
   const [mode,setMode]=useState<Mode>("start");
   const [hud,setHud]=useState({hp:100,max:100,t:0,stage:0,organs:game.current.organs,level:1,xp:0,nextXp:12,loot:""});
   const [cards,setCards]=useState<Choice[]>([]);
-  const [choiceType,setChoiceType]=useState<"생활 선택"|"전투 증강">("생활 선택");
+  const [choiceType,setChoiceType]=useState<"생활 선택"|"세포 진화"|"희귀 증강"|"전투 증강">("생활 선택");
   const [report,setReport]=useState({win:false,kills:0,t:0,organs:game.current.organs,choices:[] as string[],augments:[] as string[]});
 
-  const openChoice=useCallback((type:"생활 선택"|"전투 증강", picks:Choice[])=>{
+  const openChoice=useCallback((type:"생활 선택"|"세포 진화"|"희귀 증강"|"전투 증강", picks:Choice[])=>{
     game.current.paused=true; setChoiceType(type); setCards(picks); setMode("choice");
   },[]);
 
@@ -163,7 +174,12 @@ export default function OrganGame() {
             d.life=0;
             if(d.kind==="xp"){
               g.xp+=d.value;picked=`경험 세포 +${d.value}`;
-              while(g.xp>=g.nextXp){g.xp-=g.nextXp;g.level++;g.nextXp=Math.round(g.nextXp*1.28);g.damage+=2;g.fireRate=Math.max(.18,g.fireRate*.97);g.maxHp+=3;g.hp=Math.min(g.maxHp,g.hp+3);picked=`레벨 ${g.level} · 세포 강화`}
+              if(g.xp>=g.nextXp){
+                g.xp-=g.nextXp;g.level++;g.nextXp=Math.round(g.nextXp*1.28);picked=`레벨 ${g.level} · 진화 가능`;
+                const rare=g.level%5===0;
+                const pool=[...(rare?AUG:BASIC)].sort(()=>Math.random()-.5).slice(0,3);
+                openChoice(rare?"희귀 증강":"세포 진화",pool);
+              }
             }else if(d.kind==="heal"){g.hp=Math.min(g.maxHp,g.hp+d.value);picked=`회복 세포 +${d.value}`}
             else if(d.organ){g.organs[d.organ]=Math.min(100,g.organs[d.organ]+d.value);picked=`${d.organ} 영양소 +${d.value}`}
             burst(g,d.x,d.y,d.kind==="xp"?"#d8ff3e":d.kind==="heal"?"#ff715b":"#4ee5e1",6);
@@ -222,7 +238,7 @@ export default function OrganGame() {
       <div className="level-hud"><b>LV.{hud.level}</b><span><i style={{width:`${hud.xp/hud.nextXp*100}%`}}/></span>{hud.loot&&<em>{hud.loot}</em>}</div>
       <div className="organs">{ORGAN_KEYS.map(k=><div className={`organ ${state(hud.organs[k])}`} key={k}><i/>{k}<br/>{state(hud.organs[k])==="healthy"?"건강":state(hud.organs[k])==="normal"?"주의":"위험"}</div>)}</div>
       <div className="dash-hint">SPACE 대시 · ESC 일시정지</div></>}
-    {mode==="choice"&&<div className="choice-wrap"><div className="choice-head"><div><div className="eyebrow">LIFE INTERRUPT</div><h2>{choiceType}</h2></div><p>{choiceType==="생활 선택"?"어떤 선택도 공짜는 아닙니다. 강해진 만큼, 몸 어딘가에 흔적이 남습니다.":"현재의 몸이 새로운 생존 방식을 제안합니다."}</p></div><div className="cards">{cards.map((c,i)=><button className="card" key={c.name} onClick={()=>choose(c)}><span className="card-no">OPTION 0{i+1}</span><h3>{c.name}</h3><p>{c.desc}</p><strong>{c.effect} ↗</strong></button>)}</div></div>}
+    {mode==="choice"&&<div className="choice-wrap"><div className="choice-head"><div><div className="eyebrow">{choiceType==="생활 선택"?"LIFE INTERRUPT":choiceType==="희귀 증강"?"MUTATION MILESTONE":"CELL EVOLUTION"}</div><h2>{choiceType}</h2></div><p>{choiceType==="생활 선택"?"어떤 선택도 공짜는 아닙니다. 강해진 만큼, 몸 어딘가에 흔적이 남습니다.":choiceType==="세포 진화"?"이번 생애의 전투 방향을 하나 선택하세요. 선택은 계속 누적됩니다.":"몸이 한계를 넘어 새로운 생존 방식을 제안합니다."}</p></div><div className="cards">{cards.map((c,i)=><button className="card" key={c.name} onClick={()=>choose(c)}><span className="card-no">OPTION 0{i+1}</span><h3>{c.name}</h3><p>{c.desc}</p><strong>{c.effect} ↗</strong></button>)}</div></div>}
     {mode==="pause"&&<div className="pause"><div><div className="eyebrow">SYSTEM PAUSED</div><h2>잠시 숨 고르기</h2><button className="primary" onClick={()=>{game.current.paused=false;game.current.last=performance.now();setMode("play")}}>계속하기</button></div></div>}
     {mode==="report"&&<div className="screen report"><div className="report-grid"><div><div className="eyebrow">LIFE REPORT / COMPLETE</div><h1>{report.win?"노화를 넘어섰습니다.":"생애가 끝났습니다."}</h1><p className="report-copy"><b>{build}</b>의 삶이었습니다. {strongest}은(는) 끝까지 강하게 버텼지만, {weakest}에는 선택의 대가가 깊게 남았습니다. 다음 생애에는 <b>타고난 {strongest}</b>이 유전됩니다.</p><div className="stats"><div className="stat"><small>SURVIVAL</small><b>{fmt(report.t)}</b></div><div className="stat"><small>ZOMBIES</small><b>{report.kills} 처치</b></div><div className="stat"><small>BUILD</small><b>{build}</b></div><div className="stat"><small>GENE</small><b>타고난 {strongest}</b></div></div><div className="report-actions"><button className="primary" onClick={start}>다음 생애 시작 ↗</button></div></div><div><div className="organ-report">{ORGAN_KEYS.map(k=><div className="organ-line" key={k}><span>{k}</span><div className="bar"><i style={{width:`${report.organs[k]}%`}}/></div><b>{report.organs[k]}</b></div>)}</div><p className="gene">생활: {report.choices.join(" · ")||"기록 없음"}<br/>증강: {report.augments.join(" · ")||"기록 없음"}</p></div></div></div>}
   </section></main>;
