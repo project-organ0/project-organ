@@ -40,6 +40,10 @@ button { font: inherit; }
   background: #161d1d;
   box-shadow: 10px 10px 0 var(--ink);
 }
+*:fullscreen .frame { width:100vw;height:100vh;max-height:none;aspect-ratio:auto;border:0;border-radius:0;box-shadow:none; }
+*:fullscreen .game-shell { padding:0;background:#101515; }
+.fullscreen-btn { position:absolute;z-index:45;right:18px;bottom:18px;border:1px solid rgba(255,255,255,.35);border-radius:999px;background:rgba(8,13,13,.72);color:white;padding:8px 11px;font:700 10px/1 monospace;cursor:pointer;backdrop-filter:blur(8px); }
+.fullscreen-btn kbd { margin-left:5px;color:var(--acid); }
 
 canvas { display: block; width: 100%; height: 100%; }
 
@@ -88,6 +92,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .hud { position: absolute; z-index: 5; inset: 16px 18px auto; color: white; pointer-events: none; }
 .hud-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
 .stage { font-weight: 950; letter-spacing: -.04em; font-size: 24px; }
+.build-chip { display:block;width:max-content;margin-top:8px;padding:5px 8px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(0,0,0,.35);font:700 10px/1 monospace;letter-spacing:0; }
 .stage small { display: block; margin-bottom: 5px; color: var(--acid); font: 700 10px/1 monospace; letter-spacing: .12em; }
 .clock { font: 900 32px/1 monospace; }
 .hp { width: min(330px, 35vw); height: 10px; border: 1px solid rgba(255,255,255,.55); margin-top: 8px; background: rgba(0,0,0,.4); }
@@ -106,6 +111,15 @@ canvas { display: block; width: 100%; height: 100%; }
   border-radius: 9px; background: rgba(7,12,12,.68); color: white; backdrop-filter: blur(8px);
   font-size: 11px; font-weight: 800;
 }
+.organ b,.organ span { display:block; }
+.organ span { margin-top:3px;font-size:9px;opacity:.7; }
+.organ em { display:block;height:3px;margin-top:6px;background:rgba(255,255,255,.13); }
+.organ em u { display:block;height:100%;background:var(--organ-color);text-decoration:none; }
+.organ.leader { border-color:var(--organ-color);box-shadow:0 0 14px color-mix(in srgb,var(--organ-color) 32%,transparent); }
+.organ.healthy { animation:organ-breathe 2s ease-in-out infinite; }
+@keyframes organ-breathe { 50% { transform:translateY(-2px) } }
+.organ-effect { position:absolute;z-index:7;left:50%;top:90px;transform:translateX(-50%);padding:9px 14px;border:1px solid var(--acid);border-radius:999px;background:rgba(8,13,13,.82);color:var(--acid);font:800 11px/1 monospace;animation:effect-in .25s ease-out;pointer-events:none; }
+@keyframes effect-in { from { opacity:0;transform:translate(-50%,8px) scale(.94) } }
 .organ i { display: block; width: 7px; height: 7px; margin-bottom: 5px; border-radius: 50%; }
 .organ.healthy i { background: var(--acid); box-shadow: 0 0 9px var(--acid); }
 .organ.normal i { background: #ffd66b; }
@@ -127,6 +141,8 @@ canvas { display: block; width: 100%; height: 100%; }
 }
 .card:hover { transform: translateY(-7px); background: #25302e; border-color: var(--acid); }
 .card-no { font: 700 11px/1 monospace; color: var(--acid); }
+.organ-tags { display:flex;gap:5px;position:absolute;right:17px;top:16px; }
+.organ-tags span { padding:4px 7px;border:1px solid rgba(255,255,255,.2);border-radius:999px;font:700 9px/1 monospace;color:#dbe6e3; }
 .card h3 { margin: 30px 0 9px; font-size: 25px; letter-spacing: -.04em; }
 .card p { margin: 0; color: #aeb9b7; font-size: 13px; line-height: 1.55; }
 .card strong { display: block; margin-top: 16px; color: var(--acid); font-size: 13px; line-height: 1.45; }
