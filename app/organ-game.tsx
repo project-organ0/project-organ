@@ -158,6 +158,7 @@ export default function OrganGame() {
     const c=canvas.current;if(!c)return;const ctx=c.getContext("2d")!;
     const stageArt=["school","company","apartment","hospital"].map(name=>{const img=new Image();img.src=`/art/${name}-walk.png`;return img});
     const itemArt=new Image();itemArt.src="/art/items.png";
+    const playerArt=new Image();playerArt.src="/art/player-forms.png";
     const drawEnvironment=(g:Game)=>{
       const floor=["#243a35","#30383d","#3c3931","#d9e4df"][g.stage];
       const line=["#315048","#424d52","#514b40","#b9cbc5"][g.stage];
@@ -294,7 +295,15 @@ export default function OrganGame() {
         else{ctx.fillStyle=m.boss?"#ff715b":"#76c8b9";ctx.beginPath();ctx.arc(0,0,m.r,0,6.28);ctx.fill()}
         if(m.boss){ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(-m.r,-m.r-13,m.r*2,5);ctx.fillStyle="#d8ff3e";ctx.fillRect(-m.r,-m.r-13,m.r*2*(m.hp/m.max),5)}ctx.restore();
       }
-      ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.t*1.4);ctx.fillStyle=g.inv>0&&Math.floor(g.t*20)%2?"#fff":"#d8ff3e";ctx.shadowBlur=20;ctx.shadowColor="#d8ff3e";ctx.beginPath();for(let i=0;i<10;i++){const a=i/10*6.28,r=i%2?12:19;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.restore();ctx.shadowBlur=0;
+      ctx.save();ctx.translate(g.x,g.y);
+      const currentChem=g.chemistries[g.chemistries.length-1],formIndex=Math.max(0,CHEMISTRY.findIndex(c=>c.id===currentChem)+1),playerSize=formIndex?86:74;
+      const playerBob=Math.sin(g.t*(Math.hypot(g.vx,g.vy)>20?13:5))*2;
+      ctx.fillStyle="rgba(0,0,0,.32)";ctx.beginPath();ctx.ellipse(0,25,23-Math.abs(playerBob),7,0,0,6.28);ctx.fill();
+      ctx.translate(0,playerBob);if(g.vx<0)ctx.scale(-1,1);
+      ctx.globalAlpha=g.inv>0&&Math.floor(g.t*20)%2 ? .38 : 1;ctx.shadowBlur=22;ctx.shadowColor="#d8ff3e";
+      if(playerArt.complete&&playerArt.naturalWidth)ctx.drawImage(playerArt,(formIndex%4)*384,Math.floor(formIndex/4)*512,384,512,-playerSize/2,-playerSize*.64,playerSize,playerSize);
+      else{ctx.fillStyle="#d8ff3e";ctx.beginPath();ctx.arc(0,0,18,0,6.28);ctx.fill()}
+      ctx.restore();ctx.globalAlpha=1;ctx.shadowBlur=0;
       ctx.restore();raf.current=requestAnimationFrame(loop);
     };
     raf.current=requestAnimationFrame(loop);return()=>cancelAnimationFrame(raf.current);
@@ -307,6 +316,7 @@ export default function OrganGame() {
   const fmt=(t:number)=>`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,"0")}`;
   const state=(v:number)=>v>=70?"healthy":v>=30?"normal":"danger";
   const leaders=[...ORGAN_KEYS].sort((a,b)=>hud.organs[b]-hud.organs[a]).slice(0,2);
+  const activeChem=CHEMISTRY.find(c=>c.id===hud.chemistries[hud.chemistries.length-1]);
   const cardOrgans=(c:Choice)=>c.organs??ORGAN_KEYS.filter(k=>c.name.includes(k)||({뇌:["시냅스","신경","집중","공부","야근"],심장:["심실","맥박","아드레날린"],폐:["폐포","호흡","대시","등산"],간:["해독","독성","회식","식단"],근육:["근육","근섬유","운동","헬스","재활"]}[k] as string[]).some(v=>c.name.includes(v)));
 
   return <main className="game-shell"><section className="frame">
@@ -325,8 +335,9 @@ export default function OrganGame() {
       <div className="gene">{gene?`유전 특성 감지: 타고난 ${gene} +8`:"저장된 유전 특성이 없습니다. 첫 생애를 시작하세요."}</div>
     </div>}
     {(mode==="play"||mode==="pause")&&<><div className="hud"><div className="hud-top"><div className="stage"><small>LIFE STAGE 0{hud.stage+1}</small>{STAGES[hud.stage][0]}<span className="build-chip">주력 {leaders.map(k=>`${ORGAN_META[k].icon} ${k}`).join(" + ")}</span></div><div><div className="clock">{fmt(hud.t)} <small>/ 8:00</small></div><div className="hp"><i style={{width:`${Math.max(0,hud.hp/hud.max*100)}%`}}/></div></div></div></div>
+      <aside className={`chemistry-panel ${activeChem?"awakened":""}`}><small>ACTIVE CHEMISTRY</small>{activeChem?<><div className="chemistry-icons">{activeChem.organs.map(k=><span key={k}>{ORGAN_META[k].icon}</span>)}</div><h3>{activeChem.name}</h3><p>{activeChem.effect}</p>{hud.chemistries.length>1&&<em>보유 케미 {hud.chemistries.length}개 · 최신 형태 활성</em>}</>:<><h3>아직 미각성</h3><p>레벨 5에 도달하면 두 장기가 결합해 새로운 형태로 진화합니다.</p></>}</aside>
       {hud.effect&&<div className="organ-effect">{hud.effect}</div>}
-      <div className="level-hud"><b>LV.{hud.level}</b><span><i style={{width:`${hud.xp/hud.nextXp*100}%`}}/></span>{hud.chemistries.map(id=><em className="chem-chip" key={id}>{CHEMISTRY.find(c=>c.id===id)?.name}</em>)}{hud.loot&&<em>{hud.loot}</em>}</div>
+      <div className="level-hud"><b>LV.{hud.level}</b><span><i style={{width:`${hud.xp/hud.nextXp*100}%`}}/></span>{hud.loot&&<em>{hud.loot}</em>}</div>
       <div className="organs">{ORGAN_KEYS.map(k=><div className={`organ ${state(hud.organs[k])} ${leaders.includes(k)?"leader":""}`} key={k} style={{"--organ-color":ORGAN_META[k].color} as React.CSSProperties}><i/><b>{ORGAN_META[k].icon} {k}</b><span>{state(hud.organs[k])==="healthy"?"활성":state(hud.organs[k])==="normal"?"주의":"위험"}</span><em><u style={{width:`${hud.organs[k]}%`}}/></em></div>)}</div>
       <div className="dash-hint">SPACE 대시 · ESC 일시정지</div></>}
     {mode==="choice"&&<div className={`choice-wrap choice-${choiceType==="세포 진화"?"evolve":choiceType==="빌드 각성"?"build":"life"}`}><div className="choice-head"><div><div className="eyebrow">{choiceType==="생활 선택"?"LIFE INTERRUPT":choiceType==="빌드 각성"?"BUILD AWAKENING":"CELL EVOLUTION"}</div><h2>{choiceType==="세포 진화"?"능력치 선택":choiceType}</h2></div><p>{choiceType==="생활 선택"?"어떤 선택도 공짜는 아닙니다. 강해진 만큼, 몸 어딘가에 흔적이 남습니다.":choiceType==="세포 진화"?"작은 진화를 하나 골라 전투 능력을 빠르게 성장시키세요.":"두 장기의 케미를 선택해 이번 생애의 직업과 합성 공격을 결정하세요."}</p></div><div className="cards">{cards.map((c,i)=>{const tags=cardOrgans(c);return <button className="card" key={c.name} onClick={()=>choose(c)}><span className="card-no">{choiceType==="빌드 각성"?"CHEMISTRY":"OPTION"} 0{i+1}</span>{choiceType==="빌드 각성"&&<div className="chem-visual">{tags.map(k=><span key={k} style={{"--organ-color":ORGAN_META[k].color} as React.CSSProperties}>{ORGAN_META[k].icon}<small>{k}</small></span>)}</div>}<div className="organ-tags">{tags.map(k=><span key={k}>{ORGAN_META[k].icon} {k}</span>)}</div><h3>{c.name}</h3><p>{c.desc}</p><strong>{c.effect} ↗</strong>{choiceType==="세포 진화"&&tags.length>0&&<small className="synergy-hint">현재 주력 장기와 케미를 준비합니다</small>}</button>})}</div></div>}
