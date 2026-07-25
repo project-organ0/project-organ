@@ -203,7 +203,7 @@ export default function OrganGame() {
       const x=Math.max(edge,Math.min(g.worldW-edge,g.x+Math.cos(angle)*distance));
       const y=Math.max(edge,Math.min(g.worldH-edge,g.y+Math.sin(angle)*distance));
       const diff=DIFFICULTY[g.difficulty],territory=1+Math.max(0,g.zoneT-25)*.008,base=(20+g.stage*12+g.t*.035)*diff.hp*territory;
-      g.mobs.push({x,y,r:boss?(g.stage===3?52:38):10+Math.random()*8,hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,elite:boss||Math.random()<.08+g.stage*.025+Math.min(.12,g.zoneT*.0015),kind:Math.floor(Math.random()*3),hit:0,skill:1.5+Math.random()*3,cast:0,charge:0,aimX:x,aimY:y,toxin:0});
+      g.mobs.push({x,y,r:(boss?(g.stage===3?52:38):10+Math.random()*8)*(coarse ? .8 : 1),hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,elite:boss||Math.random()<.08+g.stage*.025+Math.min(.12,g.zoneT*.0015),kind:Math.floor(Math.random()*3),hit:0,skill:1.5+Math.random()*3,cast:0,charge:0,aimX:x,aimY:y,toxin:0});
     };
     const burst=(g:Game,x:number,y:number,color:string,n=7)=>{for(let i=0;i<n;i++){const a=Math.random()*6.28,s=40+Math.random()*150;g.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.35,color})}};
     const loop=(now:number)=>{
@@ -267,12 +267,12 @@ export default function OrganGame() {
           const move=m.charge>0?690:m.speed*(m.cast>0 ? 0.18 : 1);m.x+=Math.cos(a)*move*dt;m.y+=Math.sin(a)*move*dt;
           const edge=m.boss?76:24;m.x=Math.max(edge,Math.min(g.worldW-edge,m.x));m.y=Math.max(edge,Math.min(g.worldH-edge,m.y));
           const d=Math.hypot(m.x-g.x,m.y-g.y);
-          if(d<m.r+16&&g.inv<=0){g.hp-=takeDamage((m.boss?18:8)*diff.damage);g.inv=.55;g.shake=10;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",12);if(g.chemistries.includes("heart_muscle")){for(const target of g.mobs){if(Math.hypot(target.x-g.x,target.y-g.y)<135)target.hp-=14}g.effect="케미 · 심장 버서커 반격";g.effectT=.85}if(g.hp<=0)endGame(false)}
+          if(d<m.r+(coarse?12:16)&&g.inv<=0){g.hp-=takeDamage((m.boss?18:8)*diff.damage);g.inv=.55;g.shake=10;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",12);if(g.chemistries.includes("heart_muscle")){for(const target of g.mobs){if(Math.hypot(target.x-g.x,target.y-g.y)<135)target.hp-=14}g.effect="케미 · 심장 버서커 반격";g.effectT=.85}if(g.hp<=0)endGame(false)}
           if(g.poison&&d<95){m.hp-=g.poison*6*dt}
         }
         const berserk=g.chemistries.includes("heart_muscle")?1+(1-g.hp/g.maxHp)*.45:1;
         const muscleDamage=(g.organs.근육>=70?1.18:g.organs.근육<30?0.78:1)*berserk;
-        for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.enemy){if(Math.hypot(s.x-g.x,s.y-g.y)<s.r+15&&g.inv<=0){s.life=0;g.hp-=takeDamage(7*diff.damage);g.inv=.42;g.shake=7;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",8);if(g.hp<=0)endGame(false)}}else{for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){const hit=g.damage*muscleDamage*(s.r>9?1.65:1);m.hp-=hit;s.life=0;m.hit=.08;sound.current?.play("hit");burst(g,s.x,s.y,s.r>9?"#ff715b":"#d8ff3e",s.r>9?10:3);if(g.chemistries.includes("brain_liver")){m.toxin=3.5;g.effect="케미 · 신경 독성 주입";g.effectT=.45}if(g.chemistries.includes("liver_muscle")&&s.r>9){g.fields.push({x:m.x,y:m.y,r:92,life:4});g.fields=g.fields.slice(-12);g.effect="케미 · 독성 웅덩이";g.effectT=.65}break}}}}
+        for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.enemy){if(Math.hypot(s.x-g.x,s.y-g.y)<s.r+(coarse?11:15)&&g.inv<=0){s.life=0;g.hp-=takeDamage(7*diff.damage);g.inv=.42;g.shake=7;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",8);if(g.hp<=0)endGame(false)}}else{for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){const hit=g.damage*muscleDamage*(s.r>9?1.65:1);m.hp-=hit;s.life=0;m.hit=.08;sound.current?.play("hit");burst(g,s.x,s.y,s.r>9?"#ff715b":"#d8ff3e",s.r>9?10:3);if(g.chemistries.includes("brain_liver")){m.toxin=3.5;g.effect="케미 · 신경 독성 주입";g.effectT=.45}if(g.chemistries.includes("liver_muscle")&&s.r>9){g.fields.push({x:m.x,y:m.y,r:92,life:4});g.fields=g.fields.slice(-12);g.effect="케미 · 독성 웅덩이";g.effectT=.65}break}}}}
         for(const f of g.fields){f.life-=dt;for(const m of g.mobs)if(Math.hypot(m.x-f.x,m.y-f.y)<f.r)m.hp-=9*dt}g.fields=g.fields.filter(f=>f.life>0);
         if(g.organs.간>=70){for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<100)m.hp-=(2.8+g.poison*2)*dt}if(Math.floor(g.t*2)%8===0){g.effect="간 활성 · 해독 독성 오라";g.effectT=.45}}
         const heartBeat=Math.floor(g.t/8);
@@ -337,20 +337,21 @@ export default function OrganGame() {
         ctx.restore();
       }
       for(const p of g.parts){if(!visible(p.x,p.y,10))continue;ctx.globalAlpha=Math.max(0,p.life*2);ctx.fillStyle=p.color;ctx.fillRect(p.x-2,p.y-2,4,4)}ctx.globalAlpha=1;
+      const renderScale=coarse ? .8 : 1;
       for(const d of g.drops){
         if(!visible(d.x,d.y,30))continue;
         const bob=Math.sin(d.phase)*3;ctx.save();ctx.translate(d.x,d.y+bob);ctx.rotate(d.phase*.35);
         ctx.shadowBlur=16;ctx.shadowColor=d.kind==="xp"?"#d8ff3e":d.kind==="heal"?"#ff715b":"#4ee5e1";
-        if(itemArt.complete&&itemArt.naturalWidth){const row=d.kind==="xp"?0:d.kind==="heal"?1:2;ctx.drawImage(itemArt,g.stage*384,row*(1024/3),384,1024/3,-18,-18,36,36)}
+        if(itemArt.complete&&itemArt.naturalWidth){const row=d.kind==="xp"?0:d.kind==="heal"?1:2,size=36*renderScale;ctx.drawImage(itemArt,g.stage*384,row*(1024/3),384,1024/3,-size/2,-size/2,size,size)}
         else{ctx.fillStyle=d.kind==="xp"?"#d8ff3e":d.kind==="heal"?"#ff715b":"#4ee5e1";ctx.beginPath();ctx.arc(0,0,7,0,6.28);ctx.fill()}
         ctx.restore();
       }
-      for(const s of g.shots){if(!visible(s.x,s.y,20))continue;ctx.fillStyle=s.enemy?"#ff715b":s.r===6?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e";ctx.shadowBlur=s.enemy?0:10;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fill();if(s.enemy){ctx.strokeStyle="#fff3d1";ctx.lineWidth=2;ctx.stroke()}}ctx.shadowBlur=0;
+      for(const s of g.shots){if(!visible(s.x,s.y,20))continue;ctx.fillStyle=s.enemy?"#ff715b":s.r===6?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e";ctx.shadowBlur=s.enemy?0:10;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(s.x,s.y,s.r*renderScale,0,6.28);ctx.fill();if(s.enemy){ctx.strokeStyle="#fff3d1";ctx.lineWidth=2;ctx.stroke()}}ctx.shadowBlur=0;
       for(const m of g.mobs){
         if(!visible(m.x,m.y,m.boss?100:50))continue;
         ctx.save();ctx.translate(m.x,m.y);
         const atlas=stageArt[g.stage],idx=m.boss?3:m.kind;
-        const cell=(atlas.complete&&atlas.naturalWidth?atlas.naturalWidth:1254)/4,size=m.boss?(g.stage===3?126:118):68;
+        const cell=(atlas.complete&&atlas.naturalWidth?atlas.naturalWidth:1254)/4,size=(m.boss?(g.stage===3?126:118):68)*renderScale;
         const frame=Math.floor(g.t*(m.boss?4.5:7)+(m.x+m.y)*.008)%4,bob=Math.sin(g.t*(m.boss?9:14)+(m.x+m.y)*.01)*(m.boss?2:3);
         const facingRight=g.x>=m.x;
         ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(0,size*.31,Math.max(11,size*.28)*(1-Math.abs(bob)*.025),Math.max(4,size*.075),0,0,6.28);ctx.fill();
@@ -364,7 +365,7 @@ export default function OrganGame() {
         if(m.boss){ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(-m.r,-m.r-13,m.r*2,5);ctx.fillStyle="#d8ff3e";ctx.fillRect(-m.r,-m.r-13,m.r*2*(m.hp/m.max),5)}ctx.restore();
       }
       ctx.save();ctx.translate(g.x,g.y);
-      const currentChem=g.chemistries[g.chemistries.length-1],formIndex=Math.max(0,CHEMISTRY.findIndex(c=>c.id===currentChem)+1),playerSize=formIndex?86:74;
+      const currentChem=g.chemistries[g.chemistries.length-1],formIndex=Math.max(0,CHEMISTRY.findIndex(c=>c.id===currentChem)+1),playerSize=(formIndex?86:74)*renderScale;
       const playerBob=Math.sin(g.t*(Math.hypot(g.vx,g.vy)>20?13:5))*2;
       ctx.fillStyle="rgba(0,0,0,.32)";ctx.beginPath();ctx.ellipse(0,25,23-Math.abs(playerBob),7,0,0,6.28);ctx.fill();
       if(g.chemistries.includes("heart_muscle")&&g.hp/g.maxHp<.5){ctx.strokeStyle="#ff715b";ctx.lineWidth=4;ctx.globalAlpha=.5+Math.sin(g.t*12)*.2;ctx.beginPath();ctx.arc(0,0,32+(1-g.hp/g.maxHp)*12,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1}
