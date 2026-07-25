@@ -212,8 +212,9 @@ export default function OrganGame() {
     };
     const spawn=(g:Game,boss=false)=>{
       const angle=Math.random()*Math.PI*2,distance=Math.max(g.w,g.h)*(.62+Math.random()*.2);
-      const x=Math.max(24,Math.min(g.worldW-24,g.x+Math.cos(angle)*distance));
-      const y=Math.max(24,Math.min(g.worldH-24,g.y+Math.sin(angle)*distance));
+      const edge=boss?96:36;
+      const x=Math.max(edge,Math.min(g.worldW-edge,g.x+Math.cos(angle)*distance));
+      const y=Math.max(edge,Math.min(g.worldH-edge,g.y+Math.sin(angle)*distance));
       const diff=DIFFICULTY[g.difficulty],base=(20+g.stage*12+g.t*.035)*diff.hp;
       g.mobs.push({x,y,r:boss?(g.stage===3?52:38):10+Math.random()*8,hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,kind:Math.floor(Math.random()*3),hit:0});
     };
@@ -249,6 +250,7 @@ export default function OrganGame() {
         }
         for(const m of g.mobs){
           const a=Math.atan2(g.y-m.y,g.x-m.x);m.x+=Math.cos(a)*m.speed*dt;m.y+=Math.sin(a)*m.speed*dt;m.hit-=dt;
+          const edge=m.boss?76:24;m.x=Math.max(edge,Math.min(g.worldW-edge,m.x));m.y=Math.max(edge,Math.min(g.worldH-edge,m.y));
           const d=Math.hypot(m.x-g.x,m.y-g.y);
           if(d<m.r+16&&g.inv<=0){g.hp-=(m.boss?18:8)*diff.damage;g.inv=.55;g.shake=10;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",12);if(g.chemistries.includes("heart_muscle")){for(const target of g.mobs){if(Math.hypot(target.x-g.x,target.y-g.y)<135)target.hp-=14}g.effect="케미 · 심장 버서커 반격";g.effectT=.85}if(g.hp<=0)endGame(false)}
           if(g.poison&&d<95){m.hp-=g.poison*6*dt}
@@ -312,7 +314,8 @@ export default function OrganGame() {
       for(const s of g.shots){ctx.fillStyle=s.r===6?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e";ctx.shadowBlur=13;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fill()}ctx.shadowBlur=0;
       for(const m of g.mobs){
         ctx.save();ctx.translate(m.x,m.y);
-        const atlas=stageArt[g.stage],idx=m.boss?3:m.kind,cell=1254/4,size=m.boss?138:68;
+        const atlas=stageArt[g.stage],idx=m.boss?3:m.kind;
+        const cell=(atlas.complete&&atlas.naturalWidth?atlas.naturalWidth:1254)/4,size=m.boss?(g.stage===3?126:118):68;
         const frame=Math.floor(g.t*(m.boss?4.5:7)+(m.x+m.y)*.008)%4,bob=Math.sin(g.t*(m.boss?9:14)+(m.x+m.y)*.01)*(m.boss?2:3);
         const facingRight=g.x>=m.x;
         ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(0,size*.31,Math.max(11,size*.28)*(1-Math.abs(bob)*.025),Math.max(4,size*.075),0,0,6.28);ctx.fill();
