@@ -1,0 +1,20 @@
+export type OrganKey = "뇌" | "심장" | "폐" | "간" | "근육";
+export type Organs = Record<OrganKey, number>;
+export type Mode = "start" | "play" | "choice" | "pause" | "report";
+export type Difficulty = "easy" | "normal" | "hard";
+export type Choice = { name:string;desc:string;effect:string;apply:(g:Game)=>void;organs?:OrganKey[];chemistry?:string };
+export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number };
+export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean };
+export type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
+export type Drop = {x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number};
+export type Telegraph = {x:number;y:number;tx:number;ty:number;life:number;max:number;kind:"line"|"circle";r:number};
+export type ToxicField = {x:number;y:number;r:number;life:number};
+export type Game = {
+  w:number;h:number;worldW:number;worldH:number;t:number;stage:number;stageT:number;hp:number;maxHp:number;
+  x:number;y:number;vx:number;vy:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
+  organs:Organs;mobs:Mob[];shots:Shot[];parts:Particle[];drops:Drop[];warnings:Telegraph[];fields:ToxicField[];keys:Set<string>;
+  choices:string[];augments:string[];level:number;xp:number;nextXp:number;paused:boolean;
+  damage:number;fireRate:number;speed:number;projectiles:number;poison:number;pulse:number;runner:number;
+  bossSpawned:boolean;choiceDone:boolean;augmentDone:boolean;last:number;shake:number;difficulty:Difficulty;
+  lastHeart:number;effect:string;effectT:number;shotCount:number;chemistries:string[];
+};
