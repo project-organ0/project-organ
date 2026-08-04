@@ -296,6 +296,7 @@ canvas { display: block; width: 100%; height: 100%; }
   .rotate-device { position:absolute;z-index:100;inset:0;display:grid;place-content:center;justify-items:center;gap:15px;background:#101515;color:white;text-align:center; }
   .rotate-device b { color:var(--acid);font-size:58px;animation:rotate-hint 1.8s ease-in-out infinite; }
   .rotate-device span { font-weight:900; }
+  .rotate-device small { color:#aeb9b5;font-size:12px; }
 }
 @keyframes rotate-hint { 50% { transform:rotate(90deg) } }
 

@@ -125,7 +125,34 @@ export default function OrganGame() {
   const [cards,setCards]=useState<Choice[]>([]);
   const [choiceType,setChoiceType]=useState<"생활 선택"|"세포 진화"|"빌드 각성"|"전투 증강">("생활 선택");
   const [report,setReport]=useState({win:false,kills:0,t:0,organs:game.current.organs,choices:[] as string[],augments:[] as string[],route:[] as OrganKey[]});
+  const [archive,setArchive]=useState<{gene:OrganKey|null;chemistries:string[];bestKills:number;bestTime:number}>({gene:null,chemistries:[],bestKills:0,bestTime:0});
+  const orientationPaused=useRef(false);
   const runNumber=useRef(0);
+
+  useEffect(()=>{
+    const gene=localStorage.getItem("organ-gene") as OrganKey|null;
+    setArchive({
+      gene:gene&&ORGAN_KEYS.includes(gene)?gene:null,
+      chemistries:JSON.parse(localStorage.getItem("organ-chemistry")||"[]") as string[],
+      bestKills:Number(localStorage.getItem("organ-best-kills")||0),
+      bestTime:Number(localStorage.getItem("organ-best-time")||0),
+    });
+  },[]);
+
+  useEffect(()=>{
+    const query=matchMedia("(pointer: coarse) and (orientation: portrait)");
+    const sync=()=>{
+      if(query.matches&&mode==="play"){
+        game.current.paused=true;
+        orientationPaused.current=true;
+      }else if(!query.matches&&orientationPaused.current&&mode==="play"){
+        orientationPaused.current=false;
+        game.current.last=performance.now();
+        game.current.paused=false;
+      }
+    };
+    sync();query.addEventListener("change",sync);return()=>query.removeEventListener("change",sync);
+  },[mode]);
 
   const openChoice=useCallback((type:"생활 선택"|"세포 진화"|"빌드 각성"|"전투 증강", picks:Choice[])=>{
     game.current.paused=true; setChoiceType(type); setCards(picks); setMode("choice");
@@ -138,8 +165,11 @@ export default function OrganGame() {
     setReport({win,kills:g.kills,t:g.t,organs,choices:[...g.choices],augments:[...g.augments],route:[...g.route]});
     const strongest=ORGAN_KEYS.reduce((a,b)=>organs[a]>organs[b]?a:b);
     localStorage.setItem("organ-gene",strongest);
-    localStorage.setItem("organ-best-kills",String(Math.max(g.kills,Number(localStorage.getItem("organ-best-kills")||0))));
-    localStorage.setItem("organ-best-time",String(Math.max(g.t,Number(localStorage.getItem("organ-best-time")||0))));
+    const bestKills=Math.max(g.kills,Number(localStorage.getItem("organ-best-kills")||0));
+    const bestTime=Math.max(g.t,Number(localStorage.getItem("organ-best-time")||0));
+    localStorage.setItem("organ-best-kills",String(bestKills));
+    localStorage.setItem("organ-best-time",String(bestTime));
+    setArchive(old=>({...old,gene:strongest,bestKills,bestTime}));
     sendGameLabEvent("game_run_ended",{runNumber:runNumber.current,endReason:win?"completed":"game_over",progress:Math.min(1,g.t/600),score:g.kills,kills:g.kills,stage:g.stage});
     if(win)sendGameLabEvent("game_completed",{runNumber:runNumber.current,score:g.kills});
     setMode("report");
@@ -384,17 +414,17 @@ export default function OrganGame() {
     raf.current=requestAnimationFrame(loop);return()=>cancelAnimationFrame(raf.current);
   },[mode,endGame,openChoice]);
 
-  const choose=(c:Choice)=>{const g=game.current;c.apply(g);if(c.chemistry&&!g.chemistries.includes(c.chemistry)){g.chemistries.push(c.chemistry);g.effect=`케미 발견 · ${c.name}`;g.effectT=2.2;const found=new Set<string>(JSON.parse(localStorage.getItem("organ-chemistry")||"[]"));found.add(c.chemistry);localStorage.setItem("organ-chemistry",JSON.stringify([...found]))}ORGAN_KEYS.forEach(k=>g.organs[k]=Math.max(0,Math.min(100,g.organs[k])));if(choiceType==="생활 선택")g.choices.push(c.name);else g.augments.push(c.name);g.paused=false;g.last=performance.now();setMode("play")};
-  const gene=typeof window!=="undefined"?localStorage.getItem("organ-gene"):null;
+  const choose=(c:Choice)=>{const g=game.current;c.apply(g);if(c.chemistry&&!g.chemistries.includes(c.chemistry)){g.chemistries.push(c.chemistry);g.effect=`케미 발견 · ${c.name}`;g.effectT=2.2;const found=new Set<string>(JSON.parse(localStorage.getItem("organ-chemistry")||"[]"));found.add(c.chemistry);const chemistries=[...found];localStorage.setItem("organ-chemistry",JSON.stringify(chemistries));setArchive(old=>({...old,chemistries}))}ORGAN_KEYS.forEach(k=>g.organs[k]=Math.max(0,Math.min(100,g.organs[k])));if(choiceType==="생활 선택")g.choices.push(c.name);else g.augments.push(c.name);g.paused=false;g.last=performance.now();setMode("play")};
+  const gene=archive.gene;
   const strongest=ORGAN_KEYS.reduce((a,b)=>report.organs[a]>report.organs[b]?a:b),weakest=ORGAN_KEYS.reduce((a,b)=>report.organs[a]<report.organs[b]?a:b);
   const build=strongest==="뇌"?(report.organs.간>55?"신경 마법사":"기동 마법사"):strongest==="근육"?(report.organs.심장>55?"심장 버서커":"독성 파이터"):strongest==="폐"?"심폐 러너":"균형형 인간";
   const fmt=(t:number)=>`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,"0")}`;
   const state=(v:number)=>v>=70?"healthy":v>=30?"normal":"danger";
   const leaders=[...ORGAN_KEYS].sort((a,b)=>hud.organs[b]-hud.organs[a]).slice(0,2);
   const activeChem=CHEMISTRY.find(c=>c.id===hud.chemistries[hud.chemistries.length-1]);
-  const discovered=typeof window!=="undefined"?JSON.parse(localStorage.getItem("organ-chemistry")||"[]") as string[]:[];
-  const bestKills=typeof window!=="undefined"?Number(localStorage.getItem("organ-best-kills")||0):0;
-  const bestTime=typeof window!=="undefined"?Number(localStorage.getItem("organ-best-time")||0):0;
+  const discovered=archive.chemistries;
+  const bestKills=archive.bestKills;
+  const bestTime=archive.bestTime;
   const hubDx=HUB.x-game.current.x,hubDy=HUB.y-game.current.y,hubDistance=Math.round(Math.hypot(hubDx,hubDy));
   const hubDirection=["동","남동","남","남서","서","북서","북","북동"][(Math.round(Math.atan2(hubDy,hubDx)/(Math.PI/4))+8)%8];
   const cardOrgans=(c:Choice)=>c.organs??ORGAN_KEYS.filter(k=>c.name.includes(k)||({뇌:["시냅스","신경","집중","공부","야근"],심장:["심실","맥박","아드레날린"],폐:["폐포","호흡","대시","등산"],간:["해독","독성","회식","식단"],근육:["근육","근섬유","운동","헬스","재활"]}[k] as string[]).some(v=>c.name.includes(v)));
@@ -404,7 +434,7 @@ export default function OrganGame() {
     <button className="sound-btn" onClick={()=>{const next=!isMuted;setIsMuted(next);sound.current??=createSoundEngine();sound.current.setMuted(next);if(!next)sound.current.play("pickup")}} aria-label={isMuted?"사운드 켜기":"사운드 끄기"}>{isMuted?"🔇 소리 켜기":"🔊 사운드"}</button>
     <button className="fullscreen-btn" onClick={toggleFullscreen} aria-label={isFullscreen?"전체화면 종료":"전체화면 시작"}>{isFullscreen?"⊡ 나가기":"⛶ 전체화면"} <kbd>F</kbd></button>
     {mode==="play"&&<div className="mobile-controls"><div ref={joystick} className="touch-stick" onPointerDown={moveStick} onPointerMove={moveStick} onPointerUp={releaseStick} onPointerCancel={releaseStick}><span style={{transform:`translate(${stick.x}px,${stick.y}px)`}}/></div><button className="touch-dash" onPointerDown={e=>{e.preventDefault();dashNow()}}><b>DASH</b><span>{Array.from({length:hud.maxDash},(_,i)=><i className={i<hud.dashCharges?"ready":""} key={i}/>)}</span></button></div>}
-    <div className="rotate-device"><b>↻</b><span>가로 화면으로 돌려주세요</span></div>
+    <div className="rotate-device"><b>↻</b><span>가로 화면으로 돌려주세요</span><small>회전하는 동안 게임은 잠시 멈춥니다.</small></div>
     {mode==="start"&&<div className="screen menu-screen">
       <nav className="meta-nav"><div className="nav-brand">ORGAN<br/><b>PROJECT</b></div>{([["home","생애 시작"],["heroes","영웅 도감"],["organs","장기 도감"],["items","생활 보관함"],["archive","유전 기록"]] as const).map(([id,label])=><button className={menuSection===id?"active":""} key={id} onClick={()=>setMenuSection(id)}>{label}<span>↗</span></button>)}<div className="nav-keys"><kbd>WASD</kbd> 이동<br/><kbd>SPACE</kbd> 대시<br/><kbd>ESC</kbd> 메뉴</div></nav>
       <section className="meta-content">
