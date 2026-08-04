@@ -106,6 +106,7 @@ function fresh(difficulty:Difficulty="normal"):Game {
     level:1,xp:0,nextXp:12,paused:false,damage:14,armor:3,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,runner:0,
     bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,zone:"중앙",zoneT:0,portalCd:0,route:[],lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[]};
 }
+function sendGameLabEvent(eventName:string,metadata:Record<string,unknown>={}){if(typeof window!=="undefined"&&window.opener)window.opener.postMessage({source:"game-lab-game",eventName,metadata},"*")}
 
 export default function OrganGame() {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -124,6 +125,7 @@ export default function OrganGame() {
   const [cards,setCards]=useState<Choice[]>([]);
   const [choiceType,setChoiceType]=useState<"생활 선택"|"세포 진화"|"빌드 각성"|"전투 증강">("생활 선택");
   const [report,setReport]=useState({win:false,kills:0,t:0,organs:game.current.organs,choices:[] as string[],augments:[] as string[],route:[] as OrganKey[]});
+  const runNumber=useRef(0);
 
   const openChoice=useCallback((type:"생활 선택"|"세포 진화"|"빌드 각성"|"전투 증강", picks:Choice[])=>{
     game.current.paused=true; setChoiceType(type); setCards(picks); setMode("choice");
@@ -138,6 +140,8 @@ export default function OrganGame() {
     localStorage.setItem("organ-gene",strongest);
     localStorage.setItem("organ-best-kills",String(Math.max(g.kills,Number(localStorage.getItem("organ-best-kills")||0))));
     localStorage.setItem("organ-best-time",String(Math.max(g.t,Number(localStorage.getItem("organ-best-time")||0))));
+    sendGameLabEvent("game_run_ended",{runNumber:runNumber.current,endReason:win?"completed":"game_over",progress:Math.min(1,g.t/600),score:g.kills,kills:g.kills,stage:g.stage});
+    if(win)sendGameLabEvent("game_completed",{runNumber:runNumber.current,score:g.kills});
     setMode("report");
   },[]);
 
@@ -145,6 +149,7 @@ export default function OrganGame() {
     sound.current??=createSoundEngine();sound.current.setMuted(isMuted);sound.current.play("start");
     const g=fresh(difficulty); const gene=localStorage.getItem("organ-gene") as OrganKey|null;
     if(gene&&ORGAN_KEYS.includes(gene)) g.organs[gene]+=8;
+    runNumber.current+=1;if(runNumber.current>1)sendGameLabEvent("game_restarted",{runNumber:runNumber.current});sendGameLabEvent("game_run_started",{runNumber:runNumber.current,difficulty});
     game.current=g; setHud({hp:g.hp,max:g.maxHp,t:0,stage:0,organs:{...g.organs},level:1,xp:0,nextXp:g.nextXp,loot:"",effect:"",chemistries:[],dashCharges:g.dashCharges,maxDash:g.maxDash,armor:g.armor,zone:g.zone,zoneT:0}); setMode("play");
   },[isMuted]);
 
