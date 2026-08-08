@@ -1,0 +1,26 @@
+[
+  { "id": "heart_adrenaline", "main": "heart", "tier": 2, "depth": 1 },
+  { "id": "heart_bloodflow", "main": "heart", "tier": 4, "depth": 1 },
+  { "id": "heart_shock", "main": "heart", "tier": 2, "depth": 2, "parent": "heart_adrenaline" },
+  { "id": "heart_overload", "main": "heart", "tier": 2, "depth": 2, "parent": "heart_bloodflow" },
+
+  { "id": "brain_frenzy", "main": "brain", "tier": 3, "depth": 1 },
+  { "id": "brain_focus", "main": "brain", "tier": 4, "depth": 1 },
+  { "id": "brain_synapse", "main": "brain", "tier": 2, "depth": 2, "parent": "brain_frenzy" },
+  { "id": "brain_chain", "main": "brain", "tier": 1, "depth": 2, "parent": "brain_focus" },
+
+  { "id": "liver_footprints", "main": "liver", "tier": 3, "depth": 1 },
+  { "id": "liver_concentrated", "main": "liver", "tier": 2, "depth": 1 },
+  { "id": "liver_rupture", "main": "liver", "tier": 2, "depth": 2, "parent": "liver_footprints" },
+  { "id": "liver_overlap", "main": "liver", "tier": 1, "depth": 2, "parent": "liver_concentrated" },
+
+  { "id": "lung_bladewind", "main": "lung", "tier": 2, "depth": 1 },
+  { "id": "lung_circulation", "main": "lung", "tier": 4, "depth": 1 },
+  { "id": "lung_eyestorm", "main": "lung", "tier": 1, "depth": 2, "parent": "lung_bladewind" },
+  { "id": "lung_afterimage", "main": "lung", "tier": 3, "depth": 2, "parent": "lung_circulation" },
+
+  { "id": "muscle_overcontract", "main": "muscle", "tier": 3, "depth": 1 },
+  { "id": "muscle_painfuel", "main": "muscle", "tier": 4, "depth": 1 },
+  { "id": "muscle_chaincollide", "main": "muscle", "tier": 2, "depth": 2, "parent": "muscle_overcontract" },
+  { "id": "muscle_gravity", "main": "muscle", "tier": 1, "depth": 2, "parent": "muscle_painfuel" }
+]

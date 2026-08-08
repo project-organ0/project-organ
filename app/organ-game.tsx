@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import AUGMENT_BALANCE from "./game/augment-balance.json";
+import AUGMENT_CATALOG_DATA from "./game/augment-catalog.json";
+import { createAugmentCatalog, getAvailableAugments, pickTieredAugment, recordAugmentPick } from "./game/augment-selection";
 import { createSoundEngine } from "./game/audio";
 import type { AugmentTier, CardKind, Choice, CoreOrgan, Difficulty, Game, MainClass, Mob, Mode, OrganKey, SkillFx } from "./game/types";
 
@@ -111,7 +113,7 @@ const ORGAN_GROWTH:Choice[] = [
   {id:"organ_muscle",kind:"organ",name:"근섬유 강화",desc:"근섬유가 굵어지고 타격에 무게가 실립니다.",effect:"근육 레벨 +1 · Lv.3에서 파괴자 각성 가능",organs:["근육"],organLevel:"muscle",apply:g=>{g.organLevels.muscle=Math.min(3,g.organLevels.muscle+1);g.organs.근육=Math.min(100,g.organs.근육+8)}},
 ];
 type CardDef={id:string;name:string;kind:CardKind;organs:OrganKey[];main?:CoreOrgan;support?:CoreOrgan;maxLevel:number;desc:string;effect:string;cost?:string;tier?:AugmentTier;apply?:(g:Game)=>void};
-const CLASS_CARDS:CardDef[]=[
+const CLASS_CARD_CONTENT:CardDef[]=[
   {id:"heart_adrenaline",name:"아드레날린",kind:"class",tier:2,organs:["심장"],main:"heart",maxLevel:3,desc:"근처에 적이 있으면 공격 간격이 감소합니다.",effect:"근처 적 존재 시 공격 간격 -30/-35/-40%"},
   {id:"heart_shock",name:"심박 충격",kind:"class",tier:2,organs:["심장"],main:"heart",maxLevel:3,desc:"연타의 마지막 공격이 주변을 밀어내는 충격파로 변합니다.",effect:"4번째 공격마다 80% 범위 피해 · Lv.3 심장 표식"},
   {id:"heart_overload",name:"과부하 연타",kind:"class",tier:2,organs:["심장"],main:"heart",maxLevel:3,desc:"한 적을 계속 공격하면 강력한 일격이 발생합니다.",effect:"동일 대상 5회 타격 뒤 2.2배 피해"},
@@ -133,6 +135,8 @@ const CLASS_CARDS:CardDef[]=[
   {id:"muscle_painfuel",name:"고통 연료",kind:"class",tier:4,organs:["근육"],main:"muscle",maxLevel:3,desc:"맞을수록 다음 강타가 무거워집니다.",effect:"피해를 받으면 지면 강타 충전 증가"},
   {id:"muscle_gravity",name:"중력 압박",kind:"class",tier:1,organs:["근육"],main:"muscle",maxLevel:3,desc:"강타 직전 적을 끌어모아 함께 터뜨립니다.",effect:`강타 탐색 범위 ${AUGMENT_BALANCE.muscleGravity.rangeMultiplier.join("/")}배 · 당김 거리 ${AUGMENT_BALANCE.muscleGravity.pullDistance.join("/")}`},
 ];
+const AUGMENT_CATALOG=createAugmentCatalog(AUGMENT_CATALOG_DATA);
+const CLASS_CARDS:CardDef[]=CLASS_CARD_CONTENT.map(card=>({...card,...AUGMENT_CATALOG.get(card.id)}));
 const FUSION_CARDS:CardDef[]=[
   {id:"fusion_heart_brain",name:"뇌근 동기화",kind:"fusion",organs:["심장","뇌"],main:"heart",support:"brain",maxLevel:1,desc:"주먹과 신경 코어가 동기화됩니다.",effect:"콤보 피니시마다 추적 에너지탄 발사"},
   {id:"fusion_heart_liver",name:"독성 파이터",kind:"fusion",organs:["심장","간"],main:"heart",support:"liver",maxLevel:1,desc:"주먹에 독을 쌓고 연타의 마지막 공격으로 터뜨립니다.",effect:"근접 공격 중독 · 피니시 독 폭발"},
@@ -152,49 +156,15 @@ const COMMON_CARDS:CardDef[]=[
   {id:"common_membrane",name:"세포막 강화",kind:"common",organs:[],maxLevel:1,desc:"잠시 피해를 받지 않으면 보호막이 생성됩니다.",effect:"8초 무피격 시 최대 체력 15% 보호막"},
 ];
 const cardLevel=(g:Game,id:string)=>g.cardLevels[id]||0;
-const toChoice=(d:CardDef):Choice=>({id:d.id,kind:d.kind,name:d.name,desc:d.desc,effect:d.effect,cost:d.cost,organs:d.organs,maxLevel:d.maxLevel,tier:d.tier,apply:g=>{g.cardLevels[d.id]=cardLevel(g,d.id)+1;if(!g.acquiredCards.includes(d.id))g.acquiredCards.push(d.id);if(d.kind==="class"){const branch=cardBranch(d.id);if(g.lastAugmentBranch===branch)g.augmentBranchStreak++;else{g.lastAugmentBranch=branch;g.augmentBranchStreak=1}}d.apply?.(g)}});
+const toChoice=(d:CardDef):Choice=>({id:d.id,kind:d.kind,name:d.name,desc:d.desc,effect:d.effect,cost:d.cost,organs:d.organs,maxLevel:d.maxLevel,tier:d.tier,apply:g=>{g.cardLevels[d.id]=cardLevel(g,d.id)+1;if(!g.acquiredCards.includes(d.id))g.acquiredCards.push(d.id);if(d.kind==="class")recordAugmentPick(g,AUGMENT_CATALOG,d.id);d.apply?.(g)}});
 const shuffled=<T,>(items:T[])=>[...items].sort(()=>Math.random()-.5);
 const available=(g:Game,items:CardDef[])=>items.filter(d=>cardLevel(g,d.id)<d.maxLevel);
 const eligibleFusions=(g:Game)=>FUSION_CARDS.filter(d=>d.main===g.mainClass&&d.support&&g.organLevels[d.support]>=2&&!g.acquiredCards.includes(d.id));
-// 직업 카드 스킬트리: 선행 증강 → 후속 증강. 희귀도 T1~T4와 트리 깊이는 별개다.
-const CARD_TREE:Record<string,{depth:number;parent?:string}> = {
-  heart_adrenaline:{depth:1},heart_bloodflow:{depth:1},heart_shock:{depth:2,parent:"heart_adrenaline"},heart_overload:{depth:2,parent:"heart_bloodflow"},
-  brain_frenzy:{depth:1},brain_focus:{depth:1},brain_synapse:{depth:2,parent:"brain_frenzy"},brain_chain:{depth:2,parent:"brain_focus"},
-  liver_footprints:{depth:1},liver_concentrated:{depth:1},liver_rupture:{depth:2,parent:"liver_footprints"},liver_overlap:{depth:2,parent:"liver_concentrated"},
-  lung_bladewind:{depth:1},lung_circulation:{depth:1},lung_eyestorm:{depth:2,parent:"lung_bladewind"},lung_afterimage:{depth:2,parent:"lung_circulation"},
-  muscle_overcontract:{depth:1},muscle_painfuel:{depth:1},muscle_chaincollide:{depth:2,parent:"muscle_overcontract"},muscle_gravity:{depth:2,parent:"muscle_painfuel"},
-};
-const classCardUnlocked=(g:Game,id:string)=>{const p=CARD_TREE[id]?.parent;return !p||g.acquiredCards.includes(p)};
-const cardBranch=(id:string)=>CARD_TREE[id]?.parent??id;
-const classCardOfferWeight=(g:Game,card:CardDef)=>{
-  const config=AUGMENT_BALANCE.branchWeighting,branch=cardBranch(card.id),sameBranch=g.acquiredCards.some(id=>cardBranch(id)===branch);
-  const branchWeight=sameBranch?(g.lastAugmentBranch===branch&&g.augmentBranchStreak>=config.softenAfterConsecutivePicks?config.softenedSameBranch:config.sameBranch):1;
-  const levelWeight=cardLevel(g,card.id)>0?config.ownedCardLevelUp:1;
-  return Math.min(config.combinedCap,branchWeight*levelWeight);
-};
-const pickWeightedClassCard=(g:Game,cards:CardDef[])=>{
-  const total=cards.reduce((sum,card)=>sum+classCardOfferWeight(g,card),0);let roll=Math.random()*total;
-  for(const card of cards){roll-=classCardOfferWeight(g,card);if(roll<=0)return card}
-  return cards[cards.length-1];
-};
-const TIER_ORDER:AugmentTier[]=[1,2,3,4];
 type ChoiceSource="level"|"boss";
-const tierBand=(g:Game)=>{
-  const [middleLevel,lateLevel,finalLevel]=AUGMENT_BALANCE.tierSystem.levelThresholds;
-  if(g.stage>=3||g.level>=finalLevel)return "final";
-  if(g.stage>=2||g.level>=lateLevel)return "late";
-  if(g.stage>=1||g.level>=middleLevel)return "middle";
-  return "awakened";
-};
-const classCardCandidates=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4)=>available(g,CLASS_CARDS.filter(d=>d.main===g.mainClass&&classCardUnlocked(g,d.id)&&d.tier!==undefined&&d.tier<=weakestTier&&!excluded.has(d.id)));
+const classCardCandidates=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4)=>getAvailableAugments({state:g,cards:CLASS_CARDS.filter((card):card is CardDef&{main:CoreOrgan;tier:AugmentTier}=>card.main!==undefined&&card.tier!==undefined),catalog:AUGMENT_CATALOG,excluded,weakestTier});
 const pickTieredClassCard=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4):Choice|undefined=>{
-  const candidates=classCardCandidates(g,excluded,weakestTier);if(!candidates.length)return;
-  const chances=AUGMENT_BALANCE.tierSystem.chances[tierBand(g)];
-  const tierCounts=TIER_ORDER.map(tier=>candidates.filter(card=>card.tier===tier).length);
-  const weights=candidates.map(card=>chances[(card.tier??4)-1]/Math.max(1,tierCounts[(card.tier??4)-1])*classCardOfferWeight(g,card)),total=weights.reduce((sum,value)=>sum+value,0);
-  if(total<=0)return toChoice(pickWeightedClassCard(g,candidates));
-  let roll=Math.random()*total;for(let index=0;index<candidates.length;index++){roll-=weights[index];if(roll<=0)return toChoice(candidates[index])}
-  return toChoice(candidates[candidates.length-1]);
+  const card=pickTieredAugment({state:g,cards:CLASS_CARDS.filter((candidate):candidate is CardDef&{main:CoreOrgan;tier:AugmentTier}=>candidate.main!==undefined&&candidate.tier!==undefined),catalog:AUGMENT_CATALOG,config:AUGMENT_BALANCE,excluded,weakestTier});
+  return card?toChoice(card):undefined;
 };
 const weightedChoices=(g:Game,source:ChoiceSource="level"):Choice[]=>{
   const fusion=eligibleFusions(g)[0];

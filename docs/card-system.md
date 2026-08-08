@@ -1,7 +1,7 @@
 # 증강 시스템 기획 및 현재 구현 평가
 
 작성일: 2026-08-08  
-평가 기준: `app/organ-game.tsx`의 `CLASS_CARDS`, `CARD_TREE`, `weightedChoices`, `cardLevel(...)` 전투 로직
+평가 기준: `app/organ-game.tsx`의 `CLASS_CARDS`, `weightedChoices`, `cardLevel(...)` 전투 로직과 `app/game/augment-catalog.json`, `app/game/augment-selection.js`
 
 ## 1. 문서 목적
 
