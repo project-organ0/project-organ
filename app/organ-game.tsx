@@ -25,6 +25,12 @@ const CORE_META:Record<CoreOrgan,{key:OrganKey;icon:string;color:string;classNam
   brain:{key:"뇌",icon:"🧠",color:"#a49bd8",className:"에너지술사",action:"CORE"},
   liver:{key:"간",icon:"◆",color:"#a8d43a",className:"독술사",action:"TOXIN"},
 };
+// 3직업 도감 데이터 (form: player-forms 시트 인덱스, question: 핵심 플레이 판단)
+const CLASS_CODEX:{core:CoreOrgan;form:number;question:string;passive:string;play:string}[] = [
+  {core:"heart",form:3,question:"적에게 얼마나 가까이 붙을 것인가",passive:"가까운 적을 자동으로 근접 공격하며 4타 콤보를 쌓습니다.",play:"거리를 좁혀 콤보를 유지하고 4타 충격파와 과부하 강타로 밀집한 적을 부순다."},
+  {core:"brain",form:1,question:"적과 어떤 거리를 유지할 것인가",passive:"주위를 도는 에너지 코어가 스스로 적을 사격합니다.",play:"안전 거리를 유지하며 코어 수와 연쇄를 늘리고 5킬 폭주로 화력을 터뜨린다."},
+  {core:"liver",form:5,question:"적을 어디로 유도할 것인가",passive:"이동 경로에 독 지대를 남겨 밟고 지난 적을 서서히 녹입니다.",play:"동선을 설계해 독 지대를 겹치고 중독된 적의 죽음으로 연쇄 폭발을 일으킨다."},
+];
 const DIFFICULTY = {
   easy: { name:"가벼움", hp:.72, speed:.88, count:.72, damage:.65 },
   normal: { name:"표준", hp:1, speed:1, count:1, damage:1 },
@@ -177,7 +183,7 @@ function fresh(difficulty:Difficulty="normal"):Game {
   return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,touchX:0,touchY:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],warnings:[],fields:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,armor:3,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,runner:0,
-    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,zone:"중앙",zoneT:0,portalCd:0,route:[],lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[]};
+    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,zone:"중앙",zoneT:0,portalCd:0,route:[],lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,invuln:false};
 }
 // 직업 전용 스킬 이펙트를 큐에 넣는다. dur 동안 grow 배율까지 확대되며 알파가 사라진다.
 function pushSkill(g:Game,sheet:CoreOrgan,index:number,x:number,y:number,size:number,dur:number,opts:{rot?:number;spin?:number;grow?:number}={}){
@@ -198,7 +204,8 @@ export default function OrganGame() {
   const [isFullscreen,setIsFullscreen]=useState(false);
   const [isMuted,setIsMuted]=useState(false);
   const [menuSection,setMenuSection]=useState<"home"|"heroes"|"organs"|"items"|"archive">("home");
-  const [selectedHero,setSelectedHero]=useState("brain_muscle");
+  const [selectedHero,setSelectedHero]=useState<CoreOrgan>("heart");
+  const [foundFusions,setFoundFusions]=useState<string[]>([]);
   const [stick,setStick]=useState({x:0,y:0});
   const [cards,setCards]=useState<Choice[]>([]);
   const [selectedCard,setSelectedCard]=useState(0);
@@ -218,6 +225,7 @@ export default function OrganGame() {
       bestKills:Number(localStorage.getItem("organ-best-kills")||0),
       bestTime:Number(localStorage.getItem("organ-best-time")||0),
     });
+    setFoundFusions(JSON.parse(localStorage.getItem("organ-fusions")||"[]") as string[]);
   },[]);
 
   useEffect(()=>{
@@ -265,6 +273,18 @@ export default function OrganGame() {
     sound.current??=createSoundEngine();sound.current.setMuted(isMuted);sound.current.play("start");sound.current.startMusic();
     const g=fresh(difficulty); const gene=localStorage.getItem("organ-gene") as OrganKey|null;
     if(gene&&ORGAN_KEYS.includes(gene)) g.organs[gene]+=8;
+    // 개발용 빠른 검증 모드: /?debug=heart|brain|liver (&fusion=<보조장기> &common=1 &life=1)
+    const dbg=new URLSearchParams(window.location.search).get("debug") as CoreOrgan|null;
+    if(dbg==="heart"||dbg==="brain"||dbg==="liver"){
+      const params=new URLSearchParams(window.location.search);
+      g.debug=true;g.organLevels[dbg]=3;g.mainClass=dbg;g.awakened=true;
+      for(const c of CLASS_CARDS)if(c.main===dbg){g.cardLevels[c.id]=c.maxLevel;g.acquiredCards.push(c.id)}
+      const fus=params.get("fusion") as CoreOrgan|null;
+      if((fus==="heart"||fus==="brain"||fus==="liver")&&fus!==dbg){g.organLevels[fus]=2;const f=FUSION_CARDS.find(d=>d.main===dbg&&d.support===fus);if(f){g.cardLevels[f.id]=1;g.acquiredCards.push(f.id)}}
+      if(params.get("common")==="1")for(const c of COMMON_CARDS){g.cardLevels[c.id]=1;g.acquiredCards.push(c.id);c.apply?.(g)}
+      if(params.get("life")==="1")for(const c of LIFE_CARDS){g.cardLevels[c.id]=1;g.acquiredCards.push(c.id);c.apply?.(g)}
+      g.effect=`[debug] ${CORE_META[dbg].className} 각성 · B 보스 · N 잡몹 · K 정리 · H 회복 · I 무적`;g.effectT=6;
+    }
     runNumber.current+=1;runStartedAt.current=Date.now();progressMilestones.current.clear();if(runNumber.current>1)sendGameLabEvent("game_restarted",{runNumber:runNumber.current});sendGameLabEvent("game_run_started",{runNumber:runNumber.current,difficulty});
     game.current=g; setHud({hp:g.hp,max:g.maxHp,t:0,stage:0,organs:{...g.organs},organLevels:{...g.organLevels},mainClass:g.mainClass,level:1,xp:0,nextXp:g.nextXp,loot:"",effect:"",chemistries:[],dashCharges:g.dashCharges,maxDash:g.maxDash,armor:g.armor,zone:g.zone,zoneT:0}); setMode("play");
   },[isMuted]);
@@ -383,7 +403,7 @@ export default function OrganGame() {
         }else{g.lastTrailX=g.x;g.lastTrailY=g.y}
         const diff=DIFFICULTY[g.difficulty],cap=Math.min(coarse?140:190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count*(coarse ? .78 : 1)));
         const takeDamage=(raw:number)=>raw*100/(100+g.armor*5);
-        const hurtPlayer=(raw:number)=>{let amount=takeDamage(raw);g.noDamage=0;if(g.shield>0){const blocked=Math.min(g.shield,amount);g.shield-=blocked;amount-=blocked}g.hp-=amount;if(g.hp<=0&&g.reviveAvailable){g.reviveAvailable=false;g.hp=g.maxHp*.4;g.inv=2;g.shield=g.maxHp*.15;g.heartFx=.8;g.effect="세포 분열 · 40% 체력으로 부활";g.effectT=3;sound.current?.play("level");return false}if(g.hp<=0){endGame(false);return true}return false};
+        const hurtPlayer=(raw:number)=>{if(g.invuln)return false;let amount=takeDamage(raw);g.noDamage=0;if(g.shield>0){const blocked=Math.min(g.shield,amount);g.shield-=blocked;amount-=blocked}g.hp-=amount;if(g.hp<=0&&g.reviveAvailable){g.reviveAvailable=false;g.hp=g.maxHp*.4;g.inv=2;g.shield=g.maxHp*.15;g.heartFx=.8;g.effect="세포 분열 · 40% 체력으로 부활";g.effectT=3;sound.current?.play("level");return false}if(g.hp<=0){endGame(false);return true}return false};
         if(cardLevel(g,"common_membrane")&&g.noDamage>=8&&g.shield<=0){g.shield=g.maxHp*.15;g.noDamage=0;g.effect="세포막 강화 · 보호막 생성";g.effectT=1.2;burst(g,g.x,g.y,"#4ee5e1",18)}
         if(g.mobs.filter(m=>!m.boss).length<cap&&Math.random()<dt*(5+g.stage*3+g.stageT*.05)*diff.count)spawn(g);
         let nearest:Mob|undefined,nd=Infinity;for(const m of g.mobs){const d=(m.x-g.x)**2+(m.y-g.y)**2;if(d<nd){nd=d;nearest=m}}
@@ -565,10 +585,19 @@ export default function OrganGame() {
       ctx.restore();ctx.globalAlpha=1;ctx.shadowBlur=0;
       ctx.restore();raf.current=requestAnimationFrame(loop);
     };
-    raf.current=requestAnimationFrame(loop);return()=>cancelAnimationFrame(raf.current);
+    const onDebugKey=(e:KeyboardEvent)=>{
+      const g=game.current;if(!g.debug||mode!=="play"||g.paused)return;
+      if(e.code==="KeyB"){spawn(g,true);sound.current?.play("boss");g.effect="[debug] 보스 소환";g.effectT=1.5}
+      else if(e.code==="KeyN"){for(let i=0;i<6;i++)spawn(g);g.effect="[debug] 잡몹 6 소환";g.effectT=1.2}
+      else if(e.code==="KeyK"){for(const m of g.mobs)if(!m.boss)m.hp=0;g.effect="[debug] 잡몹 정리";g.effectT=1}
+      else if(e.code==="KeyH"){g.hp=g.maxHp;g.shield=g.maxHp*.2;g.effect="[debug] 풀 회복+실드";g.effectT=1}
+      else if(e.code==="KeyI"){g.invuln=!g.invuln;g.effect=`[debug] 무적 ${g.invuln?"ON":"OFF"}`;g.effectT=1.4}
+    };
+    addEventListener("keydown",onDebugKey);
+    raf.current=requestAnimationFrame(loop);return()=>{cancelAnimationFrame(raf.current);removeEventListener("keydown",onDebugKey)};
   },[mode,endGame,openChoice]);
 
-  const choose=(c:Choice)=>{const g=game.current;c.apply(g);g.effect=`${c.name} · ${c.effect}`;g.effectT=2.4;if(c.chemistry&&!g.chemistries.includes(c.chemistry)){g.chemistries.push(c.chemistry);g.effect=`케미 발견 · ${c.name}`;g.effectT=2.8;const found=new Set<string>(JSON.parse(localStorage.getItem("organ-chemistry")||"[]"));found.add(c.chemistry);const chemistries=[...found];localStorage.setItem("organ-chemistry",JSON.stringify(chemistries));setArchive(old=>({...old,chemistries}))}ORGAN_KEYS.forEach(k=>g.organs[k]=Math.max(0,Math.min(100,g.organs[k])));if(choiceType==="생활 선택")g.choices.push(c.name);else g.augments.push(c.name);sendGameLabEvent("game_choice_selected",{runNumber:runNumber.current,choiceType,choice:c.name,effect:c.effect,elapsedSeconds:Math.round(g.t),stage:g.stage+1,level:g.level,organLevels:{...g.organLevels},mainClass:g.mainClass});
+  const choose=(c:Choice)=>{const g=game.current;c.apply(g);g.effect=`${c.name} · ${c.effect}`;g.effectT=2.4;if(c.kind==="fusion"&&c.id){const set=new Set<string>(JSON.parse(localStorage.getItem("organ-fusions")||"[]"));set.add(c.id);const arr=[...set];localStorage.setItem("organ-fusions",JSON.stringify(arr));setFoundFusions(arr)}if(c.chemistry&&!g.chemistries.includes(c.chemistry)){g.chemistries.push(c.chemistry);g.effect=`케미 발견 · ${c.name}`;g.effectT=2.8;const found=new Set<string>(JSON.parse(localStorage.getItem("organ-chemistry")||"[]"));found.add(c.chemistry);const chemistries=[...found];localStorage.setItem("organ-chemistry",JSON.stringify(chemistries));setArchive(old=>({...old,chemistries}))}ORGAN_KEYS.forEach(k=>g.organs[k]=Math.max(0,Math.min(100,g.organs[k])));if(choiceType==="생활 선택")g.choices.push(c.name);else g.augments.push(c.name);sendGameLabEvent("game_choice_selected",{runNumber:runNumber.current,choiceType,choice:c.name,effect:c.effect,elapsedSeconds:Math.round(g.t),stage:g.stage+1,level:g.level,organLevels:{...g.organLevels},mainClass:g.mainClass});
     if(c.organLevel&&!g.awakened&&g.organLevels[c.organLevel]>=3){sound.current?.play("level");openChoice("장기 각성",awakeningChoices(c.organLevel));return}
     if(c.awakening&&c.awakening!=="hold"){g.effect=`${CORE_META[c.awakening].className} 각성 · 전투 방식이 고정됩니다`;g.effectT=3.2;g.heartFx=.7;pushSkill(g,c.awakening,7,g.x,g.y,240,.85,{grow:1.9});sound.current?.play("boss")}
     g.paused=false;g.last=performance.now();setMode("play")};
@@ -609,10 +638,10 @@ export default function OrganGame() {
       <nav className="meta-nav"><div className="nav-brand">ORGAN<br/><b>PROJECT</b></div>{([["home","생애 시작"],["heroes","영웅 도감"],["organs","장기 도감"],["items","생활 보관함"],["archive","유전 기록"]] as const).map(([id,label])=><button className={menuSection===id?"active":""} key={id} onClick={()=>setMenuSection(id)}>{label}<span>↗</span></button>)}<div className="nav-keys"><kbd>WASD</kbd> 이동<br/><kbd>SPACE</kbd> 직업 액션<br/><kbd>ESC</kbd> 메뉴</div></nav>
       <section className="meta-content">
         {menuSection==="home"&&<div className="home-panel"><div className="eyebrow">ORGAN PROJECT / LIFE-01</div><h1 className="title">장기<br/><span>프로젝트</span></h1><p className="lede">생활을 선택하고 장기를 성장시키며, 마지막 적 <b>‘노화’</b>와 맞서세요.</p><div className="difficulty" aria-label="난이도 선택"><button onClick={()=>start("easy")}><small>CASUAL</small><b>가벼움</b><span>적 체력과 수 감소</span></button><button className="recommended" onClick={()=>start("normal")}><small>RECOMMENDED</small><b>표준</b><span>기획 의도 그대로</span></button><button onClick={()=>start("hard")}><small>SURVIVAL</small><b>생존</b><span>더 빠르고 많은 적</span></button></div><div className="gene">{gene?`유전 특성: 타고난 ${gene} +8`:"저장된 유전 특성이 없습니다."}</div></div>}
-        {menuSection==="heroes"&&<div className="codex-panel hero-codex"><div className="eyebrow">HERO ARCHIVE / 06 TRAITS</div><h2>영웅 도감</h2><p className="section-lede">두 장기의 케미가 전투 방식을 완전히 바꿉니다. 영웅을 선택해 패시브와 고유 스킬을 확인하세요.</p><div className="hero-layout"><div className="hero-list">{HERO_GUIDE.map((h,i)=>{const c=CHEMISTRY.find(v=>v.id===h.id)!;return <button className={`${selectedHero===h.id?"active":""} ${discovered.includes(h.id)?"found":""}`} key={h.id} onClick={()=>setSelectedHero(h.id)}><span>{c.organs.map(k=>ORGAN_META[k].icon).join(" × ")}</span><b>{c.name}</b><small>{discovered.includes(h.id)?"발견 완료":"미발견 · 레벨 5에서 각성"}</small></button>})}</div>{HERO_GUIDE.filter(h=>h.id===selectedHero).map(h=>{const c=CHEMISTRY.find(v=>v.id===h.id)!,formIndex=CHEMISTRY.findIndex(v=>v.id===h.id)+1;return <article className="hero-detail" key={h.id}><div className="hero-visual"><div className="hero-portrait" style={{backgroundPosition:`${formIndex%4/3*100}% ${Math.floor(formIndex/4)*100}%`}}/><span>{discovered.includes(h.id)?"DISCOVERED":"AWAKEN IN GAME"}</span></div><div className="hero-copy"><small>{h.role}</small><h3>{c.name}</h3><div className="hero-organs">{c.organs.map(k=><b key={k}>{ORGAN_META[k].icon} {k}</b>)}</div><dl><div><dt>PASSIVE</dt><dd>{h.passive}</dd></div><div><dt>UNIQUE SKILL · {h.skill}</dt><dd>{h.trigger}</dd></div><div><dt>PLAY STYLE</dt><dd>{h.play}</dd></div></dl></div></article>})}</div></div>}
-        {menuSection==="organs"&&<div className="codex-panel"><div className="eyebrow">BODY CODEX / 05 ORGANS</div><h2>장기 도감</h2><p className="section-lede">수치는 숨겨져 있지만 상태는 전투에 직접 반영됩니다. 70 이상이면 활성, 30 미만이면 위험입니다.</p><div className="organ-guide">{ORGAN_GUIDE.map(o=><article key={o.key} style={{"--organ-color":ORGAN_META[o.key].color} as React.CSSProperties}><span>{ORGAN_META[o.key].icon}</span><div><small>{o.title}</small><h3>{o.key}</h3><p>{o.copy}</p></div></article>)}</div></div>}
-        {menuSection==="items"&&<div className="codex-panel"><div className="eyebrow">LIFE STORAGE / 12 ITEMS</div><h2>생활 보관함</h2><p className="section-lede">좋은 선택도 나쁜 선택도 몸에 흔적을 남깁니다. 아이템 효과는 생애 구간에 따라 달라집니다.</p><div className="item-guide">{ITEM_GUIDE.map((it,i)=><article key={it[0]}><span>{["📖","👟","🥐","💻","☕","🥃","🍱","📋","🥾","🪢","🥗","📿"][i]}</span><small>0{Math.floor(i/3)+1} STAGE</small><h3>{it[0]}</h3><p>{it[1]}</p></article>)}</div></div>}
-        {menuSection==="archive"&&<div className="codex-panel"><div className="eyebrow">GENETIC ARCHIVE / LOCAL SAVE</div><h2>유전 기록</h2><div className="archive-stats"><article><small>INHERITED ORGAN</small><b>{gene?`${ORGAN_META[gene as OrganKey]?.icon} ${gene}`:"기록 없음"}</b></article><article><small>BEST KILLS</small><b>{bestKills} 처치</b></article><article><small>LONGEST LIFE</small><b>{fmt(bestTime)}</b></article></div><h3 className="archive-title">발견한 케미 <span>{discovered.length} / 6</span></h3><div className="chem-archive">{CHEMISTRY.map(c=><article className={discovered.includes(c.id)?"unlocked":"locked"} key={c.id}><div>{c.organs.map(k=>ORGAN_META[k].icon).join(" × ")}</div><b>{discovered.includes(c.id)?c.name:"???"}</b><p>{discovered.includes(c.id)?c.effect:"게임에서 두 장기의 케미를 각성해 발견하세요."}</p></article>)}</div></div>}
+        {menuSection==="heroes"&&<div className="codex-panel hero-codex"><div className="eyebrow">CLASS CODEX / 03 CLASSES · 06 FUSIONS</div><h2>영웅 도감</h2><p className="section-lede">심장·뇌·간을 Lv.3까지 키우면 하나의 직업으로 각성합니다. 세 직업은 이동 판단부터 완전히 다릅니다.</p><div className="hero-layout"><div className="hero-list">{CLASS_CODEX.map(c=>{const m=CORE_META[c.core];return <button className={selectedHero===c.core?"active":""} key={c.core} onClick={()=>setSelectedHero(c.core)}><span>{m.icon}</span><b>{m.className}</b><small>{m.key} Lv.3 각성</small></button>})}</div>{CLASS_CODEX.filter(c=>c.core===selectedHero).map(c=>{const m=CORE_META[c.core],cards=CLASS_CARDS.filter(d=>d.main===c.core);return <article className="hero-detail" key={c.core}><div className="hero-visual"><div className="hero-portrait" style={{backgroundImage:"url('/art/player-forms-v2-clean.png')",backgroundPosition:`${c.form%4/3*100}% ${Math.floor(c.form/4)*100}%`}}/><span>AWAKEN IN GAME</span></div><div className="hero-copy"><small>{c.question}</small><h3>{m.className}</h3><div className="hero-organs"><b>{m.icon} {m.key}</b><b>SPACE · {m.action}</b></div><dl><div><dt>PASSIVE</dt><dd>{c.passive}</dd></div><div><dt>PLAY STYLE</dt><dd>{c.play}</dd></div></dl><div className="hero-cards">{cards.map(cd=><div key={cd.id}><b>{cd.name}</b><span>{cd.effect}</span></div>)}</div></div></article>})}</div><h3 className="archive-title">융합 6종 <span>주 직업 + 보조 장기 Lv.2에서 해금</span></h3><div className="fusion-grid">{FUSION_CARDS.map(f=><article key={f.id}><div>{f.organs.map(k=>ORGAN_META[k].icon).join(" + ")}</div><b>{f.name}</b><p>{f.effect}</p></article>)}</div></div>}
+        {menuSection==="organs"&&<div className="codex-panel"><div className="eyebrow">BODY CODEX / 03 CORE ORGANS</div><h2>장기 도감</h2><p className="section-lede">장기는 능력치가 아니라 플레이 스타일을 정하는 빌드 언어입니다. 같은 장기를 세 번 키워 Lv.3에 이르면 그 직업으로 각성합니다.</p><div className="organ-guide">{CLASS_CODEX.map(c=>{const m=CORE_META[c.core];return <article key={c.core} style={{"--organ-color":m.color} as React.CSSProperties}><span>{m.icon}</span><div><small>{m.key} · Lv.0 → Lv.3 → {m.className}</small><h3>{m.className}</h3><p>{c.question}. {c.passive}</p></div></article>})}</div><p className="section-lede" style={{marginTop:22}}>각성 전에는 공용 에너지탄으로 싸우고, 각성 후 <b>SPACE</b> 직업 액션이 열립니다. 전투 중 얻는 영양소는 장기 수치를 서서히 끌어올려 드롭 편향과 다음 생애 유전에 영향을 줍니다.</p></div>}
+        {menuSection==="items"&&<div className="codex-panel"><div className="eyebrow">LIFE STORAGE / 03 LIFE · 03 SURVIVAL</div><h2>생활 보관함</h2><p className="section-lede">생활 선택은 강력한 강화에 반드시 대가가 따릅니다. 공용 생존 카드는 어떤 직업에서도 버티는 힘을 줍니다.</p><h3 className="archive-title">생활 선택 <span>강화 + 대가</span></h3><div className="item-guide">{LIFE_CARDS.map(c=><article className="life-item" key={c.id}><span>{c.organs.map(k=>ORGAN_META[k].icon).join("")||"🍶"}</span><small>LIFE CHOICE</small><h3>{c.name}</h3><p>{c.effect}{c.cost?` · 대가: ${c.cost}`:""}</p></article>)}</div><h3 className="archive-title" style={{marginTop:26}}>공용 생존 <span>모든 직업 공용</span></h3><div className="item-guide">{COMMON_CARDS.map(c=><article key={c.id}><span>🧬</span><small>SURVIVAL</small><h3>{c.name}</h3><p>{c.effect}</p></article>)}</div></div>}
+        {menuSection==="archive"&&<div className="codex-panel"><div className="eyebrow">GENETIC ARCHIVE / LOCAL SAVE</div><h2>유전 기록</h2><div className="archive-stats"><article><small>INHERITED ORGAN</small><b>{gene?`${ORGAN_META[gene as OrganKey]?.icon} ${gene}`:"기록 없음"}</b></article><article><small>BEST KILLS</small><b>{bestKills} 처치</b></article><article><small>LONGEST LIFE</small><b>{fmt(bestTime)}</b></article></div><h3 className="archive-title">발견한 융합 <span>{foundFusions.length} / 6</span></h3><div className="chem-archive">{FUSION_CARDS.map(f=><article className={foundFusions.includes(f.id)?"unlocked":"locked"} key={f.id}><div>{f.organs.map(k=>ORGAN_META[k].icon).join(" + ")}</div><b>{foundFusions.includes(f.id)?f.name:"???"}</b><p>{foundFusions.includes(f.id)?f.effect:"주 직업과 보조 장기를 함께 키워 융합을 발견하세요."}</p></article>)}</div></div>}
       </section>
     </div>}
     {(mode==="play"||mode==="pause")&&<><div className="hud"><div className="hud-top"><div className="stage"><small>LIFE STAGE 0{hud.stage+1}</small>{STAGES[hud.stage][0]}<span className="build-chip">주력 {leaders.map(k=>`${ORGAN_META[k].icon} ${k}`).join(" + ")}</span></div><div><div className="clock">{fmt(hud.t)} <small>/ 6:18</small></div><div className="hp"><i style={{width:`${Math.max(0,hud.hp/hud.max*100)}%`}}/></div></div></div></div>

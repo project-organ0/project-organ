@@ -146,6 +146,17 @@ canvas { display: block; width: 100%; height: 100%; }
 .hero-copy dl>div { border-top:1px solid var(--line);padding-top:9px; }
 .hero-copy dt { margin-bottom:5px;color:#66736f;font:800 8px/1 monospace;letter-spacing:.1em; }
 .hero-copy dd { margin:0;font-size:11px;line-height:1.5; }
+.hero-cards { display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:16px; }
+.hero-cards>div { border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:white; }
+.hero-cards b { display:block;margin-bottom:3px;font-size:11px; }
+.hero-cards span { color:#65706d;font-size:9px;line-height:1.35; }
+.fusion-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:850px;margin-top:12px; }
+.fusion-grid article { min-height:94px;border:1px solid #a49bd8;border-radius:12px;padding:12px;background:linear-gradient(145deg,rgba(164,155,216,.12),rgba(168,212,58,.08)); }
+.fusion-grid article>div { margin-bottom:6px;font-size:16px; }
+.fusion-grid b { font-size:12px; }
+.fusion-grid p { margin:5px 0 0;color:#5f6966;font-size:9px;line-height:1.4; }
+.item-guide .life-item { box-shadow:inset 3px 0 0 var(--coral); }
+.item-guide .life-item>span { letter-spacing:-3px; }
 
 .hud { position: absolute; z-index: 5; inset: 16px 18px auto; color: white; pointer-events: none; }
 .hud-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
@@ -364,7 +375,7 @@ canvas { display: block; width: 100%; height: 100%; }
   .nav-brand,.nav-keys { display:none; }
   .meta-nav button { white-space:nowrap;gap:12px; }
   .meta-content { padding:22px; }
-  .organ-guide,.item-guide,.chem-archive,.hero-layout,.hero-detail { grid-template-columns:1fr; }
+  .organ-guide,.item-guide,.chem-archive,.hero-layout,.hero-detail,.fusion-grid,.hero-cards { grid-template-columns:1fr; }
   .hero-visual { min-height:220px; }
   .archive-stats,.pause-menu { grid-template-columns:1fr; }
 }
