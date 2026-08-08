@@ -112,7 +112,7 @@ const ORGAN_GROWTH:Choice[] = [
 ];
 type CardDef={id:string;name:string;kind:CardKind;organs:OrganKey[];main?:CoreOrgan;support?:CoreOrgan;maxLevel:number;desc:string;effect:string;cost?:string;apply?:(g:Game)=>void};
 const CLASS_CARDS:CardDef[]=[
-  {id:"heart_adrenaline",name:"아드레날린",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"적에게 가까이 붙을수록 공격 속도가 증가합니다.",effect:"근거리 공격 속도 +25% · 레벨마다 범위와 속도 강화"},
+  {id:"heart_adrenaline",name:"아드레날린",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"근처에 적이 있으면 공격 간격이 감소합니다.",effect:"근처 적 존재 시 공격 간격 -30/-35/-40%"},
   {id:"heart_shock",name:"심박 충격",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"연타의 마지막 공격이 주변을 밀어내는 충격파로 변합니다.",effect:"4번째 공격마다 80% 범위 피해 · Lv.3 심장 표식"},
   {id:"heart_overload",name:"과부하 연타",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"한 적을 계속 공격하면 강력한 일격이 발생합니다.",effect:"동일 대상 5회 타격 뒤 2.2배 피해"},
   {id:"heart_bloodflow",name:"혈류 가속",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"가까운 적을 쓰러뜨리면 잠시 이동 속도가 증가합니다.",effect:`근거리 처치 후 ${AUGMENT_BALANCE.heartBloodflow.durationSeconds.join("/")}초간 이동 속도 +${percentLevels(AUGMENT_BALANCE.heartBloodflow.speedBonus)}%`},
@@ -129,7 +129,7 @@ const CLASS_CARDS:CardDef[]=[
   {id:"lung_eyestorm",name:"태풍의 눈",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"계속 이동하면 주변에 작은 회오리가 돕니다.",effect:"이동 중 주기적으로 회오리 생성 · 레벨마다 개수 증가"},
   {id:"lung_circulation",name:"순환 가속",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"적을 쓰러뜨리면 숨 돌릴 틈 없이 더 빨라집니다.",effect:`처치 시 ${AUGMENT_BALANCE.lungCirculation.durationSeconds.join("/")}초간 모멘텀 유지 · 이동 속도 +${percentLevels(AUGMENT_BALANCE.lungCirculation.speedBonus)}%`},
   {id:"muscle_overcontract",name:"과잉 수축",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"근수축이 폭발적으로 커집니다.",effect:"기본 강타 범위와 넉백 증가 · 레벨마다 강화"},
-  {id:"muscle_chaincollide",name:"연쇄 충돌",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"밀린 적이 부딪히면 충격이 터집니다.",effect:"적 충돌 시 범위 폭발 피해 · 레벨마다 폭발 확대"},
+  {id:"muscle_chaincollide",name:"연쇄 충돌",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"밀린 적이 다른 적과 충돌하면 주변에 추가 폭발이 발생합니다.",effect:"주변 적에게 공격력 80% 피해 · 폭발 반경 88/114/141"},
   {id:"muscle_painfuel",name:"고통 연료",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"맞을수록 다음 강타가 무거워집니다.",effect:"피해를 받으면 지면 강타 충전 증가"},
   {id:"muscle_gravity",name:"중력 압박",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"강타 직전 적을 끌어모아 함께 터뜨립니다.",effect:`강타 탐색 범위 ${AUGMENT_BALANCE.muscleGravity.rangeMultiplier.join("/")}배 · 당김 거리 ${AUGMENT_BALANCE.muscleGravity.pullDistance.join("/")}`},
 ];
