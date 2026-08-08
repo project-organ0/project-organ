@@ -93,17 +93,83 @@ canvas { display: block; width: 100%; height: 100%; }
 .keys { font: 700 12px/1 var(--font-mono); }
 .keys kbd { border: 1px solid var(--ink); border-radius: 5px; padding: 5px 8px; background: white; }
 .gene { position: relative; z-index: 2; margin-top: 30px; font: 700 13px/1.7 var(--font-mono); color: #51605d; }
-.menu-screen { display:grid;grid-template-columns:190px 1fr;align-content:stretch;padding:0; }
-.menu-screen::after { width:42%;opacity:.6; }
-.meta-nav { position:relative;z-index:3;padding:34px 20px;border-right:2px solid var(--ink);display:flex;flex-direction:column;gap:11px;background:rgba(233,234,223,.78); }
-.nav-brand { margin-bottom:35px;font:900 16px/.9 var(--font-mono);letter-spacing:-.08em; }
+/* ── 시작화면: 다크 게임 키아트 아트디렉션 ── */
+.menu-screen { display:grid;grid-template-columns:210px 1fr;align-content:stretch;padding:0;color:#e9efe9;
+  background:
+    radial-gradient(90% 120% at 82% 42%, rgba(216,255,62,.10), transparent 46%),
+    radial-gradient(70% 90% at 88% 60%, rgba(255,113,91,.09), transparent 55%),
+    linear-gradient(150deg,#16201e 0%,#0d1312 55%,#080b0b 100%);
+}
+/* 동심원 데코 제거 → 은은한 스캔라인 텍스처로 대체 */
+.menu-screen::after {
+  content:"";position:absolute;inset:0;border:0;border-radius:0;opacity:.5;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.16) 3px 4px);
+  mix-blend-mode:multiply;pointer-events:none;
+}
+.meta-nav { position:relative;z-index:3;padding:30px 20px;border-right:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:6px;background:rgba(8,12,11,.5);backdrop-filter:blur(4px); }
+.nav-brand { margin-bottom:30px;font:900 16px/.9 var(--font-mono);letter-spacing:-.08em;color:#f2f6f1; }
 .nav-brand b { color:var(--coral);font-size:22px; }
-.meta-nav button { display:flex;justify-content:space-between;border:0;border-bottom:1px solid var(--line);background:transparent;padding:15px 6px;text-align:left;font-size:15px;font-weight:800;cursor:pointer; }
-.meta-nav button.active { color:var(--coral); }
-.nav-keys { margin-top:auto;color:#596461;font:700 10px/2.3 var(--font-mono); }
-.nav-keys kbd { padding:3px 5px;border:1px solid var(--line);border-radius:4px;background:white;color:var(--ink); }
+.meta-nav button { display:flex;justify-content:space-between;align-items:center;border:0;border-bottom:1px solid rgba(255,255,255,.09);background:transparent;padding:14px 6px;text-align:left;font-size:15px;font-weight:800;color:#c4cec9;cursor:pointer;transition:.14s color,.14s padding-left; }
+.meta-nav button:hover { color:#f2f6f1;padding-left:10px; }
+.meta-nav button>span { opacity:.4; }
+.meta-nav button.active { color:var(--acid); }
+.meta-nav button.active>span { opacity:1;color:var(--acid); }
+.nav-keys { margin-top:auto;color:#7d8b86;font:700 10px/2.3 var(--font-mono); }
+.nav-keys kbd { padding:3px 5px;border:1px solid rgba(255,255,255,.16);border-radius:4px;background:rgba(255,255,255,.06);color:#cdd6d2; }
 .meta-content { position:relative;z-index:2;padding:clamp(16px,2.2vw,26px) clamp(28px,5vw,64px);overflow:auto; }
-.home-panel .title { font-size:clamp(54px,7vw,104px); }
+
+/* 홈 패널 */
+.home-panel { position:relative;min-height:100%;display:flex;flex-direction:column;justify-content:center; }
+.home-panel .eyebrow { color:var(--acid);opacity:.85; }
+.home-panel .title { position:relative;z-index:2;font-size:clamp(56px,7.4vw,112px);color:#f4f8f3;text-shadow:0 6px 30px rgba(0,0,0,.5); }
+.home-panel .title span { color:var(--coral);text-shadow:0 0 34px rgba(255,113,91,.4); }
+.home-panel .lede { position:relative;z-index:2;color:#aab6b1; }
+.home-panel .lede b { color:#f4f8f3; }
+.home-panel .difficulty { position:relative;z-index:2; }
+.home-panel .difficulty button { border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.045);color:#e9efe9;backdrop-filter:blur(6px);box-shadow:0 10px 30px rgba(0,0,0,.28); }
+.home-panel .difficulty button:hover { background:rgba(255,255,255,.09);border-color:rgba(216,255,62,.5); }
+.home-panel .difficulty button.recommended { background:var(--acid);border-color:var(--acid);color:#0c1211;box-shadow:0 0 30px rgba(216,255,62,.28); }
+.home-panel .difficulty button.recommended span { color:#243a10; }
+.home-panel .difficulty small { color:var(--acid); }
+.home-panel .difficulty button.recommended small { color:#2c4a0e; }
+.home-panel .difficulty span { color:#9aa6a2; }
+.home-panel .gene { position:relative;z-index:2;color:#7d8b86; }
+/* 주인공 키비주얼 (우측 빈 공간을 채우는 게임 키아트) */
+.key-visual {
+  position:absolute;z-index:1;right:-3%;bottom:-26px;
+  width:min(46%,470px);aspect-ratio:384/512;
+  background:url("/art/player-forms-v2-clean.png") no-repeat;
+  background-size:400% 200%;background-position:0% 0%;
+  filter:drop-shadow(0 24px 46px rgba(0,0,0,.65));
+  pointer-events:none;image-rendering:auto;
+}
+@media (max-width:900px){ .key-visual { opacity:.35;right:-8%; } }
+
+/* ── 다크 코덱스 테마: 카드/텍스트를 다크로 통일 ── */
+.meta-content .eyebrow { color:var(--acid);opacity:.85; }
+.meta-content .section-lede { color:#97a39e; }
+.meta-content .section-lede b { color:#f2f6f1; }
+.meta-content .archive-title { color:#eef3ee;border-bottom-color:rgba(255,255,255,.16); }
+.meta-content .archive-title span { color:#8b968f; }
+.codex-panel h2,.codex-panel h3 { color:#f3f7f2; }
+/* 카드류 다크 글래스 */
+.organ-guide article,.item-guide article,.chem-archive article,.hero-list button,.fusion-grid article,.hero-cards>div {
+  background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.14)!important;color:#e2e8e4;
+}
+.archive-stats article { background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.2)!important;color:#e2e8e4; }
+.hero-detail { background:rgba(255,255,255,.04)!important;border-color:rgba(255,255,255,.16)!important;box-shadow:6px 6px 0 rgba(0,0,0,.35); }
+.hero-copy { background:transparent; }
+.hero-list button.active { background:var(--acid);border-color:var(--acid);color:#0c1211;box-shadow:3px 3px 0 rgba(0,0,0,.4); }
+.hero-list button.active small { color:#2c4a0e; }
+.hero-list button.found small { color:var(--cyan); }
+/* 카드 내부 텍스트 */
+.organ-guide h3,.item-guide h3,.archive-stats b,.chem-archive b,.hero-copy h3,.hero-cards b,.fusion-grid b { color:#f3f7f2; }
+.organ-guide p,.item-guide p,.chem-archive p,.hero-copy dd,.hero-cards span,.fusion-grid p { color:#98a49f; }
+.organ-guide small,.item-guide small,.archive-stats small,.hero-list button small,.hero-copy dt { color:#8b968f; }
+.hero-organs b { background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16);color:#e2e8e4; }
+.chem-archive .locked { opacity:.4; }
+/* 융합/생존 카드 accent 유지하되 다크 위에서 */
+.hero-codex .fusion-grid article,.fusion-grid article { background:linear-gradient(145deg,rgba(164,155,216,.18),rgba(168,212,58,.09))!important;border-color:rgba(164,155,216,.42)!important; }
 .home-panel .lede { margin:18px 0 24px; }
 .codex-panel h2 { margin:6px 0 6px;font-size:clamp(30px,3.6vw,48px);letter-spacing:-.05em; }
 .section-lede { max-width:650px;margin:0 0 16px;color:#586461;line-height:1.65; }
