@@ -178,7 +178,7 @@ const weightedChoices=(g:Game):Choice[]=>{
 const awakeningChoices=(organ:CoreOrgan):Choice[]=>{
   const meta=CORE_META[organ];
   return [
-    {id:`awaken_${organ}`,name:`${meta.className}로 각성`,desc:`${meta.key}의 힘을 이번 생애의 주 전투 방식으로 고정합니다.`,effect:`주 직업 고정 · SPACE 액션 ${meta.action}`,organs:[meta.key],awakening:organ,apply:g=>{g.mainClass=organ;g.awakened=true}},
+    {id:`awaken_${organ}`,name:`${meta.className}로 각성`,desc:`${meta.key}의 힘을 이번 생애의 주 전투 방식으로 고정합니다.`,effect:`주 직업 고정 · SPACE 액션 ${meta.action}`,organs:[meta.key],awakening:organ,apply:g=>{g.mainClass=organ;g.awakened=true;if(organ==="heart"||organ==="lung"){g.maxDash=2;g.dashCharges=2}}},
     {id:`hold_${organ}`,name:"각성 보류",desc:"Lv.3 효과만 유지하고 다른 장기의 가능성을 더 탐색합니다.",effect:"공용 에너지탄 유지 · 나중에 다시 각성 가능",organs:[meta.key],awakening:"hold",apply:g=>{if(!g.deferredAwakenings.includes(organ))g.deferredAwakenings.push(organ)}},
   ];
 };
@@ -303,7 +303,7 @@ export default function OrganGame() {
     const dbg=new URLSearchParams(window.location.search).get("debug") as CoreOrgan|null;
     if(dbg&&(["heart","brain","liver","lung","muscle"] as CoreOrgan[]).includes(dbg)){
       const params=new URLSearchParams(window.location.search);
-      g.debug=true;g.organLevels[dbg]=3;g.mainClass=dbg;g.awakened=true;
+      g.debug=true;g.organLevels[dbg]=3;g.mainClass=dbg;g.awakened=true;if(dbg==="heart"||dbg==="lung"){g.maxDash=2;g.dashCharges=2}
       for(const c of CLASS_CARDS)if(c.main===dbg){g.cardLevels[c.id]=c.maxLevel;g.acquiredCards.push(c.id)}
       const fus=params.get("fusion") as CoreOrgan|null;
       if((fus==="heart"||fus==="brain"||fus==="liver")&&fus!==dbg){g.organLevels[fus]=2;const f=FUSION_CARDS.find(d=>d.main===dbg&&d.support===fus);if(f){g.cardLevels[f.id]=1;g.acquiredCards.push(f.id)}}
@@ -441,7 +441,7 @@ export default function OrganGame() {
           if(cardLevel(g,"lung_afterimage")&&moving&&g.galeMomentum>=3.2){for(const m of g.mobs)if(Math.hypot(m.x-g.x,m.y-g.y)<72)m.hp-=(6+cardLevel(g,"lung_afterimage")*3)*dt;if(Math.random()<dt*22)pushSkill(g,"lung",2,g.x-g.vx*.03,g.y-g.vy*.03,54,.3,{rot:Math.atan2(g.vy,g.vx),grow:1.1})}
           if(cardLevel(g,"lung_eyestorm")&&moving&&Math.floor(g.t*2)!==Math.floor((g.t-dt)*2)){const cnt=cardLevel(g,"lung_eyestorm");for(let i=0;i<cnt;i++){const a=Math.random()*6.28,r=58+Math.random()*44,wx=g.x+Math.cos(a)*r,wy=g.y+Math.sin(a)*r;for(const m of g.mobs)if(Math.hypot(m.x-wx,m.y-wy)<52)m.hp-=g.damage*.5;pushSkill(g,"lung",5,wx,wy,72,.4,{spin:6,grow:1.3})}}
         }
-        if(g.mainClass==="muscle"){const near=g.mobs.filter(m=>Math.hypot(m.x-g.x,m.y-g.y)<240).length;g.impactCharge=Math.min(1,g.impactCharge+near*dt*.05)}
+        if(g.mainClass==="muscle"){const near=g.mobs.filter(m=>Math.hypot(m.x-g.x,m.y-g.y)<240).length;g.impactCharge=Math.min(1,g.impactCharge+near*dt*.075)}
         const diff=DIFFICULTY[g.difficulty],cap=Math.min(coarse?140:190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count*(coarse ? .78 : 1)));
         const takeDamage=(raw:number)=>raw*100/(100+g.armor*5);
         const hurtPlayer=(raw:number)=>{if(g.invuln)return false;let amount=takeDamage(raw);g.noDamage=0;if(g.mainClass==="muscle"){const pf=cardLevel(g,"muscle_painfuel");if(pf)g.impactCharge=Math.min(1,g.impactCharge+.05*pf)}if(g.shield>0){const blocked=Math.min(g.shield,amount);g.shield-=blocked;amount-=blocked}g.hp-=amount;if(g.hp<=0&&g.reviveAvailable){g.reviveAvailable=false;g.hp=g.maxHp*.4;g.inv=2;g.shield=g.maxHp*.15;g.heartFx=.8;g.effect="세포 분열 · 40% 체력으로 부활";g.effectT=3;sound.current?.play("level");return false}if(g.hp<=0){endGame(false);return true}return false};
@@ -454,13 +454,13 @@ export default function OrganGame() {
           if(g.mainClass==="heart"){
             const inRange=g.mobs.filter(m=>Math.hypot(m.x-g.x,m.y-g.y)<=g.meleeRange+m.r).sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y))[0];
             const adrenaline=cardLevel(g,"heart_adrenaline"),nearby=g.mobs.some(m=>Math.hypot(m.x-g.x,m.y-g.y)<g.meleeRange*1.8);g.fire=g.fireRate*(nearby&&adrenaline?Math.max(.5,.75-adrenaline*.05):1);
-            if(inRange){g.meleeCombo=(g.meleeCombo%4)+1;inRange.overloadHits++;let damage=g.damage*(1+cardLevel(g,"heart_overload")*.08);if(cardLevel(g,"heart_overload")&&inRange.overloadHits>=5){damage*=2.2;inRange.overloadHits=0;pushSkill(g,"heart",4,inRange.x,inRange.y,120,.4,{grow:1.6});g.effect="과부하 연타 · 2.2×";g.effectT=.8}if(inRange.heartMark>0){damage*=1.3;inRange.heartMark=0;pushSkill(g,"heart",6,inRange.x,inRange.y,64,.35,{grow:1.3})}inRange.hp-=damage;inRange.hit=.12;g.heartFx=.2;sound.current?.play("hit");burst(g,inRange.x,inRange.y,"#ff715b",6);if(g.meleeCombo<4)pushSkill(g,"heart",g.meleeCombo-1,inRange.x,inRange.y,72,.2,{rot:Math.atan2(inRange.y-g.y,inRange.x-g.x),grow:1.2});
+            if(inRange){g.meleeCombo=(g.meleeCombo%4)+1;inRange.overloadHits++;let damage=g.damage*1.18*(1+cardLevel(g,"heart_overload")*.08);if(cardLevel(g,"heart_overload")&&inRange.overloadHits>=5){damage*=2.2;inRange.overloadHits=0;pushSkill(g,"heart",4,inRange.x,inRange.y,120,.4,{grow:1.6});g.effect="과부하 연타 · 2.2×";g.effectT=.8}if(inRange.heartMark>0){damage*=1.3;inRange.heartMark=0;pushSkill(g,"heart",6,inRange.x,inRange.y,64,.35,{grow:1.3})}inRange.hp-=damage;inRange.hit=.12;g.heartFx=.2;sound.current?.play("hit");burst(g,inRange.x,inRange.y,"#ff715b",6);if(g.meleeCombo<4)pushSkill(g,"heart",g.meleeCombo-1,inRange.x,inRange.y,72,.2,{rot:Math.atan2(inRange.y-g.y,inRange.x-g.x),grow:1.2});
               if(cardLevel(g,"fusion_heart_liver")){inRange.poisonStacks=Math.min(8,inRange.poisonStacks+1);inRange.toxin=4}
               if(g.meleeCombo===4){const shock=cardLevel(g,"heart_shock");pushSkill(g,"heart",3,inRange.x,inRange.y,shock?185:120,.5,{grow:1.7});if(shock){const radius=g.meleeRange*1.8*(1+(shock-1)*.25);for(const m of g.mobs){const d=Math.hypot(m.x-inRange.x,m.y-inRange.y);if(d<radius){m.hp-=g.damage*.8*(1+(shock-1)*.15);if(d>1){m.x+=(m.x-inRange.x)/d*18;m.y+=(m.y-inRange.y)/d*18}if(shock>=3)m.heartMark=3}}g.heartFx=.58;g.shake=9;burst(g,inRange.x,inRange.y,"#ff715b",24)}if(cardLevel(g,"fusion_heart_liver")&&inRange.poisonStacks){const blast=g.damage*.42*inRange.poisonStacks;for(const m of g.mobs)if(Math.hypot(m.x-inRange.x,m.y-inRange.y)<120)m.hp-=blast;inRange.poisonStacks=0;burst(g,inRange.x,inRange.y,"#a8d43a",20)}if(cardLevel(g,"fusion_heart_brain"))shootAt(inRange,{damageMul:.65,chain:g.chainBonus,core:true})}
             }
           }else if(g.mainClass==="brain"){
             const coreCount=2+cardLevel(g,"brain_synapse"),close=g.mobs.some(m=>Math.hypot(m.x-g.x,m.y-g.y)<180),speedBoost=(cardLevel(g,"fusion_brain_heart")&&close)?0.35:0;
-            g.fire=g.fireRate*.94/(1+speedBoost);const focus=cardLevel(g,"brain_focus"),toxic=cardLevel(g,"fusion_brain_liver");const targets=[...g.mobs].sort((a,b)=>toxic&&a.poisonStacks!==b.poisonStacks?b.poisonStacks-a.poisonStacks:focus?b.hp-a.hp:Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y));for(let i=0;i<coreCount;i++){const target=targets[i%Math.max(1,targets.length)]||nearest;shootAt(target,{damageMul:focus&&(target.elite||target.boss)?1.2:1,chain:cardLevel(g,"brain_chain")+g.chainBonus,poison:toxic?1:0,core:true,angle:Math.atan2(target.y-g.y,target.x-g.x)+(i-(coreCount-1)/2)*.035})}g.brainVolley=.24;pushSkill(g,"brain",1,g.x,g.y,74,.16,{rot:Math.atan2(nearest.y-g.y,nearest.x-g.x),grow:1.3});g.castFx=.16;g.castAngle=Math.atan2(nearest.y-g.y,nearest.x-g.x);sound.current?.play("shot");
+            g.fire=g.fireRate*1.12/(1+speedBoost);const focus=cardLevel(g,"brain_focus"),toxic=cardLevel(g,"fusion_brain_liver");const targets=[...g.mobs].sort((a,b)=>toxic&&a.poisonStacks!==b.poisonStacks?b.poisonStacks-a.poisonStacks:focus?b.hp-a.hp:Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y));for(let i=0;i<coreCount;i++){const target=targets[i%Math.max(1,targets.length)]||nearest;shootAt(target,{damageMul:focus&&(target.elite||target.boss)?1.0:.82,chain:cardLevel(g,"brain_chain")+g.chainBonus,poison:toxic?1:0,core:true,angle:Math.atan2(target.y-g.y,target.x-g.x)+(i-(coreCount-1)/2)*.035})}g.brainVolley=.24;pushSkill(g,"brain",1,g.x,g.y,74,.16,{rot:Math.atan2(nearest.y-g.y,nearest.x-g.x),grow:1.3});g.castFx=.16;g.castAngle=Math.atan2(nearest.y-g.y,nearest.x-g.x);sound.current?.play("shot");
           }else if(g.mainClass==="liver"){
             g.fire=.55;
           }else if(g.mainClass==="lung"){
@@ -470,10 +470,10 @@ export default function OrganGame() {
             pushSkill(g,"lung",1,g.x+Math.cos(a)*24,g.y+Math.sin(a)*24,50+mo*10,.16,{rot:a,grow:1.3});
             g.castFx=.12;g.castAngle=a;sound.current?.play("shot");
           }else if(g.mainClass==="muscle"){
-            g.fire=g.fireRate*1.8;const oc=cardLevel(g,"muscle_overcontract"),range=g.meleeRange*1.5*(1+oc*.16),kb=250*(1+oc*.28);let hit=false;
-            for(const m of g.mobs){const d=Math.hypot(m.x-g.x,m.y-g.y);if(d<range+m.r){m.hp-=g.damage*1.35;m.hit=.12;const nx=(m.x-g.x)/(d||1),ny=(m.y-g.y)/(d||1);m.kbX+=nx*kb;m.kbY+=ny*kb;hit=true}}
+            g.fire=g.fireRate*1.45;const oc=cardLevel(g,"muscle_overcontract"),range=g.meleeRange*1.6*(1+oc*.16),kb=270*(1+oc*.28);let hit=false;
+            for(const m of g.mobs){const d=Math.hypot(m.x-g.x,m.y-g.y);if(d<range+m.r){m.hp-=g.damage*1.75;m.hit=.12;const nx=(m.x-g.x)/(d||1),ny=(m.y-g.y)/(d||1);m.kbX+=nx*kb;m.kbY+=ny*kb;hit=true}}
             if(hit){pushSkill(g,"muscle",1,g.x,g.y,range*1.7,.3,{grow:1.4});g.shake=Math.max(g.shake,4);sound.current?.play("hit")}
-            g.impactCharge=Math.min(1,g.impactCharge+.05);
+            g.impactCharge=Math.min(1,g.impactCharge+.08);
           }else{
             g.fire=g.fireRate;const a=Math.atan2(nearest.y-g.y,nearest.x-g.x)+(Math.random()-.5)*(g.organs.뇌<30?.34:0);for(let j=0;j<g.projectiles;j++)shootAt(nearest,{chain:g.chainBonus,angle:a+(j-(g.projectiles-1)/2)*.13});g.castFx=.16;g.castAngle=a;sound.current?.play("shot");
           }
