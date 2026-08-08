@@ -1,0 +1,48 @@
+{
+  "tierSystem": {
+    "levelThresholds": [6, 8, 10],
+    "chances": {
+      "awakened": [0, 0.05, 0.3, 0.65],
+      "middle": [0.03, 0.15, 0.37, 0.45],
+      "late": [0.08, 0.27, 0.38, 0.27],
+      "final": [0.15, 0.35, 0.3, 0.2]
+    },
+    "bossWeakestGuaranteedTier": 3,
+    "pityWeakestGuaranteedTier": 2,
+    "pityAfterOffers": 5
+  },
+  "branchWeighting": {
+    "sameBranch": 1.35,
+    "ownedCardLevelUp": 1.15,
+    "combinedCap": 1.5,
+    "softenAfterConsecutivePicks": 2,
+    "softenedSameBranch": 1.15
+  },
+  "heartBloodflow": {
+    "durationSeconds": [2, 3, 4],
+    "speedBonus": [0.2, 0.25, 0.3]
+  },
+  "brainFocus": {
+    "eliteBossDamageBonus": [0.2, 0.4, 0.6]
+  },
+  "brainFrenzy": {
+    "killsPerProc": [5, 4, 3]
+  },
+  "liverOverlap": {
+    "maxStacks": [3, 4, 5],
+    "baseRadius": 74,
+    "radiusGrowth": 1.15
+  },
+  "liverConcentrated": {
+    "tickSeconds": [1, 0.75, 0.5],
+    "maxPoisonStacks": 8
+  },
+  "lungCirculation": {
+    "durationSeconds": [2, 3, 4],
+    "speedBonus": [0.2, 0.25, 0.3]
+  },
+  "muscleGravity": {
+    "rangeMultiplier": [1.5, 1.75, 2],
+    "pullDistance": [80, 110, 140]
+  }
+}

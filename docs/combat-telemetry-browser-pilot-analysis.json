@@ -1,0 +1,69 @@
+{
+  "generatedAt": "2026-08-08T16:14:30.818Z",
+  "source": "docs/combat-telemetry-browser-pilot.json",
+  "includeDebug": false,
+  "totalRuns": 5,
+  "usableRuns": 5,
+  "byClass": {
+    "heart": {
+      "runs": 1,
+      "awakeningRate": 100,
+      "clearRate": 0,
+      "avgSurvivalSeconds": 385.9,
+      "avgKills": 1019,
+      "avgDps": 128.71,
+      "avgDamageTakenPerMinute": 106.81,
+      "avgHitsPerMinute": 17.88,
+      "avgBossKills": 1,
+      "avgActionsPerMinute": 32.49
+    },
+    "brain": {
+      "runs": 1,
+      "awakeningRate": 100,
+      "clearRate": 0,
+      "avgSurvivalSeconds": 255.3,
+      "avgKills": 356,
+      "avgDps": 50.85,
+      "avgDamageTakenPerMinute": 56.54,
+      "avgHitsPerMinute": 8.22,
+      "avgBossKills": 0,
+      "avgActionsPerMinute": 11.98
+    },
+    "liver": {
+      "runs": 1,
+      "awakeningRate": 100,
+      "clearRate": 100,
+      "avgSurvivalSeconds": 516.4,
+      "avgKills": 2148,
+      "avgDps": 749.04,
+      "avgDamageTakenPerMinute": 110.53,
+      "avgHitsPerMinute": 18.82,
+      "avgBossKills": 4,
+      "avgActionsPerMinute": 26.84
+    },
+    "lung": {
+      "runs": 1,
+      "awakeningRate": 0,
+      "clearRate": 0,
+      "avgSurvivalSeconds": 122.6,
+      "avgKills": 127,
+      "avgDps": 25.29,
+      "avgDamageTakenPerMinute": 56.45,
+      "avgHitsPerMinute": 8.32,
+      "avgBossKills": 0,
+      "avgActionsPerMinute": 0
+    },
+    "muscle": {
+      "runs": 1,
+      "awakeningRate": 100,
+      "clearRate": 100,
+      "avgSurvivalSeconds": 413.4,
+      "avgKills": 4160,
+      "avgDps": 548.09,
+      "avgDamageTakenPerMinute": 59.96,
+      "avgHitsPerMinute": 10.16,
+      "avgBossKills": 4,
+      "avgActionsPerMinute": 26.7
+    }
+  }
+}

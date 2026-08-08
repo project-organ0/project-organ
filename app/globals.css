@@ -335,6 +335,14 @@ canvas { display: block; width: 100%; height: 100%; }
 .card-life { background:linear-gradient(180deg,#222823,#18201f)!important; }
 .card-class { border-color:rgba(164,155,216,.42); }
 .card-no em { float:right;padding:4px 7px;border-radius:999px;background:#a49bd8;color:#111;font:900 8px/1 var(--font-mono);font-style:normal;letter-spacing:.08em; }
+.augment-tier-1 { border-color:#f0c85a;box-shadow:inset 0 3px #f0c85a; }
+.augment-tier-1 .organ-tags .card-tier { border-color:#f0c85a;background:#f0c85a;color:#101515; }
+.augment-tier-2 { border-color:#b29be0;box-shadow:inset 0 3px #b29be0; }
+.augment-tier-2 .organ-tags .card-tier { border-color:#b29be0;background:#b29be0;color:#101515; }
+.augment-tier-3 { border-color:#4ee5e1;box-shadow:inset 0 3px #4ee5e1; }
+.augment-tier-3 .organ-tags .card-tier { border-color:#4ee5e1;background:#4ee5e1;color:#101515; }
+.augment-tier-4 { border-color:#8a938f;box-shadow:inset 0 3px #8a938f; }
+.augment-tier-4 .organ-tags .card-tier { border-color:#8a938f;background:#8a938f;color:#101515; }
 .card-no { font: 800 10px/1 var(--font-mono); color: var(--acid); }
 .card-no kbd { display:inline-grid;place-items:center;width:25px;height:25px;margin-right:7px;border:1px solid var(--acid);border-radius:6px;background:rgba(216,255,62,.09);color:var(--acid);font:900 11px/1 var(--font-mono); }
 .card-art { height:66px;display:flex;align-items:center;gap:8px;margin-top:12px; }
@@ -388,6 +396,10 @@ canvas { display: block; width: 100%; height: 100%; }
 .stat { padding: 15px 0; border-bottom: 1px solid var(--line); }
 .stat b { display:block; font-size: 25px; }
 .stat small { font: 700 10px/1 var(--font-mono); }
+.telemetry-summary { display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--ink); }
+.telemetry-summary>div { padding:12px 10px 12px 0;min-width:0; }
+.telemetry-summary small { display:block;font:700 9px/1 var(--font-mono);color:#68716d; }
+.telemetry-summary b { display:block;margin-top:5px;font:900 15px/1 var(--font-mono);overflow-wrap:anywhere; }
 .organ-report { border: 2px solid var(--ink); border-radius: 18px; padding: 20px; background: white; }
 .organ-line { display: grid; grid-template-columns: 56px 1fr 34px; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); font-weight: 800; }
 .organ-line:last-child { border-bottom: 0; }
@@ -410,6 +422,13 @@ canvas { display: block; width: 100%; height: 100%; }
 .report .gene { color:#8b968f; }
 .report-menu-btn { border-color:rgba(255,255,255,.3);background:transparent;color:#e9efe9; }
 .report-menu-btn:hover { background:rgba(255,255,255,.08); }
+.telemetry-export { display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:12px;padding:14px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05); }
+.telemetry-export>div small { display:block;font:800 9px/1 var(--font-mono);color:#8b968f; }
+.telemetry-export>div b { display:block;margin-top:5px;font:900 11px/1.2 var(--font-mono);color:#e9efe9; }
+.telemetry-export>button { border:1px solid rgba(255,255,255,.3);border-radius:4px;background:transparent;color:#e9efe9;padding:8px 10px;font:800 10px/1 var(--font-mono);cursor:pointer; }
+.telemetry-export details { grid-column:1/-1;border-top:1px solid var(--line);padding-top:8px; }
+.telemetry-export summary { cursor:pointer;font:800 10px/1 var(--font-mono);color:#e9efe9; }
+.telemetry-export pre { max-height:220px;overflow:auto;margin:10px 0 0;padding:10px;background:#121817;color:#d8ff3e;font:10px/1.45 var(--font-mono);white-space:pre-wrap;overflow-wrap:anywhere; }
 
 .pause {
   position:absolute; z-index:25; inset:0; display:grid; place-items:center;
@@ -492,6 +511,9 @@ canvas { display: block; width: 100%; height: 100%; }
   .card h3 { margin-top: 14px; }
   .choice-head p { display:none; }
   .report-grid { grid-template-columns: 1fr; }
+  .telemetry-summary { grid-template-columns:1fr 1fr; }
+  .telemetry-export { grid-template-columns:1fr 1fr; }
+  .telemetry-export>div { grid-column:1/-1; }
   .difficulty { grid-template-columns:1fr; }
   .organs { flex-wrap: wrap; max-width: 75%; }
   .chemistry-panel { top:105px;width:180px; }
