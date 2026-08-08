@@ -35,4 +35,5 @@ export type Game = {
   debug:boolean;benchmark:boolean;benchmarkTarget:CoreOrgan|null;benchmarkSpeed:number;benchmarkStopAt:number;benchmarkActionCooldown:number;invuln:boolean;
   galeMomentum:number;windTrailDist:number;galeKillLock:number;impactCharge:number;
   telemetry:TelemetryState;
+  hurtT:number;hurtDir:number;lowHpWarned:boolean;
 };
