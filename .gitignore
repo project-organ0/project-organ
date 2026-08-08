@@ -44,3 +44,6 @@ tsconfig.tsbuildinfo
 
 # local scratch
 /tmp/
+
+# local dev logs
+/tmp-*.log
