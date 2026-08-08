@@ -8,13 +8,17 @@ export type CardKind = "organ" | "class" | "fusion" | "life" | "common" | "awake
 export type AugmentTier = 1 | 2 | 3 | 4;
 export type Choice = { id?:string;name:string;desc:string;effect:string;cost?:string;apply:(g:Game)=>void;organs?:OrganKey[];chemistry?:string;organLevel?:CoreOrgan;awakening?:CoreOrgan|"hold";kind?:CardKind;maxLevel?:number;tier?:AugmentTier };
 export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number;poisonStacks:number;poisonTick:number;overloadHits:number;heartMark:number;kbX:number;kbY:number;collideCd:number };
-export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean;damageMul?:number;chain?:number;poison?:number;core?:boolean };
+export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean;damageMul?:number;chain?:number;poison?:number;core?:boolean;source?:string };
 export type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
 export type Drop = {x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number};
 export type Telegraph = {x:number;y:number;tx:number;ty:number;life:number;max:number;kind:"line"|"circle";r:number};
 export type ToxicField = {x:number;y:number;r:number;life:number;stack:number;kills:number;tick:number};
 // 직업별 스킬 이펙트: 4x2 시트에서 index 프레임 하나를 위치/회전/확대/알파로 재생
 export type SkillFx = {sheet:CoreOrgan;index:number;x:number;y:number;size:number;life:number;max:number;rot:number;spin:number;grow:number};
+export type TelemetryChoice = {id:string|null;name:string;kind:CardKind|null;tier:AugmentTier|null;choiceType:string;time:number;stage:number;playerLevel:number;cardLevel:number|null};
+export type BossTelemetry = {stage:number;killTime:number;playerLevel:number;hpPercent:number};
+export type TelemetryState = {runId:string;startedAt:string;damageDealt:number;damageBySource:Record<string,number>;damageTaken:number;damageBlocked:number;hitsTaken:number;healingReceived:number;distanceTraveled:number;actionsUsed:number;choices:TelemetryChoice[];bossResults:BossTelemetry[]};
+export type RunTelemetry = {schemaVersion:1;runId:string;startedAt:string;endedAt:string;difficulty:Difficulty;debug:boolean;benchmark:boolean;result:"clear"|"defeat";class:MainClass;survivalSeconds:number;stage:number;playerLevel:number;kills:number;bossKills:number;damageDealt:number;damageBySource:Record<string,number>;damageTaken:number;damageBlocked:number;hitsTaken:number;healingReceived:number;distanceTraveled:number;actionsUsed:number;choices:TelemetryChoice[];bossResults:BossTelemetry[];cardLevels:Record<string,number>};
 export type Game = {
   w:number;h:number;worldW:number;worldH:number;t:number;stage:number;stageT:number;hp:number;maxHp:number;
   x:number;y:number;vx:number;vy:number;touchX:number;touchY:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
@@ -28,6 +32,7 @@ export type Game = {
   cardLevels:Record<string,number>;acquiredCards:string[];tierPity:number;lastAugmentBranch:string|null;augmentBranchStreak:number;meleeCombo:number;moveBuff:number;poisonTrailDistance:number;lastTrailX:number;lastTrailY:number;toxicCoreCooldown:number;killsSinceRegen:number;noDamage:number;shield:number;reviveAvailable:boolean;meleeRange:number;rangedDamageMul:number;chainBonus:number;poisonRadiusMul:number;poisonDurationMul:number;brainVolley:number;
   fatigue:number;unstableAim:number;recoveryPenalty:number;momentum:number;bossWeakTarget:OrganKey|null;lastFatigue:number;
   skillFx:SkillFx[];
-  debug:boolean;invuln:boolean;
+  debug:boolean;benchmark:boolean;invuln:boolean;
   galeMomentum:number;windTrailDist:number;galeKillLock:number;impactCharge:number;
+  telemetry:TelemetryState;
 };

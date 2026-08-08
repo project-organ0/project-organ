@@ -306,6 +306,10 @@ canvas { display: block; width: 100%; height: 100%; }
 .stat { padding: 15px 0; border-bottom: 1px solid var(--line); }
 .stat b { display:block; font-size: 25px; }
 .stat small { font: 700 10px/1 monospace; }
+.telemetry-summary { display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--ink); }
+.telemetry-summary>div { padding:12px 10px 12px 0;min-width:0; }
+.telemetry-summary small { display:block;font:700 9px/1 monospace;color:#68716d; }
+.telemetry-summary b { display:block;margin-top:5px;font:900 15px/1 monospace;overflow-wrap:anywhere; }
 .organ-report { border: 2px solid var(--ink); border-radius: 18px; padding: 20px; background: white; }
 .organ-line { display: grid; grid-template-columns: 56px 1fr 34px; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); font-weight: 800; }
 .organ-line:last-child { border-bottom: 0; }
@@ -313,6 +317,13 @@ canvas { display: block; width: 100%; height: 100%; }
 .bar i { display:block; height:100%; background: var(--coral); }
 .report-actions { display:flex; gap: 12px; margin-top: 22px; }
 .report-menu-btn { border:2px solid var(--ink);border-radius:999px;background:white;padding:14px 22px;font-weight:900;cursor:pointer; }
+.telemetry-export { display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:12px;padding:14px;border:1px solid var(--ink);background:#f7f8f2; }
+.telemetry-export>div small { display:block;font:800 9px/1 monospace;color:#68716d; }
+.telemetry-export>div b { display:block;margin-top:5px;font:900 11px/1.2 monospace; }
+.telemetry-export>button { border:1px solid var(--ink);border-radius:4px;background:white;padding:8px 10px;font:800 10px/1 monospace;cursor:pointer; }
+.telemetry-export details { grid-column:1/-1;border-top:1px solid var(--line);padding-top:8px; }
+.telemetry-export summary { cursor:pointer;font:800 10px/1 monospace; }
+.telemetry-export pre { max-height:220px;overflow:auto;margin:10px 0 0;padding:10px;background:#121817;color:#d8ff3e;font:10px/1.45 monospace;white-space:pre-wrap;overflow-wrap:anywhere; }
 
 .pause {
   position:absolute; z-index:25; inset:0; display:grid; place-items:center;
@@ -384,6 +395,9 @@ canvas { display: block; width: 100%; height: 100%; }
   .card h3 { margin-top: 14px; }
   .choice-head p { display:none; }
   .report-grid { grid-template-columns: 1fr; }
+  .telemetry-summary { grid-template-columns:1fr 1fr; }
+  .telemetry-export { grid-template-columns:1fr 1fr; }
+  .telemetry-export>div { grid-column:1/-1; }
   .difficulty { grid-template-columns:1fr; }
   .organs { flex-wrap: wrap; max-width: 75%; }
   .chemistry-panel { top:105px;width:180px; }
