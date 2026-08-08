@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSoundEngine } from "./game/audio";
-import { OrganGlyph } from "./game/icons";
+import { OrganGlyph, SoundGlyph, FullscreenGlyph } from "./game/icons";
 import type { CardKind, Choice, CoreOrgan, Difficulty, Game, MainClass, Mob, Mode, OrganKey, SkillFx } from "./game/types";
 
 const STAGES = [
@@ -681,8 +681,8 @@ export default function OrganGame() {
 
   return <main className="game-shell"><section className="frame">
     <canvas ref={canvas} width={1280} height={720} aria-label="장기 프로젝트 게임 화면"/>
-    {(mode==="start"||mode==="play")&&<><button className="sound-btn" onClick={()=>{const next=!isMuted;setIsMuted(next);sound.current??=createSoundEngine();sound.current.setMuted(next);if(!next)sound.current.play("pickup")}} aria-label={isMuted?"사운드 켜기":"사운드 끄기"}>{isMuted?"🔇 소리 켜기":"🔊 사운드"}</button>
-    <button className="fullscreen-btn" onClick={toggleFullscreen} aria-label={isFullscreen?"전체화면 종료":"전체화면 시작"}>{isFullscreen?"⊡ 나가기":"⛶ 전체화면"} <kbd>F</kbd></button></>}
+    {(mode==="start"||mode==="play")&&<><button className="sound-btn" onClick={()=>{const next=!isMuted;setIsMuted(next);sound.current??=createSoundEngine();sound.current.setMuted(next);if(!next)sound.current.play("pickup")}} aria-label={isMuted?"사운드 켜기":"사운드 끄기"}><SoundGlyph muted={isMuted}/> {isMuted?"소리 켜기":"사운드"}</button>
+    <button className="fullscreen-btn" onClick={toggleFullscreen} aria-label={isFullscreen?"전체화면 종료":"전체화면 시작"}><FullscreenGlyph on={isFullscreen}/> {isFullscreen?"나가기":"전체화면"} <kbd>F</kbd></button></>}
     {mode==="play"&&<div className="mobile-controls"><div ref={joystick} className="touch-stick" onPointerDown={moveStick} onPointerMove={moveStick} onPointerUp={releaseStick} onPointerCancel={releaseStick}><span style={{transform:`translate(${stick.x}px,${stick.y}px)`}}/></div><button className="touch-dash" onPointerDown={e=>{e.preventDefault();dashNow()}}><b>{actionName}</b><span>{Array.from({length:hud.maxDash},(_,i)=><i className={i<hud.dashCharges?"ready":""} key={i}/>)}</span></button></div>}
     <div className="rotate-device"><b>↻</b><span>가로 화면으로 돌려주세요</span><small>회전하는 동안 게임은 잠시 멈춥니다.</small></div>
     {mode==="start"&&<div className="screen menu-screen">

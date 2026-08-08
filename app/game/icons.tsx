@@ -1,5 +1,21 @@
 import type { OrganKey } from "./types";
 
+const ui = (size: number) => ({
+  viewBox: "0 0 24 24", width: size, height: size, fill: "none",
+  stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const,
+  "aria-hidden": true, style: { display: "inline-block", verticalAlign: "-0.16em" },
+});
+export function SoundGlyph({ muted, size = 13 }: { muted: boolean; size?: number }) {
+  return <svg {...ui(size)}><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z" fill="currentColor" stroke="none"/>{muted
+    ? <path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>
+    : <><path d="M15.5 8.8a4.5 4.5 0 0 1 0 6.4"/><path d="M18 6.5a8 8 0 0 1 0 11"/></>}</svg>;
+}
+export function FullscreenGlyph({ on, size = 13 }: { on: boolean; size?: number }) {
+  return <svg {...ui(size)}>{on
+    ? <path d="M9 4v3a2 2 0 0 1-2 2H4M15 4v3a2 2 0 0 0 2 2h3M9 20v-3a2 2 0 0 0-2-2H4M15 20v-3a2 2 0 0 1 2-2h3"/>
+    : <path d="M4 9V6a2 2 0 0 1 2-2h3M20 9V6a2 2 0 0 0-2-2h-3M4 15v3a2 2 0 0 0 2 2h3M20 15v3a2 2 0 0 1-2 2h-3"/>}</svg>;
+}
+
 // 5장기 커스텀 라인 글리프 (currentColor 상속, viewBox 24). 이모지 대체용.
 export function OrganGlyph({ k, size = 20 }: { k: OrganKey; size?: number }) {
   const common = {
