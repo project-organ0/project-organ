@@ -104,13 +104,15 @@ canvas { display: block; width: 100%; height: 100%; }
 .home-panel .title { font-size:clamp(54px,7vw,104px); }
 .home-panel .lede { margin:18px 0 24px; }
 .codex-panel h2 { margin:10px 0 8px;font-size:clamp(40px,5vw,66px);letter-spacing:-.06em; }
-.section-lede { max-width:650px;margin:0 0 24px;color:#586461;line-height:1.6; }
+.section-lede { max-width:650px;margin:0 0 24px;color:#586461;line-height:1.7; }
+/* 한글 본문 어절 단위 줄바꿈 (단어 중간 끊김 방지) */
+.meta-content,.choice-wrap,.report,.pause-menu { word-break:keep-all;overflow-wrap:break-word; }
 .organ-guide { display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:850px; }
 .organ-guide article { display:grid;grid-template-columns:58px 1fr;gap:14px;align-items:center;border:1.5px solid var(--ink);border-radius:14px;padding:14px;background:rgba(255,255,255,.72);box-shadow:inset 4px 0 0 var(--organ-color); }
 .organ-guide article>span { font-size:31px;text-align:center; }
 .organ-guide h3,.item-guide h3 { margin:2px 0 4px;font-size:19px; }
 .organ-guide small,.item-guide small { color:#6a7773;font:700 8px/1 monospace; }
-.organ-guide p,.item-guide p { margin:0;color:#5f6966;font-size:11px;line-height:1.35; }
+.organ-guide p,.item-guide p { margin:0;color:#5f6966;font-size:11px;line-height:1.6; }
 .item-guide { display:grid;grid-template-columns:repeat(4,1fr);gap:9px;max-width:900px; }
 .item-guide article { min-height:125px;border:1px solid var(--line);border-radius:13px;padding:13px;background:rgba(255,255,255,.68); }
 .item-guide article>span { display:block;margin-bottom:10px;font-size:25px; }
@@ -122,7 +124,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .chem-archive { display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:850px; }
 .chem-archive article { min-height:105px;border:1px solid var(--line);border-radius:12px;padding:13px;background:rgba(255,255,255,.7); }
 .chem-archive article>div { margin-bottom:7px;font-size:18px; }
-.chem-archive p { margin:6px 0 0;color:#65706d;font-size:9px;line-height:1.4; }
+.chem-archive p { margin:7px 0 0;color:#65706d;font-size:9px;line-height:1.6; }
 .chem-archive .locked { filter:grayscale(1);opacity:.5; }
 .hero-layout { display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;max-width:920px; }
 .hero-list { display:grid;gap:6px;align-content:start; }
@@ -145,16 +147,16 @@ canvas { display: block; width: 100%; height: 100%; }
 .hero-copy dl { display:grid;gap:10px;margin:0; }
 .hero-copy dl>div { border-top:1px solid var(--line);padding-top:9px; }
 .hero-copy dt { margin-bottom:5px;color:#66736f;font:800 8px/1 monospace;letter-spacing:.1em; }
-.hero-copy dd { margin:0;font-size:11px;line-height:1.5; }
+.hero-copy dd { margin:0;font-size:11px;line-height:1.6; }
 .hero-cards { display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:16px; }
 .hero-cards>div { border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:white; }
 .hero-cards b { display:block;margin-bottom:3px;font-size:11px; }
-.hero-cards span { color:#65706d;font-size:9px;line-height:1.35; }
+.hero-cards span { color:#65706d;font-size:9px;line-height:1.55; }
 .fusion-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:850px;margin-top:12px; }
 .fusion-grid article { min-height:94px;border:1px solid #a49bd8;border-radius:12px;padding:12px;background:linear-gradient(145deg,rgba(164,155,216,.12),rgba(168,212,58,.08)); }
 .fusion-grid article>div { margin-bottom:6px;font-size:16px; }
 .fusion-grid b { font-size:12px; }
-.fusion-grid p { margin:5px 0 0;color:#5f6966;font-size:9px;line-height:1.4; }
+.fusion-grid p { margin:6px 0 0;color:#5f6966;font-size:9px;line-height:1.6; }
 .item-guide .life-item { box-shadow:inset 3px 0 0 var(--coral); }
 .item-guide .life-item>span { letter-spacing:-3px; }
 
@@ -190,7 +192,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .chemistry-panel { position:absolute;z-index:6;left:18px;top:112px;width:210px;padding:13px;border:1px solid rgba(255,255,255,.18);border-radius:13px;background:rgba(7,12,12,.74);color:white;backdrop-filter:blur(9px);pointer-events:none; }
 .chemistry-panel > small { color:#8da09c;font:700 8px/1 monospace;letter-spacing:.11em; }
 .chemistry-panel h3 { margin:8px 0 5px;font-size:17px;letter-spacing:-.03em; }
-.chemistry-panel p { margin:0;color:#9eacab;font-size:10px;line-height:1.45; }
+.chemistry-panel p { margin:0;color:#9eacab;font-size:10px;line-height:1.55; }
 .chemistry-panel em { display:block;margin-top:9px;color:var(--acid);font:700 8px/1.3 monospace;font-style:normal; }
 .chemistry-panel.awakened { border-color:rgba(216,255,62,.5);box-shadow:0 0 22px rgba(216,255,62,.08); }
 .next-objective { position:absolute;z-index:7;left:50%;top:82px;transform:translateX(-50%);min-width:280px;padding:10px 16px;border:1px solid rgba(216,255,62,.45);border-radius:12px;background:rgba(7,12,12,.78);color:white;text-align:center;backdrop-filter:blur(9px);pointer-events:none;animation:objective-in .35s ease-out; }
@@ -233,7 +235,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .choice-evolve .card h3 { font-size:22px; }
 .choice-head { display: flex; justify-content: space-between; align-items: end; gap:24px; margin-bottom: 16px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,.18); }
 .choice-head h2 { margin: 5px 0 0; font-size: clamp(34px, 4.4vw, 58px); letter-spacing: -.055em; line-height: .92; }
-.choice-head p { max-width: 500px; margin: 0; color: #d4dbd9; font-size:13px; line-height: 1.45; }
+.choice-head p { max-width: 500px; margin: 0; color: #d4dbd9; font-size:13px; line-height: 1.6; }
 .choice-head p b { color:var(--acid);font:900 11px/1 monospace; }
 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .card {
@@ -262,9 +264,9 @@ canvas { display: block; width: 100%; height: 100%; }
 .choice-build .card h3 { margin-top:12px;font-size:28px; }
 .synergy-hint { display:block;margin-top:13px;padding-top:11px;border-top:1px solid rgba(255,255,255,.1);color:#8ea09c;font:700 9px/1.3 monospace; }
 .card h3 { margin: 12px 0 7px; font-size: 28px; letter-spacing: -.045em; }
-.card p { margin: 0; color: #c0c9c7; font-size: 14px; line-height: 1.45; }
+.card p { margin: 0; color: #c0c9c7; font-size: 14px; line-height: 1.6; }
 .decision-effects { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px; }
-.decision-effects strong,.decision-effects em { min-height:54px;padding:9px 10px;border:1px solid rgba(255,255,255,.13);font-size:12px;line-height:1.35;font-style:normal; }
+.decision-effects strong,.decision-effects em { min-height:56px;padding:10px 11px;border:1px solid rgba(255,255,255,.13);font-size:12px;line-height:1.55;font-style:normal; }
 .decision-effects strong { color:var(--acid);background:rgba(216,255,62,.06); }
 .decision-effects em { color:#ff9a89;background:rgba(255,113,91,.06); }
 .decision-effects small { display:block;margin-bottom:5px;color:#899894;font:800 8px/1 monospace;text-transform:uppercase;letter-spacing:.08em; }
@@ -312,7 +314,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .pause h2 { font-size:52px; margin:0 0 8px; letter-spacing:-.06em; }
 .pause-menu { width:min(760px,90%);display:grid;grid-template-columns:1.2fr .8fr;border:1px solid rgba(255,255,255,.25);border-radius:20px;overflow:hidden;background:#151d1c;text-align:left;box-shadow:0 20px 70px rgba(0,0,0,.45); }
 .pause-summary { padding:30px; }
-.pause-summary p { color:#a8b5b2;line-height:1.5; }
+.pause-summary p { color:#a8b5b2;line-height:1.6; }
 .pause-summary p b { color:var(--acid);font-size:18px; }
 .pause-organs { display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:22px; }
 .pause-organs span { padding:7px;border:1px solid rgba(255,255,255,.13);border-radius:8px;font:700 9px/1 monospace; }
@@ -360,8 +362,8 @@ canvas { display: block; width: 100%; height: 100%; }
   .card-art { height:42px;margin-top:6px; }.card-art span { width:39px;height:39px;border-radius:12px;font-size:20px; }
   .organ-tags { right:11px;top:11px; }.organ-tags span { padding:3px 5px;font-size:7px; }
   .card h3,.choice-build .card h3,.choice-evolve .card h3 { margin:7px 0 4px;font-size:20px; }
-  .card p { font-size:10px;line-height:1.3; }
-  .decision-effects { margin-top:7px;gap:5px; }.decision-effects strong,.decision-effects em { min-height:39px;padding:6px;font-size:9px;line-height:1.25; }
+  .card p { font-size:10px;line-height:1.5; }
+  .decision-effects { margin-top:7px;gap:5px; }.decision-effects strong,.decision-effects em { min-height:42px;padding:6px 7px;font-size:9px;line-height:1.45; }
   .decision-effects small { margin-bottom:3px;font-size:6px; }
   .confirm-hint { right:10px;bottom:7px;font-size:7px; }
 }
