@@ -4,7 +4,7 @@ import { useState } from "react";
 import "./assets.css";
 
 type Asset = { name:string; file:string; category:"characters"|"monsters"|"maps"|"effects"; size:string; cols?:number; rows?:number; note:string };
-type CardKind = "life"|"evolve"|"awaken"|"augment";
+type CardKind = "organ"|"class"|"fusion"|"life"|"common";
 type CardSpec = {name:string;kind:CardKind;organs:string[];effect:string;cost?:string;status:"live"|"planned"};
 
 const assets:Asset[] = [
@@ -15,7 +15,10 @@ const assets:Asset[] = [
   {name:"병원 캐릭터 V2",file:"/art/hospital-walk.png",category:"monsters",size:"1254 × 1254",cols:4,rows:4,note:"예약·처방·의료비·시간과 노화"},
   {name:"아이템",file:"/art/items.png",category:"effects",size:"1536 × 1024",cols:4,rows:3,note:"경험·회복·장기 드롭"},
   {name:"원형 투사체",file:"/art/projectiles.png",category:"effects",size:"1774 × 887",cols:4,rows:2,note:"플레이어·적·노화 보스 탄환"},
-  {name:"플레이어 전투 이펙트",file:"/art/player-vfx.png",category:"effects",size:"1536 × 1024",cols:4,rows:2,note:"이동·대시·발사·피격과 심장·뇌·간 활성 효과"},
+  {name:"플레이어 전투 이펙트",file:"/art/player-vfx.png",category:"effects",size:"1536 × 1024",cols:4,rows:2,note:"범용 이동·대시·발사·피격 효과"},
+  {name:"심장 스킬 이펙트",file:"/art/vfx/heart-skills-v1.png",category:"effects",size:"1774 × 887",cols:4,rows:2,note:"콤보·4타 충격파·과부하·돌진·심장 표식·각성 파동"},
+  {name:"뇌 스킬 이펙트",file:"/art/vfx/brain-skills-v1.png",category:"effects",size:"1774 × 887",cols:4,rows:2,note:"코어·발사 섬광·연쇄·집중·폭주·전염·각성 파동"},
+  {name:"간 스킬 이펙트",file:"/art/vfx/liver-skills-v1.png",category:"effects",size:"1774 × 887",cols:4,rows:2,note:"발자국·독 지대 1~3단계·중독 표식·파열·추적·각성 파동"},
   {name:"학교 맵",file:"/art/maps/school.png",category:"maps",size:"WORLD MAP",note:"0–20세 전투 공간"},
   {name:"회사 맵",file:"/art/maps/company.png",category:"maps",size:"WORLD MAP",note:"20–40세 전투 공간"},
   {name:"아파트 맵",file:"/art/maps/apartment.png",category:"maps",size:"WORLD MAP",note:"40–60세 전투 공간"},
@@ -23,37 +26,37 @@ const assets:Asset[] = [
 ];
 
 const cardSpecs:CardSpec[] = ([
-  {name:"심장 강화",kind:"evolve",organs:["심장"],effect:"심장 레벨 +1 · Lv.3에서 격투가 각성",status:"live"},
-  {name:"신경 확장",kind:"evolve",organs:["뇌"],effect:"뇌 레벨 +1 · Lv.3에서 에너지술사 각성",status:"live"},
-  {name:"간 활성화",kind:"evolve",organs:["간"],effect:"간 레벨 +1 · Lv.3에서 독술사 각성",status:"live"},
-  {name:"아드레날린",kind:"augment",organs:["심장"],effect:"근거리에서 공격 속도 +25%",status:"planned"},
-  {name:"심박 충격",kind:"augment",organs:["심장"],effect:"4번째 근접 공격이 충격파로 변화",status:"planned"},
-  {name:"과부하 연타",kind:"augment",organs:["심장"],effect:"동일 대상을 5회 공격하면 강력한 일격",status:"planned"},
-  {name:"혈류 가속",kind:"augment",organs:["심장"],effect:"근거리 처치 후 2초간 이동 가속",status:"planned"},
-  {name:"시냅스 증식",kind:"augment",organs:["뇌"],effect:"실제 에너지 코어 +1",status:"planned"},
-  {name:"연쇄 사고",kind:"augment",organs:["뇌"],effect:"코어 공격이 가까운 적에게 연쇄",status:"planned"},
-  {name:"집중 사고",kind:"augment",organs:["뇌"],effect:"강한 적 우선 조준 · 엘리트 피해 증가",status:"planned"},
-  {name:"사고 폭주",kind:"augment",organs:["뇌"],effect:"5킬마다 모든 코어가 일제 사격",status:"planned"},
-  {name:"독성 발자국",kind:"augment",organs:["간"],effect:"이동 경로에 독 흔적을 더 촘촘히 생성",status:"planned"},
-  {name:"오염 중첩",kind:"augment",organs:["간"],effect:"같은 길을 지나면 독 지대 강화",status:"planned"},
-  {name:"독성 파열",kind:"augment",organs:["간"],effect:"중독된 적 처치 시 주변에 독 폭발",status:"planned"},
-  {name:"농축 독",kind:"augment",organs:["간"],effect:"독 지대 체류 시간에 따라 중독 증가",status:"planned"},
-  {name:"뇌근 동기화",kind:"awaken",organs:["심장","뇌"],effect:"격투 피니시마다 추적 에너지탄 발사",status:"planned"},
-  {name:"독성 파이터",kind:"awaken",organs:["심장","간"],effect:"주먹으로 독을 쌓고 피니시에서 폭발",status:"planned"},
-  {name:"맥동 코어",kind:"awaken",organs:["뇌","심장"],effect:"적과 가까울수록 코어 공격 속도 증가",status:"planned"},
-  {name:"신경 독성",kind:"awaken",organs:["뇌","간"],effect:"중독 대상을 우선 조준하고 독 전염",status:"planned"},
-  {name:"독성 폭주",kind:"awaken",organs:["간","심장"],effect:"독 지대 3킬마다 영역 폭발",status:"planned"},
-  {name:"추적 독성",kind:"awaken",organs:["간","뇌"],effect:"독성 코어가 적을 추적해 새 지대 생성",status:"planned"},
-  {name:"밤샘 공부",kind:"life",organs:["뇌"],effect:"자동 공격 연쇄 +1 · 공격 주기 감소",cost:"최대 체력 -15%",status:"planned"},
-  {name:"운동부 입단",kind:"life",organs:["심장"],effect:"근접 범위 증가 · 근거리 처치 후 가속",cost:"원거리 피해 -10%",status:"planned"},
-  {name:"회식의 제왕",kind:"life",organs:["간"],effect:"독 지대 범위와 지속시간 증가",cost:"회복 효과 -25%",status:"planned"},
-  {name:"세포 분열",kind:"evolve",organs:["공용"],effect:"사망 시 체력 40%로 1회 부활",status:"planned"},
-  {name:"재생 인자",kind:"evolve",organs:["공용"],effect:"20킬마다 최대 체력의 8% 회복",status:"planned"},
-  {name:"세포막 강화",kind:"evolve",organs:["공용"],effect:"8초간 무피해 시 보호막 생성",status:"planned"},
-] as CardSpec[]).map(card=>({...card,status:"live" as const}));
+  {name:"심장 강화",kind:"organ",organs:["심장"],effect:"심장 레벨 +1 · Lv.3에서 격투가 각성"},
+  {name:"신경 확장",kind:"organ",organs:["뇌"],effect:"뇌 레벨 +1 · Lv.3에서 에너지술사 각성"},
+  {name:"간 활성화",kind:"organ",organs:["간"],effect:"간 레벨 +1 · Lv.3에서 독술사 각성"},
+  {name:"아드레날린",kind:"class",organs:["심장"],effect:"근거리에서 공격 속도 +25%"},
+  {name:"심박 충격",kind:"class",organs:["심장"],effect:"4번째 근접 공격이 충격파로 변화"},
+  {name:"과부하 연타",kind:"class",organs:["심장"],effect:"동일 대상을 5회 공격하면 강력한 일격"},
+  {name:"혈류 가속",kind:"class",organs:["심장"],effect:"근거리 처치 후 2초간 이동 가속"},
+  {name:"시냅스 증식",kind:"class",organs:["뇌"],effect:"실제 에너지 코어 +1"},
+  {name:"연쇄 사고",kind:"class",organs:["뇌"],effect:"코어 공격이 가까운 적에게 연쇄"},
+  {name:"집중 사고",kind:"class",organs:["뇌"],effect:"강한 적 우선 조준 · 엘리트 피해 증가"},
+  {name:"사고 폭주",kind:"class",organs:["뇌"],effect:"5킬마다 모든 코어가 일제 사격"},
+  {name:"독성 발자국",kind:"class",organs:["간"],effect:"이동 경로에 독 흔적을 더 촘촘히 생성"},
+  {name:"오염 중첩",kind:"class",organs:["간"],effect:"같은 길을 지나면 독 지대 강화"},
+  {name:"독성 파열",kind:"class",organs:["간"],effect:"중독된 적 처치 시 주변에 독 폭발"},
+  {name:"농축 독",kind:"class",organs:["간"],effect:"독 지대 체류 시간에 따라 중독 증가"},
+  {name:"뇌근 동기화",kind:"fusion",organs:["심장","뇌"],effect:"격투 피니시마다 추적 에너지탄 발사"},
+  {name:"독성 파이터",kind:"fusion",organs:["심장","간"],effect:"주먹으로 독을 쌓고 피니시에서 폭발"},
+  {name:"맥동 코어",kind:"fusion",organs:["뇌","심장"],effect:"적과 가까울수록 코어 공격 속도 증가"},
+  {name:"신경 독성",kind:"fusion",organs:["뇌","간"],effect:"중독 대상을 우선 조준하고 독 전염"},
+  {name:"독성 폭주",kind:"fusion",organs:["간","심장"],effect:"독 지대 3킬마다 영역 폭발"},
+  {name:"추적 독성",kind:"fusion",organs:["간","뇌"],effect:"독성 코어가 적을 추적해 새 지대 생성"},
+  {name:"밤샘 공부",kind:"life",organs:["뇌"],effect:"자동 공격 연쇄 +1 · 공격 주기 감소",cost:"최대 체력 -15%"},
+  {name:"운동부 입단",kind:"life",organs:["심장"],effect:"근접 범위 증가 · 근거리 처치 후 가속",cost:"원거리 피해 -10%"},
+  {name:"회식의 제왕",kind:"life",organs:["간"],effect:"독 지대 범위와 지속시간 증가",cost:"회복 효과 -25%"},
+  {name:"세포 분열",kind:"common",organs:["공용"],effect:"사망 시 체력 40%로 1회 부활"},
+  {name:"재생 인자",kind:"common",organs:["공용"],effect:"20킬마다 최대 체력의 8% 회복"},
+  {name:"세포막 강화",kind:"common",organs:["공용"],effect:"8초간 무피해 시 보호막 생성"},
+] as Omit<CardSpec,"status">[]).map(card=>({...card,status:"live" as const}));
 
 const labels={all:"전체",characters:"캐릭터",monsters:"몬스터",maps:"배경",effects:"아이템·효과"} as const;
-const cardLabels={all:"전체 카드",life:"생활 선택",evolve:"세포 진화",awaken:"빌드 각성",augment:"전투 증강"} as const;
+const cardLabels={all:"전체 카드",organ:"장기 성장",class:"직업 전용",fusion:"융합",life:"생활 선택",common:"공용 생존"} as const;
 
 export default function AssetsPage(){
   const [filter,setFilter]=useState<keyof typeof labels>("all");

@@ -216,7 +216,7 @@
   border: 1px solid rgba(16, 21, 21, 0.28);
   background: #f5f5ed;
 }
-.dev-choice-card.awaken {
+.dev-choice-card.fusion {
   background: #151c1b;
   color: white;
   border-color: #8e7bd1;
@@ -255,7 +255,7 @@
 .dev-choice-card strong {
   color: #54721b;
 }
-.dev-choice-card.awaken strong {
+.dev-choice-card.fusion strong {
   color: #d8ff3e;
 }
 .dev-choice-card em {
