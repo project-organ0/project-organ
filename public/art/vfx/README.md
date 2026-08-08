@@ -45,6 +45,28 @@ ctx.drawImage(image, col * cellW, row * cellH, cellW, cellH, x, y, width, height
 6. 추적 독성 코어
 7. 간 각성 파동
 
+## lung-skills-v1.png
+
+0. 기본 바람 칼날
+1. 교차 바람 칼날
+2. 이동 잔상
+3. 관통 대시
+4. 원형 넉백 돌풍
+5. 회오리 폭발
+6. 지속 이동 바람 오라
+7. 폐 각성 사이클론
+
+## muscle-skills-v1.png
+
+0. 기본 중량 타격
+1. 광역 물리 충격파
+2. 전방 넉백 압력파
+3. 적 충돌 폭발
+4. 분노 충전 오라
+5. 지면 강타
+6. 에너지 건틀릿
+7. 근육 각성 폭발
+
 ## 사용 원칙
 
 - 이펙트는 `screen` 또는 `lighter` 합성 모드가 잘 맞는다.
@@ -52,4 +74,3 @@ ctx.drawImage(image, col * cellW, row * cellH, cellW, cellH, x, y, width, height
 - 강한 스킬은 `작은 사전 섬광 → 본 이펙트 확장 → 잔광 소멸` 3단계로 연출한다.
 - 과도하게 크게 상시 표시하지 말고 4타, 폭주, 파열, 각성처럼 중요한 순간에 집중한다.
 - 기존 `public/art/player-vfx.png`는 범용 이동·대시·피격용으로 유지한다.
-

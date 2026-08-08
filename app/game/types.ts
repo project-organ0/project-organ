@@ -1,12 +1,12 @@
 export type OrganKey = "뇌" | "심장" | "폐" | "간" | "근육";
-export type CoreOrgan = "heart" | "brain" | "liver";
+export type CoreOrgan = "heart" | "brain" | "liver" | "lung" | "muscle";
 export type MainClass = CoreOrgan | null;
 export type Organs = Record<OrganKey, number>;
 export type Mode = "start" | "play" | "choice" | "pause" | "report";
 export type Difficulty = "easy" | "normal" | "hard";
 export type CardKind = "organ" | "class" | "fusion" | "life" | "common" | "awakening";
 export type Choice = { id?:string;name:string;desc:string;effect:string;cost?:string;apply:(g:Game)=>void;organs?:OrganKey[];chemistry?:string;organLevel?:CoreOrgan;awakening?:CoreOrgan|"hold";kind?:CardKind;maxLevel?:number };
-export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number;poisonStacks:number;poisonTick:number;overloadHits:number;heartMark:number };
+export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number;poisonStacks:number;poisonTick:number;overloadHits:number;heartMark:number;kbX:number;kbY:number;collideCd:number };
 export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean;damageMul?:number;chain?:number;poison?:number;core?:boolean };
 export type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
 export type Drop = {x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number};
@@ -29,4 +29,5 @@ export type Game = {
   fatigue:number;unstableAim:number;recoveryPenalty:number;momentum:number;bossWeakTarget:OrganKey|null;lastFatigue:number;
   skillFx:SkillFx[];
   debug:boolean;invuln:boolean;
+  galeMomentum:number;windTrailDist:number;galeKillLock:number;impactCharge:number;
 };

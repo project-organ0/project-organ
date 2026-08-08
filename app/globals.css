@@ -288,6 +288,10 @@ canvas { display: block; width: 100%; height: 100%; }
 .bmark.core u { width:8px;height:3px;border-radius:2px;background:rgba(255,255,255,.2);text-decoration:none; }
 .bmark.core u.on { background:var(--core-color);box-shadow:0 0 5px var(--core-color); }
 .bmark.core.awoken>span { border-color:var(--core-color);box-shadow:0 0 12px var(--core-color);background:color-mix(in srgb,var(--core-color) 22%,rgba(0,0,0,.42)); }
+.class-gauge { margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12); }
+.class-gauge span { display:block;margin-bottom:4px;color:var(--core-color);font:800 8px/1 monospace;letter-spacing:.08em; }
+.class-gauge b { display:block;height:7px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden; }
+.class-gauge b i { display:block;height:100%;background:var(--core-color);box-shadow:0 0 8px var(--core-color);transition:width .12s; }
 @keyframes confirm-pulse { 50% { opacity:.45 } }
 
 .report { overflow: auto; align-content: start; padding-top: 48px; }

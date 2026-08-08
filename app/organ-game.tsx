@@ -24,12 +24,16 @@ const CORE_META:Record<CoreOrgan,{key:OrganKey;icon:string;color:string;classNam
   heart:{key:"심장",icon:"♥",color:"#ff715b",className:"격투가",action:"PUNCH"},
   brain:{key:"뇌",icon:"🧠",color:"#a49bd8",className:"에너지술사",action:"CORE"},
   liver:{key:"간",icon:"◆",color:"#a8d43a",className:"독술사",action:"TOXIN"},
+  lung:{key:"폐",icon:"🫁",color:"#4ee5e1",className:"질풍술사",action:"DASH"},
+  muscle:{key:"근육",icon:"💪",color:"#d8ff3e",className:"파괴자",action:"SLAM"},
 };
 // 3직업 도감 데이터 (form: player-forms 시트 인덱스, question: 핵심 플레이 판단)
 const CLASS_CODEX:{core:CoreOrgan;form:number;question:string;passive:string;play:string}[] = [
   {core:"heart",form:3,question:"적에게 얼마나 가까이 붙을 것인가",passive:"가까운 적을 자동으로 근접 공격하며 4타 콤보를 쌓습니다.",play:"거리를 좁혀 콤보를 유지하고 4타 충격파와 과부하 강타로 밀집한 적을 부순다."},
   {core:"brain",form:1,question:"적과 어떤 거리를 유지할 것인가",passive:"주위를 도는 에너지 코어가 스스로 적을 사격합니다.",play:"안전 거리를 유지하며 코어 수와 연쇄를 늘리고 5킬 폭주로 화력을 터뜨린다."},
   {core:"liver",form:5,question:"적을 어디로 유도할 것인가",passive:"이동 경로에 독 지대를 남겨 밟고 지난 적을 서서히 녹입니다.",play:"동선을 설계해 독 지대를 겹치고 중독된 적의 죽음으로 연쇄 폭발을 일으킨다."},
+  {core:"lung",form:2,question:"얼마나 멈추지 않고 이동할 것인가",passive:"계속 이동하면 질풍 모멘텀이 차오르고 이동 방향으로 바람 칼날이 자동 발생합니다.",play:"멈추지 않고 흐르며 바람 칼날을 겹치고, SPACE 관통 대시로 대열을 가르고 돌풍을 터뜨린다."},
+  {core:"muscle",form:6,question:"얼마나 많은 적을 모아 한 번에 터뜨릴 것인가",passive:"가까운 적을 느리고 넓게 강타해 밀쳐내고, 밀린 적이 서로 부딪히면 추가 피해를 받습니다.",play:"적을 뭉치게 유도하고 충전을 쌓아 SPACE 지면 강타로 무리를 한 번에 폭발시킨다."},
 ];
 const DIFFICULTY = {
   easy: { name:"가벼움", hp:.72, speed:.88, count:.72, damage:.65 },
@@ -101,6 +105,8 @@ const ORGAN_GROWTH:Choice[] = [
   {id:"organ_heart",kind:"organ",name:"심장 강화",desc:"심장이 더욱 강하게 뜁니다.",effect:"심장 레벨 +1 · Lv.3에서 격투가 각성 가능",organs:["심장"],organLevel:"heart",apply:g=>{g.organLevels.heart=Math.min(3,g.organLevels.heart+1);g.organs.심장=Math.min(100,g.organs.심장+8)}},
   {id:"organ_brain",kind:"organ",name:"신경 확장",desc:"신경망의 처리 능력이 확장됩니다.",effect:"뇌 레벨 +1 · Lv.3에서 에너지술사 각성 가능",organs:["뇌"],organLevel:"brain",apply:g=>{g.organLevels.brain=Math.min(3,g.organLevels.brain+1);g.organs.뇌=Math.min(100,g.organs.뇌+8)}},
   {id:"organ_liver",kind:"organ",name:"간 활성화",desc:"체내 독성 물질을 전투 에너지로 변환합니다.",effect:"간 레벨 +1 · Lv.3에서 독술사 각성 가능",organs:["간"],organLevel:"liver",apply:g=>{g.organLevels.liver=Math.min(3,g.organLevels.liver+1);g.organs.간=Math.min(100,g.organs.간+8)}},
+  {id:"organ_lung",kind:"organ",name:"폐활량 강화",desc:"호흡이 깊어지고 몸이 바람을 다루기 시작합니다.",effect:"폐 레벨 +1 · Lv.3에서 질풍술사 각성 가능",organs:["폐"],organLevel:"lung",apply:g=>{g.organLevels.lung=Math.min(3,g.organLevels.lung+1);g.organs.폐=Math.min(100,g.organs.폐+8)}},
+  {id:"organ_muscle",kind:"organ",name:"근섬유 강화",desc:"근섬유가 굵어지고 타격에 무게가 실립니다.",effect:"근육 레벨 +1 · Lv.3에서 파괴자 각성 가능",organs:["근육"],organLevel:"muscle",apply:g=>{g.organLevels.muscle=Math.min(3,g.organLevels.muscle+1);g.organs.근육=Math.min(100,g.organs.근육+8)}},
 ];
 type CardDef={id:string;name:string;kind:CardKind;organs:OrganKey[];main?:CoreOrgan;support?:CoreOrgan;maxLevel:number;desc:string;effect:string;cost?:string;apply?:(g:Game)=>void};
 const CLASS_CARDS:CardDef[]=[
@@ -116,6 +122,14 @@ const CLASS_CARDS:CardDef[]=[
   {id:"liver_overlap",name:"오염 중첩",kind:"class",organs:["간"],main:"liver",maxLevel:3,desc:"같은 길을 다시 지나가면 독 지대가 강해집니다.",effect:"최대 3중첩 · 중첩마다 범위 +15%"},
   {id:"liver_rupture",name:"독성 파열",kind:"class",organs:["간"],main:"liver",maxLevel:3,desc:"중독된 적이 죽으면 주변에 독을 터뜨립니다.",effect:"중독 중첩 비례 폭발 · 주변 적 중독"},
   {id:"liver_concentrated",name:"농축 독",kind:"class",organs:["간"],main:"liver",maxLevel:3,desc:"독 지대에 오래 머문 적일수록 빠르게 중독됩니다.",effect:"지대 안에서 1초마다 독 중첩 +1"},
+  {id:"lung_bladewind",name:"칼바람",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"일정 거리마다 이동 방향으로 바람 칼날을 날립니다.",effect:"이동 거리마다 관통 바람 칼날 발사 · 레벨마다 발사 간격 감소"},
+  {id:"lung_afterimage",name:"잔상 호흡",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"모멘텀이 가득 찰수록 남긴 잔상이 적을 벱니다.",effect:"최대 모멘텀에서 이동 잔상이 주변 적에게 지속 피해"},
+  {id:"lung_eyestorm",name:"태풍의 눈",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"계속 이동하면 주변에 작은 회오리가 돕니다.",effect:"이동 중 주기적으로 회오리 생성 · 레벨마다 개수 증가"},
+  {id:"lung_circulation",name:"순환 가속",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"적을 쓰러뜨리면 숨 돌릴 틈 없이 더 빨라집니다.",effect:"처치 시 2초간 모멘텀 감소 정지 + 이동 속도 증가"},
+  {id:"muscle_overcontract",name:"과잉 수축",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"근수축이 폭발적으로 커집니다.",effect:"기본 강타 범위와 넉백 증가 · 레벨마다 강화"},
+  {id:"muscle_chaincollide",name:"연쇄 충돌",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"밀린 적이 부딪히면 충격이 터집니다.",effect:"적 충돌 시 범위 폭발 피해 · 레벨마다 폭발 확대"},
+  {id:"muscle_painfuel",name:"고통 연료",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"맞을수록 다음 강타가 무거워집니다.",effect:"피해를 받으면 지면 강타 충전 증가"},
+  {id:"muscle_gravity",name:"중력 압박",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"강타 직전 적을 끌어모아 함께 터뜨립니다.",effect:"지면 강타 전 주변 적을 짧게 끌어당김"},
 ];
 const FUSION_CARDS:CardDef[]=[
   {id:"fusion_heart_brain",name:"뇌근 동기화",kind:"fusion",organs:["심장","뇌"],main:"heart",support:"brain",maxLevel:1,desc:"주먹과 신경 코어가 동기화됩니다.",effect:"콤보 피니시마다 추적 에너지탄 발사"},
@@ -183,7 +197,7 @@ function fresh(difficulty:Difficulty="normal"):Game {
   return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,touchX:0,touchY:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],warnings:[],fields:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,armor:3,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,runner:0,
-    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,zone:"중앙",zoneT:0,portalCd:0,route:[],lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,invuln:false};
+    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,zone:"중앙",zoneT:0,portalCd:0,route:[],lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0,lung:0,muscle:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,invuln:false,galeMomentum:0,windTrailDist:0,galeKillLock:0,impactCharge:0};
 }
 // 직업 전용 스킬 이펙트를 큐에 넣는다. dur 동안 grow 배율까지 확대되며 알파가 사라진다.
 function pushSkill(g:Game,sheet:CoreOrgan,index:number,x:number,y:number,size:number,dur:number,opts:{rot?:number;spin?:number;grow?:number}={}){
@@ -203,7 +217,7 @@ export default function OrganGame() {
   const sound = useRef<ReturnType<typeof createSoundEngine>|null>(null);
   const raf = useRef(0);
   const [mode,setMode]=useState<Mode>("start");
-  const [hud,setHud]=useState({hp:100,max:100,t:0,stage:0,organs:game.current.organs,organLevels:{heart:0,brain:0,liver:0},mainClass:null as MainClass,level:1,xp:0,nextXp:12,loot:"",effect:"",chemistries:[] as string[],dashCharges:1,maxDash:1,armor:3,zone:"중앙" as OrganKey|"중앙",zoneT:0});
+  const [hud,setHud]=useState({hp:100,max:100,t:0,stage:0,organs:game.current.organs,organLevels:{heart:0,brain:0,liver:0,lung:0,muscle:0},mainClass:null as MainClass,level:1,xp:0,nextXp:12,loot:"",effect:"",chemistries:[] as string[],dashCharges:1,maxDash:1,armor:3,zone:"중앙" as OrganKey|"중앙",zoneT:0});
   const [isFullscreen,setIsFullscreen]=useState(false);
   const [isMuted,setIsMuted]=useState(false);
   const [menuSection,setMenuSection]=useState<"home"|"heroes"|"organs"|"items"|"archive">("home");
@@ -279,7 +293,7 @@ export default function OrganGame() {
     if(gene&&ORGAN_KEYS.includes(gene)) g.organs[gene]+=8;
     // 개발용 빠른 검증 모드: /?debug=heart|brain|liver (&fusion=<보조장기> &common=1 &life=1)
     const dbg=new URLSearchParams(window.location.search).get("debug") as CoreOrgan|null;
-    if(dbg==="heart"||dbg==="brain"||dbg==="liver"){
+    if(dbg&&(["heart","brain","liver","lung","muscle"] as CoreOrgan[]).includes(dbg)){
       const params=new URLSearchParams(window.location.search);
       g.debug=true;g.organLevels[dbg]=3;g.mainClass=dbg;g.awakened=true;
       for(const c of CLASS_CARDS)if(c.main===dbg){g.cardLevels[c.id]=c.maxLevel;g.acquiredCards.push(c.id)}
@@ -315,6 +329,18 @@ export default function OrganGame() {
       g.castFx=.3;g.castAngle=Math.atan2(dy,dx);g.shake=6;g.effect="뇌 액션 · 코어 집중 사격";g.effectT=1;sound.current?.play("shot");
     }else if(active==="liver"){
       g.fields.push({x:g.x,y:g.y,r:135*g.poisonRadiusMul,life:5.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.fields=g.fields.slice(-30);pushSkill(g,"liver",3,g.x,g.y,190,.5,{grow:1.6});g.shake=8;g.effect="간 액션 · 독성 영역 점화";g.effectT=1;sound.current?.play("heart");
+    }else if(active==="lung"){
+      g.vx=dx*940;g.vy=dy*940;g.inv=.34;g.dashFx=.4;g.galeMomentum=3.5;g.shake=7;
+      const gx=g.x+dx*185,gy=g.y+dy*185;
+      for(const m of g.mobs){const tx=m.x-g.x,ty=m.y-g.y,d=Math.hypot(tx,ty),facing=(tx*dx+ty*dy)/Math.max(1,d);if(d<210&&facing>.15){m.hp-=g.damage*1.8;m.hit=.12;const gd=Math.hypot(m.x-gx,m.y-gy)||1;m.kbX+=(m.x-gx)/gd*230;m.kbY+=(m.y-gy)/gd*230}}
+      pushSkill(g,"lung",3,g.x+dx*60,g.y+dy*60,150,.34,{rot:Math.atan2(dy,dx),grow:1.7});pushSkill(g,"lung",4,gx,gy,155,.5,{grow:1.9});
+      g.effect="폐 액션 · 관통 대시 · 돌풍";g.effectT=1;sound.current?.play("dash");
+    }else if(active==="muscle"){
+      const power=g.impactCharge,radius=145+power*165,dmg=g.damage*(1.6+power*3.2),kb=340+power*380;
+      if(cardLevel(g,"muscle_gravity")){for(const m of g.mobs){const d=Math.hypot(m.x-g.x,m.y-g.y);if(d<radius*1.5&&d>1){m.x+=(g.x-m.x)/d*Math.min(d,80);m.y+=(g.y-m.y)/d*Math.min(d,80)}}}
+      for(const m of g.mobs){const d=Math.hypot(m.x-g.x,m.y-g.y);if(d<radius+m.r){m.hp-=dmg;m.hit=.14;const nx=(m.x-g.x)/(d||1),ny=(m.y-g.y)/(d||1);m.kbX+=nx*kb;m.kbY+=ny*kb}}
+      g.impactCharge=0;g.shake=10+power*12;pushSkill(g,"muscle",5,g.x,g.y,radius*2,.55,{grow:1.5});pushSkill(g,"muscle",7,g.x,g.y,radius*1.3,.4,{grow:1.6});
+      g.effect=`근육 액션 · 지면 강타 ${Math.round(power*100)}%`;g.effectT=1;sound.current?.play("boss");
     }else{
       g.vx=dx*760;g.vy=dy*760;g.inv=.28;g.dashFx=.34;g.shake=7;sound.current?.play("dash");
     }
@@ -352,7 +378,9 @@ export default function OrganGame() {
     const heartSkillArt=new Image();heartSkillArt.src="/art/vfx/heart-skills-v1.png";
     const brainSkillArt=new Image();brainSkillArt.src="/art/vfx/brain-skills-v1.png";
     const liverSkillArt=new Image();liverSkillArt.src="/art/vfx/liver-skills-v1.png";
-    const skillSheets:Record<CoreOrgan,HTMLImageElement>={heart:heartSkillArt,brain:brainSkillArt,liver:liverSkillArt};
+    const lungSkillArt=new Image();lungSkillArt.src="/art/vfx/lung-skills-v1.png";
+    const muscleSkillArt=new Image();muscleSkillArt.src="/art/vfx/muscle-skills-v1.png";
+    const skillSheets:Record<CoreOrgan,HTMLImageElement>={heart:heartSkillArt,brain:brainSkillArt,liver:liverSkillArt,lung:lungSkillArt,muscle:muscleSkillArt};
     const drawEnvironment=(g:Game,camX:number,camY:number)=>{
       const map=stageMaps[g.stage];
       ctx.fillStyle=["#243a35","#30383d","#3c3931","#d9e4df"][g.stage];
@@ -368,7 +396,7 @@ export default function OrganGame() {
       const x=Math.max(edge,Math.min(g.worldW-edge,g.x+Math.cos(angle)*distance));
       const y=Math.max(edge,Math.min(g.worldH-edge,g.y+Math.sin(angle)*distance));
       const diff=DIFFICULTY[g.difficulty],territory=1+Math.max(0,g.zoneT-25)*.008,base=(20+g.stage*12+g.t*.035)*diff.hp*territory;
-      g.mobs.push({x,y,r:(boss?(g.stage===3?52:38):10+Math.random()*8)*(coarse ? .8 : 1),hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,elite:boss||Math.random()<.08+g.stage*.025+Math.min(.12,g.zoneT*.0015),kind:Math.floor(Math.random()*3),hit:0,skill:1.5+Math.random()*3,cast:0,charge:0,aimX:x,aimY:y,toxin:0,poisonStacks:0,poisonTick:0,overloadHits:0,heartMark:0});
+      g.mobs.push({x,y,r:(boss?(g.stage===3?52:38):10+Math.random()*8)*(coarse ? .8 : 1),hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,elite:boss||Math.random()<.08+g.stage*.025+Math.min(.12,g.zoneT*.0015),kind:Math.floor(Math.random()*3),hit:0,skill:1.5+Math.random()*3,cast:0,charge:0,aimX:x,aimY:y,toxin:0,poisonStacks:0,poisonTick:0,overloadHits:0,heartMark:0,kbX:0,kbY:0,collideCd:0});
     };
     const burst=(g:Game,x:number,y:number,color:string,n=7)=>{for(let i=0;i<n;i++){const a=Math.random()*6.28,s=40+Math.random()*150;g.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.35,color})}};
     const loop=(now:number)=>{
@@ -397,7 +425,7 @@ export default function OrganGame() {
         if(g.t>=480){const boss=g.mobs.find(m=>m.boss);if(!boss)spawn(g,true)}
         const dx=(g.keys.has("KeyD")?1:0)-(g.keys.has("KeyA")?1:0)+g.touchX,dy=(g.keys.has("KeyS")?1:0)-(g.keys.has("KeyW")?1:0)+g.touchY,n=Math.hypot(dx,dy)||1;
         const moving=Boolean(dx||dy);
-        const moveSpeed=g.speed*(g.moveBuff>0?1.2:1);
+        const moveSpeed=g.speed*(g.moveBuff>0?1.2:1)*(g.mainClass==="lung"?1+g.galeMomentum*.08:1);
         if(g.inv<=.12){const power=Math.min(1,n);g.vx=dx/n*moveSpeed*power;g.vy=dy/n*moveSpeed*power}
         g.x=Math.max(18,Math.min(g.worldW-18,g.x+g.vx*dt));g.y=Math.max(18,Math.min(g.worldH-18,g.y+g.vy*dt));
         if(g.mainClass==="liver"&&moving){
@@ -405,9 +433,19 @@ export default function OrganGame() {
           const interval=cardLevel(g,"liver_footprints")?58*Math.pow(.82,cardLevel(g,"liver_footprints")-1):82;
           if(g.poisonTrailDistance>=interval){g.poisonTrailDistance=0;const overlap=cardLevel(g,"liver_overlap")?g.fields.find(f=>Math.hypot(f.x-g.x,f.y-g.y)<f.r*.58):undefined;if(overlap){overlap.stack=Math.min(3,overlap.stack+1);overlap.r*=1.15;overlap.life=Math.max(overlap.life,4.8*g.poisonDurationMul);g.effect=`오염 중첩 · ${overlap.stack}단계`;g.effectT=.7}else g.fields.push({x:g.x,y:g.y,r:74*g.poisonRadiusMul,life:(4.8+(cardLevel(g,"liver_footprints")*.9))*g.poisonDurationMul,stack:1,kills:0,tick:0});g.fields=g.fields.slice(-36);pushSkill(g,"liver",0,g.x,g.y,52,.45,{rot:Math.atan2(g.vy,g.vx),grow:1.1})}
         }else{g.lastTrailX=g.x;g.lastTrailY=g.y}
+        if(g.mainClass==="lung"){
+          g.galeKillLock-=dt;
+          if(moving)g.galeMomentum=Math.min(3.5,g.galeMomentum+dt*1.5);
+          else if(g.galeKillLock<=0)g.galeMomentum=Math.max(0,g.galeMomentum-dt*3);
+          const bw=cardLevel(g,"lung_bladewind");
+          if(bw&&moving){g.windTrailDist+=Math.hypot(g.vx,g.vy)*dt;const iv=95*Math.pow(.78,bw-1);if(g.windTrailDist>=iv){g.windTrailDist=0;const a=Math.atan2(g.vy,g.vx);g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*710,vy:Math.sin(a)*710,life:.6,r:13,damageMul:1.1+g.galeMomentum*.15});pushSkill(g,"lung",0,g.x,g.y,60,.3,{rot:a,grow:1.4})}}
+          if(cardLevel(g,"lung_afterimage")&&moving&&g.galeMomentum>=3.2){for(const m of g.mobs)if(Math.hypot(m.x-g.x,m.y-g.y)<72)m.hp-=(6+cardLevel(g,"lung_afterimage")*3)*dt;if(Math.random()<dt*22)pushSkill(g,"lung",2,g.x-g.vx*.03,g.y-g.vy*.03,54,.3,{rot:Math.atan2(g.vy,g.vx),grow:1.1})}
+          if(cardLevel(g,"lung_eyestorm")&&moving&&Math.floor(g.t*2)!==Math.floor((g.t-dt)*2)){const cnt=cardLevel(g,"lung_eyestorm");for(let i=0;i<cnt;i++){const a=Math.random()*6.28,r=58+Math.random()*44,wx=g.x+Math.cos(a)*r,wy=g.y+Math.sin(a)*r;for(const m of g.mobs)if(Math.hypot(m.x-wx,m.y-wy)<52)m.hp-=g.damage*.5;pushSkill(g,"lung",5,wx,wy,72,.4,{spin:6,grow:1.3})}}
+        }
+        if(g.mainClass==="muscle"){const near=g.mobs.filter(m=>Math.hypot(m.x-g.x,m.y-g.y)<240).length;g.impactCharge=Math.min(1,g.impactCharge+near*dt*.05)}
         const diff=DIFFICULTY[g.difficulty],cap=Math.min(coarse?140:190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count*(coarse ? .78 : 1)));
         const takeDamage=(raw:number)=>raw*100/(100+g.armor*5);
-        const hurtPlayer=(raw:number)=>{if(g.invuln)return false;let amount=takeDamage(raw);g.noDamage=0;if(g.shield>0){const blocked=Math.min(g.shield,amount);g.shield-=blocked;amount-=blocked}g.hp-=amount;if(g.hp<=0&&g.reviveAvailable){g.reviveAvailable=false;g.hp=g.maxHp*.4;g.inv=2;g.shield=g.maxHp*.15;g.heartFx=.8;g.effect="세포 분열 · 40% 체력으로 부활";g.effectT=3;sound.current?.play("level");return false}if(g.hp<=0){endGame(false);return true}return false};
+        const hurtPlayer=(raw:number)=>{if(g.invuln)return false;let amount=takeDamage(raw);g.noDamage=0;if(g.mainClass==="muscle"){const pf=cardLevel(g,"muscle_painfuel");if(pf)g.impactCharge=Math.min(1,g.impactCharge+.05*pf)}if(g.shield>0){const blocked=Math.min(g.shield,amount);g.shield-=blocked;amount-=blocked}g.hp-=amount;if(g.hp<=0&&g.reviveAvailable){g.reviveAvailable=false;g.hp=g.maxHp*.4;g.inv=2;g.shield=g.maxHp*.15;g.heartFx=.8;g.effect="세포 분열 · 40% 체력으로 부활";g.effectT=3;sound.current?.play("level");return false}if(g.hp<=0){endGame(false);return true}return false};
         if(cardLevel(g,"common_membrane")&&g.noDamage>=8&&g.shield<=0){g.shield=g.maxHp*.15;g.noDamage=0;g.effect="세포막 강화 · 보호막 생성";g.effectT=1.2;burst(g,g.x,g.y,"#4ee5e1",18)}
         if(g.mobs.filter(m=>!m.boss).length<cap&&Math.random()<dt*(5+g.stage*3+g.stageT*.05)*diff.count)spawn(g);
         let nearest:Mob|undefined,nd=Infinity;for(const m of g.mobs){const d=(m.x-g.x)**2+(m.y-g.y)**2;if(d<nd){nd=d;nearest=m}}
@@ -426,6 +464,17 @@ export default function OrganGame() {
             g.fire=g.fireRate*.94/(1+speedBoost);const focus=cardLevel(g,"brain_focus"),toxic=cardLevel(g,"fusion_brain_liver");const targets=[...g.mobs].sort((a,b)=>toxic&&a.poisonStacks!==b.poisonStacks?b.poisonStacks-a.poisonStacks:focus?b.hp-a.hp:Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y));for(let i=0;i<coreCount;i++){const target=targets[i%Math.max(1,targets.length)]||nearest;shootAt(target,{damageMul:focus&&(target.elite||target.boss)?1.2:1,chain:cardLevel(g,"brain_chain")+g.chainBonus,poison:toxic?1:0,core:true,angle:Math.atan2(target.y-g.y,target.x-g.x)+(i-(coreCount-1)/2)*.035})}g.brainVolley=.24;pushSkill(g,"brain",1,g.x,g.y,74,.16,{rot:Math.atan2(nearest.y-g.y,nearest.x-g.x),grow:1.3});g.castFx=.16;g.castAngle=Math.atan2(nearest.y-g.y,nearest.x-g.x);sound.current?.play("shot");
           }else if(g.mainClass==="liver"){
             g.fire=.55;
+          }else if(g.mainClass==="lung"){
+            const mo=g.galeMomentum;g.fire=Math.max(.13,g.fireRate*.85-mo*.06);
+            const a=moving?Math.atan2(g.vy,g.vx):Math.atan2(nearest.y-g.y,nearest.x-g.x);
+            g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*690,vy:Math.sin(a)*690,life:.7,r:10+mo*2,damageMul:1+mo*.2});
+            pushSkill(g,"lung",1,g.x+Math.cos(a)*24,g.y+Math.sin(a)*24,50+mo*10,.16,{rot:a,grow:1.3});
+            g.castFx=.12;g.castAngle=a;sound.current?.play("shot");
+          }else if(g.mainClass==="muscle"){
+            g.fire=g.fireRate*1.8;const oc=cardLevel(g,"muscle_overcontract"),range=g.meleeRange*1.5*(1+oc*.16),kb=250*(1+oc*.28);let hit=false;
+            for(const m of g.mobs){const d=Math.hypot(m.x-g.x,m.y-g.y);if(d<range+m.r){m.hp-=g.damage*1.35;m.hit=.12;const nx=(m.x-g.x)/(d||1),ny=(m.y-g.y)/(d||1);m.kbX+=nx*kb;m.kbY+=ny*kb;hit=true}}
+            if(hit){pushSkill(g,"muscle",1,g.x,g.y,range*1.7,.3,{grow:1.4});g.shake=Math.max(g.shake,4);sound.current?.play("hit")}
+            g.impactCharge=Math.min(1,g.impactCharge+.05);
           }else{
             g.fire=g.fireRate;const a=Math.atan2(nearest.y-g.y,nearest.x-g.x)+(Math.random()-.5)*(g.organs.뇌<30?.34:0);for(let j=0;j<g.projectiles;j++)shootAt(nearest,{chain:g.chainBonus,angle:a+(j-(g.projectiles-1)/2)*.13});g.castFx=.16;g.castAngle=a;sound.current?.play("shot");
           }
@@ -447,10 +496,12 @@ export default function OrganGame() {
           }
           const a=m.charge>0?Math.atan2(m.aimY-m.y,m.aimX-m.x):Math.atan2(g.y-m.y,g.x-m.x);
           const move=m.charge>0?690:m.speed*(m.cast>0 ? 0.18 : 1);m.x+=Math.cos(a)*move*dt;m.y+=Math.sin(a)*move*dt;
+          if(m.kbX||m.kbY){m.x+=m.kbX*dt;m.y+=m.kbY*dt;m.kbX*=.85;m.kbY*=.85;if(Math.hypot(m.kbX,m.kbY)<12){m.kbX=0;m.kbY=0}}m.collideCd-=dt;
           const edge=m.boss?76:24;m.x=Math.max(edge,Math.min(g.worldW-edge,m.x));m.y=Math.max(edge,Math.min(g.worldH-edge,m.y));
           const d=Math.hypot(m.x-g.x,m.y-g.y);
           if(d<m.r+(coarse?12:16)&&g.inv<=0){hurtPlayer((m.boss?18:8)*diff.damage);if(m.boss&&g.bossWeakTarget){g.organs[g.bossWeakTarget]=Math.max(0,g.organs[g.bossWeakTarget]-4);g.effect=`노화 침식 · ${g.bossWeakTarget} -4`;g.effectT=1.2}g.inv=.55;g.shake=10;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",12)}
           if(g.poison&&d<95){m.hp-=g.poison*6*dt}
+          if((m.kbX||m.kbY)&&m.collideCd<=0){for(const o of g.mobs){if(o!==m&&o.hp>0&&Math.hypot(o.x-m.x,o.y-m.y)<m.r+o.r+4){const ex=g.damage*1.4;m.hp-=ex;o.hp-=ex;m.collideCd=.45;o.collideCd=Math.max(o.collideCd,.25);const mx=(m.x+o.x)/2,my=(m.y+o.y)/2;burst(g,mx,my,"#d8ff3e",8);pushSkill(g,"muscle",3,mx,my,64,.3,{grow:1.4});const ch=cardLevel(g,"muscle_chaincollide");if(ch){const rad=88*(1+(ch-1)*.3);for(const e of g.mobs)if(e!==m&&e!==o&&Math.hypot(e.x-mx,e.y-my)<rad)e.hp-=g.damage*.8;g.shake=Math.max(g.shake,5)}break}}}
         }
         for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.enemy){if(Math.hypot(s.x-g.x,s.y-g.y)<s.r+(coarse?11:15)&&g.inv<=0){s.life=0;hurtPlayer(7*diff.damage);if(g.bossWeakTarget&&g.mobs.some(m=>m.boss)){g.organs[g.bossWeakTarget]=Math.max(0,g.organs[g.bossWeakTarget]-2);g.effect=`노화 탄막 · ${g.bossWeakTarget} -2`;g.effectT=.9}g.inv=.42;g.shake=7;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",8)}}else{for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){const hit=g.damage*(s.r>9?1.65:1)*(s.damageMul??1)*g.rangedDamageMul;m.hp-=hit;s.life=0;m.hit=.08;if(s.poison){m.poisonStacks=Math.min(8,m.poisonStacks+s.poison);m.toxin=4}sound.current?.play("hit");burst(g,s.x,s.y,s.core?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e",s.r>9?10:4);if((s.chain??0)>0){const next=g.mobs.filter(o=>o!==m&&o.hp>0&&Math.hypot(o.x-m.x,o.y-m.y)<220).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];if(next){const a=Math.atan2(next.y-m.y,next.x-m.x);g.shots.push({x:m.x,y:m.y,vx:Math.cos(a)*610,vy:Math.sin(a)*610,life:.55,r:6,damageMul:(s.damageMul??1)*.7,chain:(s.chain??1)-1,poison:s.poison,core:true})}}break}}}}
         for(const f of g.fields){f.life-=dt;f.tick-=dt;for(const m of g.mobs)if(Math.hypot(m.x-f.x,m.y-f.y)<f.r){m.hp-=(7+f.stack*4)*dt;m.toxin=Math.max(m.toxin,.3);if(cardLevel(g,"liver_concentrated")&&f.tick<=0){m.poisonStacks=Math.min(8,m.poisonStacks+1);m.toxin=4}}if(f.tick<=0)f.tick=1}g.fields=g.fields.filter(f=>f.life>0);
@@ -458,6 +509,7 @@ export default function OrganGame() {
         const dead=g.mobs.filter(m=>m.hp<=0);for(const m of dead){
           g.kills++;burst(g,m.x,m.y,m.boss?"#ff715b":"#4ee5e1",m.boss?30:8);
           const closeKill=Math.hypot(m.x-g.x,m.y-g.y)<g.meleeRange*1.35;if(closeKill&&(cardLevel(g,"heart_bloodflow")||cardLevel(g,"life_sports")))g.moveBuff=2;
+          if(g.mainClass==="lung"&&cardLevel(g,"lung_circulation")){g.galeKillLock=2;g.moveBuff=Math.max(g.moveBuff,1.4)}
           if(cardLevel(g,"common_regen")){g.killsSinceRegen++;if(g.killsSinceRegen>=20){g.killsSinceRegen=0;const heal=g.maxHp*.08*(1-g.recoveryPenalty);g.hp=Math.min(g.maxHp,g.hp+heal);g.effect=`재생 인자 · 체력 +${Math.round(heal)}`;g.effectT=1.1}}
           if(cardLevel(g,"liver_rupture")&&m.poisonStacks>0){const blast=(7+g.poison*2)*m.poisonStacks*1.5*(1+(cardLevel(g,"liver_rupture")-1)*.2);for(const other of g.mobs)if(other!==m&&Math.hypot(other.x-m.x,other.y-m.y)<145){other.hp-=blast;other.poisonStacks=Math.min(8,other.poisonStacks+1);other.toxin=4}pushSkill(g,"liver",5,m.x,m.y,150,.5,{grow:1.7});burst(g,m.x,m.y,"#a8d43a",22);g.effect="독성 파열 · 연쇄 오염";g.effectT=.8}
           if(cardLevel(g,"fusion_brain_liver")&&m.poisonStacks>0){const other=g.mobs.filter(o=>o!==m&&o.hp>0).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];if(other){other.poisonStacks=Math.min(8,other.poisonStacks+1);other.toxin=4;pushSkill(g,"brain",6,other.x,other.y,72,.4,{grow:1.4})}}
@@ -579,7 +631,7 @@ export default function OrganGame() {
       if(g.heartFx>0)drawVfx(4,g.x,g.y,(105+(0.58-g.heartFx)*170)*renderScale,g.heartFx/.58);
       if(g.castFx>0)drawVfx(2,g.x+Math.cos(g.castAngle)*30,g.y+Math.sin(g.castAngle)*30,42*renderScale,g.castFx/.16,g.castAngle);
       ctx.save();ctx.translate(g.x,g.y);
-      const formIndex=g.mainClass==="brain"?1:g.mainClass==="heart"?3:g.mainClass==="liver"?5:0,playerSize=(formIndex?86:74)*renderScale;
+      const formIndex=g.mainClass==="brain"?1:g.mainClass==="heart"?3:g.mainClass==="liver"?5:g.mainClass==="lung"?2:g.mainClass==="muscle"?6:0,playerSize=(formIndex?86:74)*renderScale;
       const playerBob=Math.sin(g.t*(Math.hypot(g.vx,g.vy)>20?13:5))*2;
       ctx.fillStyle="rgba(0,0,0,.32)";ctx.beginPath();ctx.ellipse(0,25,23-Math.abs(playerBob),7,0,0,6.28);ctx.fill();
       ctx.translate(0,playerBob);if(g.vx<0)ctx.scale(-1,1);
@@ -657,7 +709,7 @@ export default function OrganGame() {
       {hud.effect&&<div className="organ-effect">{hud.effect}</div>}
       <div className="level-hud"><b>LV.{hud.level}</b><span><i style={{width:`${hud.xp/hud.nextXp*100}%`}}/></span>{hud.loot&&<em>{hud.loot}</em>}</div>
       <div className="defense-hud"><b>🛡 방어 {hud.armor.toFixed(1)}</b><span>피해 감소 {Math.round(100-10000/(100+hud.armor*5))}%</span></div>
-      <div className={`body-hud ${activeClass?"awakened":""}`} style={activeClass?{"--core-color":activeClass.color} as React.CSSProperties:undefined}><small>신체 상태</small><div className="body-figure"><svg viewBox="0 0 120 170" aria-hidden="true"><g className="silhouette"><circle cx="60" cy="20" r="15"/><rect x="42" y="38" width="36" height="70" rx="14"/><rect x="22" y="42" width="14" height="52" rx="7"/><rect x="84" y="42" width="14" height="52" rx="7"/><rect x="47" y="104" width="12" height="54" rx="6"/><rect x="61" y="104" width="12" height="54" rx="6"/></g></svg>{(["brain","heart","liver"] as CoreOrgan[]).map((core,idx)=>{const pos=[["6%","50%"],["35%","45%"],["48%","57%"]][idx];const st=state(hud.organs[CORE_META[core].key]);const lv=hud.organLevels[core];return <div className={`bmark core ${st} ${hud.mainClass===core?"awoken":""}`} key={core} style={{top:pos[0],left:pos[1],"--core-color":CORE_META[core].color} as React.CSSProperties}><span>{CORE_META[core].icon}</span><i>{[1,2,3].map(v=><u className={lv>=v?"on":""} key={v}/>)}</i></div>})}{([["폐","28%","39%"],["폐","28%","61%"],["근육","41%","16%"],["근육","41%","84%"]] as [OrganKey,string,string][]).map(([k,top,left],idx)=><div className={`bmark dot ${state(hud.organs[k])}`} key={`${k}${idx}`} style={{top,left} as React.CSSProperties}><span>{ORGAN_META[k].icon}</span></div>)}</div></div>
+      <div className={`body-hud ${activeClass?"awakened":""}`} style={activeClass?{"--core-color":activeClass.color} as React.CSSProperties:undefined}><small>신체 상태</small><div className="body-figure"><svg viewBox="0 0 120 170" aria-hidden="true"><g className="silhouette"><circle cx="60" cy="20" r="15"/><rect x="42" y="38" width="36" height="70" rx="14"/><rect x="22" y="42" width="14" height="52" rx="7"/><rect x="84" y="42" width="14" height="52" rx="7"/><rect x="47" y="104" width="12" height="54" rx="6"/><rect x="61" y="104" width="12" height="54" rx="6"/></g></svg>{(["brain","heart","lung","liver","muscle"] as CoreOrgan[]).map(core=>{const pos=({brain:["7%","50%"],heart:["33%","39%"],lung:["31%","63%"],liver:["50%","59%"],muscle:["47%","20%"]} as Record<CoreOrgan,[string,string]>)[core];const st=state(hud.organs[CORE_META[core].key]);const lv=hud.organLevels[core];return <div className={`bmark core ${st} ${hud.mainClass===core?"awoken":""}`} key={core} style={{top:pos[0],left:pos[1],"--core-color":CORE_META[core].color} as React.CSSProperties}><span>{CORE_META[core].icon}</span><i>{[1,2,3].map(v=><u className={lv>=v?"on":""} key={v}/>)}</i></div>})}</div>{hud.mainClass==="lung"&&<div className="class-gauge" style={{"--core-color":CORE_META.lung.color} as React.CSSProperties}><span>질풍 모멘텀</span><b><i style={{width:`${Math.min(100,game.current.galeMomentum/3.5*100)}%`}}/></b></div>}{hud.mainClass==="muscle"&&<div className="class-gauge" style={{"--core-color":CORE_META.muscle.color} as React.CSSProperties}><span>강타 충전</span><b><i style={{width:`${Math.min(100,game.current.impactCharge*100)}%`}}/></b></div>}</div>
       <div className="dash-hint"><span>SPACE {actionName}</span><i>{Array.from({length:hud.maxDash},(_,i)=><b className={i<hud.dashCharges?"ready":""} key={i}/>)}</i><em>{activeClass?`${activeClass.className} 전용 액션`:hud.dashCharges?"대시 준비":"재충전 중"}</em></div></>}
     {mode==="choice"&&<div className={`choice-wrap choice-${choiceType==="세포 진화"?"evolve":choiceType==="빌드 각성"||choiceType==="장기 각성"?"build":"life"}`}><div className="choice-head"><div><div className="eyebrow">{choiceType==="생활 선택"?"LIFE INTERRUPT":choiceType==="장기 각성"?"ORGAN AWAKENING":choiceType==="빌드 각성"?"BUILD AWAKENING":"CELL EVOLUTION"}</div><h2>{choiceType==="세포 진화"?"장기 성장":choiceType}</h2></div><p><b>1 · 2 · 3</b> 즉시 선택&nbsp;&nbsp; <b>A / D</b> 이동&nbsp;&nbsp; <b>SPACE</b> 확정</p></div><div className={`cards ${cards.length===2?"two":""}`}>{cards.map((c,i)=>{const tags=cardOrgans(c),nextLevel=c.id?cardLevel(game.current,c.id)+1:0;return <button className={`card card-${c.kind||"general"} ${selectedCard===i?"selected":""} ${c.awakening&&c.awakening!=="hold"?"awakening-card":""}`} key={c.name} onMouseEnter={()=>setSelectedCard(i)} onFocus={()=>setSelectedCard(i)} onClick={()=>choose(c)} aria-selected={selectedCard===i}><span className="card-no"><kbd>{i+1}</kbd> 선택 {c.kind==="fusion"&&<em>FUSION</em>}</span><div className="card-art">{tags.length?tags.map(k=><span key={k} style={{"--organ-color":ORGAN_META[k].color} as React.CSSProperties}>{ORGAN_META[k].icon}</span>):<span>✦</span>}</div><div className="organ-tags">{tags.map(k=><span key={k}>{ORGAN_META[k].icon} {k}{c.organLevel&&` Lv.${game.current.organLevels[c.organLevel]} → Lv.${Math.min(3,game.current.organLevels[c.organLevel]+1)}`}</span>)}{c.maxLevel===3&&<span>Lv.{nextLevel}</span>}</div><h3>{c.name}</h3><p>{c.desc}</p><div className="decision-effects"><strong><small>플레이 변화</small>{c.effect}</strong>{c.cost&&<em><small>대가</small>{c.cost}</em>}</div>{selectedCard===i&&<small className="confirm-hint">SPACE로 확정</small>}</button>})}</div></div>}
     {mode==="pause"&&<div className="pause"><div className="pause-menu"><div className="pause-summary"><div className="eyebrow">LIFE MENU / ESC</div><h2>잠시 숨 고르기</h2><p>{activeClass?<><b>{activeClass.className}</b><br/>{activeClass.key} Lv.3 각성 · {activeClass.action}</>:"아직 주 직업을 각성하지 않았습니다."}</p><div className="pause-organs">{(["heart","brain","liver"] as CoreOrgan[]).map(k=><span key={k}>{CORE_META[k].icon} {CORE_META[k].key} · Lv.{hud.organLevels[k]}</span>)}</div></div><div className="pause-actions"><button className="primary" onClick={()=>{game.current.paused=false;game.current.last=performance.now();sound.current?.resumeMusic();setMode("play")}}>계속하기</button><button onClick={()=>start(game.current.difficulty)}>현재 생애 다시 시작</button><button onClick={()=>{game.current.paused=true;sound.current?.stopMusic();setMenuSection("home");setMode("start")}}>메인 화면으로 나가기</button><small>ESC를 다시 누르면 바로 계속합니다.</small></div></div></div>}
