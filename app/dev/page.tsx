@@ -19,21 +19,20 @@ export default function DevGallery() {
   );
   return (
     <main style={{ minHeight: "100vh", background: "#0a0e0e", color: "#e9efe9", padding: "28px clamp(20px,4vw,56px)", fontFamily: "var(--font-sans)" }}>
-      <header style={{ marginBottom: 22 }}>
-        <div style={{ color: "#d8ff3e", font: "800 11px/1 var(--font-mono)", letterSpacing: ".14em" }}>DEV GALLERY / 전 화면 미리보기</div>
-        <h1 style={{ margin: "8px 0 4px", fontSize: 34, letterSpacing: "-.03em" }}>화면 갤러리</h1>
-        <p style={{ margin: 0, color: "#95a19c", fontSize: 13 }}>
-          디버그 URL을 직접 입력할 필요 없이 5직업 라이브 화면과 각 페이지를 한 번에 봅니다. 각 프레임은 자동 시작·음소거 상태입니다.
-          인게임 핫키: <b style={{ color: "#e9efe9" }}>B</b> 보스 · <b style={{ color: "#e9efe9" }}>N</b> 잡몹 · <b style={{ color: "#e9efe9" }}>H</b> 회복 · <b style={{ color: "#e9efe9" }}>I</b> 무적 · <b style={{ color: "#e9efe9" }}>G</b> 결과.
+      <header style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap", marginBottom: 12 }}>
+        <div style={{ color: "#d8ff3e", font: "800 11px/1 var(--font-mono)", letterSpacing: ".14em" }}>DEV GALLERY</div>
+        <h1 style={{ margin: 0, fontSize: 22, letterSpacing: "-.03em" }}>화면 갤러리</h1>
+        <p style={{ margin: 0, color: "#8b968f", fontSize: 12 }}>
+          자동 시작·음소거 · 핫키 <b style={{ color: "#e9efe9" }}>B</b>보스 <b style={{ color: "#e9efe9" }}>N</b>잡몹 <b style={{ color: "#e9efe9" }}>H</b>회복 <b style={{ color: "#e9efe9" }}>I</b>무적 <b style={{ color: "#e9efe9" }}>G</b>결과
         </p>
-        <nav style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+        <nav style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
           {MENUS.map((m) => (
-            <a key={m.href} href={m.href} target="_blank" rel="noreferrer" style={{ padding: "8px 13px", border: "1px solid rgba(255,255,255,.18)", borderRadius: 999, color: "#e9efe9", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>{m.label} ↗</a>
+            <a key={m.href} href={m.href} target="_blank" rel="noreferrer" style={{ padding: "6px 12px", border: "1px solid rgba(255,255,255,.18)", borderRadius: 999, color: "#e9efe9", textDecoration: "none", fontSize: 12, fontWeight: 700 }}>{m.label} ↗</a>
           ))}
         </nav>
       </header>
 
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(360px,1fr))", gap: 16 }}>
+      <section style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
         {CLASSES.map((c) => (
           <article key={c.key} style={{ border: `1px solid ${c.color}55`, borderRadius: 14, padding: 12, background: "rgba(255,255,255,.03)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
