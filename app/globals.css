@@ -160,7 +160,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .archive-stats article { background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.2)!important;color:#e2e8e4; }
 .hero-detail { background:rgba(255,255,255,.04)!important;border-color:rgba(255,255,255,.16)!important;box-shadow:6px 6px 0 rgba(0,0,0,.35); }
 .hero-copy { background:transparent; }
-.hero-list button.active { background:var(--acid);border-color:var(--acid);color:#0c1211;box-shadow:3px 3px 0 rgba(0,0,0,.4); }
+.hero-list button.active { background:var(--acid)!important;border-color:var(--acid)!important;color:#0c1211;box-shadow:3px 3px 0 rgba(0,0,0,.4); }
 .hero-list button.active small { color:#2c4a0e; }
 .hero-list button.found small { color:var(--cyan); }
 /* 카드 내부 텍스트 */
