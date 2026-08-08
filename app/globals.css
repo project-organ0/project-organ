@@ -271,11 +271,21 @@ canvas { display: block; width: 100%; height: 100%; }
 .confirm-hint { position:absolute;right:16px;bottom:12px;color:var(--acid);font:900 9px/1 monospace;animation:confirm-pulse 1s ease-in-out infinite; }
 .cards.two { grid-template-columns:repeat(2,minmax(0,420px));justify-content:center; }
 .awakening-card { border-color:var(--acid)!important;background:radial-gradient(circle at 50% 30%,rgba(216,255,62,.14),transparent 45%),#151e1c!important;box-shadow:0 0 38px rgba(216,255,62,.12); }
-.build-levels { position:absolute;z-index:7;left:18px;bottom:126px;display:flex;gap:6px; }
-.build-levels>div { min-width:105px;padding:8px 9px;border:1px solid rgba(255,255,255,.18);border-radius:9px;background:rgba(7,12,12,.74);color:white;backdrop-filter:blur(8px); }
-.build-levels>div.main { border-color:var(--core-color);box-shadow:0 0 18px color-mix(in srgb,var(--core-color) 25%,transparent); }
-.build-levels span,.build-levels b { display:block;font:800 9px/1 monospace; }.build-levels b{margin-top:5px;color:var(--core-color)}
-.build-levels i { display:flex;gap:3px;margin-top:7px; }.build-levels u{width:27px;height:4px;border-radius:99px;background:rgba(255,255,255,.17);text-decoration:none}.build-levels u.on{background:var(--core-color);box-shadow:0 0 7px var(--core-color)}
+/* 신체 상태 HUD (좌측 세로 실루엣) */
+.body-hud { position:absolute;z-index:6;left:16px;top:50%;transform:translateY(-50%);width:148px;padding:11px 10px 13px;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(7,12,12,.7);backdrop-filter:blur(9px);color:white;pointer-events:none;transition:border-color .3s,box-shadow .3s; }
+.body-hud>small { display:block;text-align:center;margin-bottom:4px;color:#8da09c;font:700 8px/1 monospace;letter-spacing:.14em; }
+.body-hud.awakened { border-color:color-mix(in srgb,var(--core-color) 55%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--core-color) 22%,transparent); }
+.body-figure { position:relative;width:100%;aspect-ratio:120/170; }
+.body-figure>svg { position:absolute;inset:0;width:100%;height:100%; }
+.body-figure .silhouette circle,.body-figure .silhouette rect { fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.16);stroke-width:1.4; }
+.bmark { position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:3px; }
+.bmark>span { display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.42);border:2px solid var(--mc,#9eacab);box-shadow:0 0 8px color-mix(in srgb,var(--mc,#9eacab) 55%,transparent);font-size:12px;line-height:1; }
+.bmark.dot>span { width:16px;height:16px;font-size:9px; }
+.bmark.healthy { --mc:#5fe08a; } .bmark.normal { --mc:#e0c24e; } .bmark.danger { --mc:#ff715b; }
+.bmark.core i { display:flex;gap:2px; }
+.bmark.core u { width:8px;height:3px;border-radius:2px;background:rgba(255,255,255,.2);text-decoration:none; }
+.bmark.core u.on { background:var(--core-color);box-shadow:0 0 5px var(--core-color); }
+.bmark.core.awoken>span { border-color:var(--core-color);box-shadow:0 0 12px var(--core-color);background:color-mix(in srgb,var(--core-color) 22%,rgba(0,0,0,.42)); }
 @keyframes confirm-pulse { 50% { opacity:.45 } }
 
 .report { overflow: auto; align-content: start; padding-top: 48px; }
@@ -321,11 +331,10 @@ canvas { display: block; width: 100%; height: 100%; }
   .touch-dash i { width:16px;height:5px;border:1px solid rgba(255,255,255,.4);border-radius:99px; }
   .touch-dash i.ready { border-color:var(--acid);background:var(--acid); }
   .dash-hint { display:none; }
-  .organs { left:168px;bottom:12px;transform:scale(.82);transform-origin:left bottom; }
-  .level-hud { left:170px;bottom:72px; }
+  .body-hud { width:104px;left:10px;top:52%;padding:8px 7px 10px; }
+  .level-hud { left:170px;bottom:20px; }
   .defense-hud { right:135px;bottom:24px; }
-  .build-levels { left:168px;bottom:106px;transform:scale(.78);transform-origin:left bottom; }
-  .chemistry-panel { width:175px;top:91px;transform:scale(.9);transform-origin:left top; }
+  .chemistry-panel { width:160px;top:80px;transform:scale(.86);transform-origin:left top; }
   .zone-hud { top:62px;transform:translateX(-50%) scale(.82); }
   .sound-btn { right:105px;bottom:auto;top:14px; }
   .fullscreen-btn { right:14px;bottom:auto;top:14px; }
