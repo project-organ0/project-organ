@@ -468,6 +468,17 @@ canvas { display: block; width: 100%; height: 100%; }
 @keyframes rotate-hint { 50% { transform:rotate(90deg) } }
 
 @media (max-height: 500px) and (orientation: landscape) {
+  /* 결과 화면: 짧은 가로에서 버튼까지 한 화면에 */
+  .report { padding-top:14px;align-content:start; }
+  .report-grid { gap:20px; }
+  .report h1 { font-size:32px;margin:2px 0 6px;line-height:.95; }
+  .report-copy { font-size:11px;line-height:1.5; }
+  .report .stat { padding:7px 0; }
+  .report .stat b { font-size:17px; }
+  .report .organ-report { padding:12px; }
+  .report .organ-line { padding:7px 0; }
+  .report-actions { margin-top:12px; }
+  .report-actions button,.report-menu-btn,.report-actions .primary { padding:10px 16px;font-size:13px; }
   .choice-wrap { align-content:stretch;padding:12px 28px 14px;overflow:hidden; }
   .choice-head { min-height:48px;margin-bottom:8px;padding-bottom:8px;align-items:center; }
   .choice-head .eyebrow { font-size:8px; }

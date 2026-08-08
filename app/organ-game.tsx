@@ -297,7 +297,8 @@ export default function OrganGame() {
   },[]);
 
   const start=useCallback((difficulty:Difficulty="normal")=>{
-    sound.current??=createSoundEngine();sound.current.setMuted(isMuted);sound.current.play("start");sound.current.startMusic();
+    const preview=typeof window!=="undefined"&&new URLSearchParams(window.location.search).get("preview")!==null;
+    sound.current??=createSoundEngine();sound.current.setMuted(isMuted||preview);if(!preview){sound.current.play("start");sound.current.startMusic();}
     const g=fresh(difficulty); const gene=localStorage.getItem("organ-gene") as OrganKey|null;
     if(gene&&ORGAN_KEYS.includes(gene)) g.organs[gene]+=8;
     // 개발용 빠른 검증 모드: /?debug=heart|brain|liver (&fusion=<보조장기> &common=1 &life=1)
@@ -315,6 +316,14 @@ export default function OrganGame() {
     runNumber.current+=1;runStartedAt.current=Date.now();progressMilestones.current.clear();if(runNumber.current>1)sendGameLabEvent("game_restarted",{runNumber:runNumber.current});sendGameLabEvent("game_run_started",{runNumber:runNumber.current,difficulty});
     game.current=g; setHud({hp:g.hp,max:g.maxHp,t:0,stage:0,organs:{...g.organs},organLevels:{...g.organLevels},mainClass:g.mainClass,level:1,xp:0,nextXp:g.nextXp,loot:"",effect:"",chemistries:[],dashCharges:g.dashCharges,maxDash:g.maxDash,armor:g.armor}); setMode("play");
   },[isMuted]);
+
+  // /dev 갤러리용: ?debug=X&preview → 메뉴 건너뛰고 자동 시작(음소거)
+  const autoStarted=useRef(false);
+  useEffect(()=>{
+    if(autoStarted.current||typeof window==="undefined")return;
+    const q=new URLSearchParams(window.location.search);
+    if(q.get("debug")&&q.get("preview")!==null){autoStarted.current=true;start((q.get("difficulty") as Difficulty)||"normal");}
+  },[start]);
 
   const toggleFullscreen=useCallback(async()=>{
     try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen()}catch{}
