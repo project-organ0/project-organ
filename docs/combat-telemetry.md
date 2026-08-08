@@ -11,7 +11,7 @@
 | 필드 | 의미 |
 | --- | --- |
 | `result`, `survivalSeconds` | 클리어 여부와 실제 생존시간 |
-| `class`, `difficulty`, `debug`, `benchmark` | 직업, 난이도, 디버그 및 비교용 런 여부 |
+| `class`, `difficulty`, `debug`, `benchmark`, `benchmarkTarget` | 실제 각성 직업, 난이도, 실행 모드와 자동 플레이 목표 장기 |
 | `playerLevel`, `kills`, `bossKills` | 성장 및 진행 결과 |
 | `damageDealt` | 과잉 피해를 제외한 실제 적 체력 감소량 |
 | `damageBySource` | 기본 공격, 액션, 증강, 독, 충돌 등 출처별 피해량 |
@@ -41,6 +41,8 @@
 - `JSON 미리보기`는 현재 런의 원시 데이터를 화면에서 확인한다.
 - 디버그 URL로 시작한 런은 `debug: true`로 기록하며 정식 밸런스 표본에서 제외한다.
 - `?benchmark=1`로 시작하면 이전 생애의 유전 보너스를 적용하지 않고 유전·최고 기록도 갱신하지 않는다. 실제 전투 규칙은 유지되며 직업 비교 표본에는 이 모드를 사용한다.
+- `?benchmark=1&autoplay=heart`처럼 `autoplay`에 장기를 지정하면 본게임 안에서 이동, 액션, 카드 선택을 자동 수행한다. 지원 값은 `heart`, `brain`, `liver`, `lung`, `muscle`이다.
+- 자동 플레이는 목표 장기의 세포 진화와 각성을 보장하고 같은 장기의 직업 카드를 우선한다. 전투 판정, 적 생성, 피해 계산, 카드 풀과 확률은 수동 플레이와 같은 코드를 사용한다.
 
 ## 검증 절차
 

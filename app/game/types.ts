@@ -18,7 +18,7 @@ export type SkillFx = {sheet:CoreOrgan;index:number;x:number;y:number;size:numbe
 export type TelemetryChoice = {id:string|null;name:string;kind:CardKind|null;tier:AugmentTier|null;choiceType:string;time:number;stage:number;playerLevel:number;cardLevel:number|null};
 export type BossTelemetry = {stage:number;killTime:number;playerLevel:number;hpPercent:number};
 export type TelemetryState = {runId:string;startedAt:string;damageDealt:number;damageBySource:Record<string,number>;damageTaken:number;damageBlocked:number;hitsTaken:number;healingReceived:number;distanceTraveled:number;actionsUsed:number;choices:TelemetryChoice[];bossResults:BossTelemetry[]};
-export type RunTelemetry = {schemaVersion:1;runId:string;startedAt:string;endedAt:string;difficulty:Difficulty;debug:boolean;benchmark:boolean;result:"clear"|"defeat";class:MainClass;survivalSeconds:number;stage:number;playerLevel:number;kills:number;bossKills:number;damageDealt:number;damageBySource:Record<string,number>;damageTaken:number;damageBlocked:number;hitsTaken:number;healingReceived:number;distanceTraveled:number;actionsUsed:number;choices:TelemetryChoice[];bossResults:BossTelemetry[];cardLevels:Record<string,number>};
+export type RunTelemetry = {schemaVersion:1;runId:string;startedAt:string;endedAt:string;difficulty:Difficulty;debug:boolean;benchmark:boolean;benchmarkTarget:CoreOrgan|null;result:"clear"|"defeat";class:MainClass;survivalSeconds:number;stage:number;playerLevel:number;kills:number;bossKills:number;damageDealt:number;damageBySource:Record<string,number>;damageTaken:number;damageBlocked:number;hitsTaken:number;healingReceived:number;distanceTraveled:number;actionsUsed:number;choices:TelemetryChoice[];bossResults:BossTelemetry[];cardLevels:Record<string,number>};
 export type Game = {
   w:number;h:number;worldW:number;worldH:number;t:number;stage:number;stageT:number;hp:number;maxHp:number;
   x:number;y:number;vx:number;vy:number;touchX:number;touchY:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
@@ -32,7 +32,7 @@ export type Game = {
   cardLevels:Record<string,number>;acquiredCards:string[];tierPity:number;lastAugmentBranch:string|null;augmentBranchStreak:number;meleeCombo:number;moveBuff:number;poisonTrailDistance:number;lastTrailX:number;lastTrailY:number;toxicCoreCooldown:number;killsSinceRegen:number;noDamage:number;shield:number;reviveAvailable:boolean;meleeRange:number;rangedDamageMul:number;chainBonus:number;poisonRadiusMul:number;poisonDurationMul:number;brainVolley:number;
   fatigue:number;unstableAim:number;recoveryPenalty:number;momentum:number;bossWeakTarget:OrganKey|null;lastFatigue:number;
   skillFx:SkillFx[];
-  debug:boolean;benchmark:boolean;invuln:boolean;
+  debug:boolean;benchmark:boolean;benchmarkTarget:CoreOrgan|null;invuln:boolean;
   galeMomentum:number;windTrailDist:number;galeKillLock:number;impactCharge:number;
   telemetry:TelemetryState;
 };
