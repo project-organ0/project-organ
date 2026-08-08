@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSoundEngine } from "./game/audio";
 import { HUB, PORTAL_ZONES } from "./game/portals";
-import type { CardKind, Choice, CoreOrgan, Difficulty, Game, MainClass, Mob, Mode, OrganKey } from "./game/types";
+import type { CardKind, Choice, CoreOrgan, Difficulty, Game, MainClass, Mob, Mode, OrganKey, SkillFx } from "./game/types";
 
 const STAGES = [
   ["0—20세 · 학교", "학생들의 식욕"],
@@ -177,7 +177,12 @@ function fresh(difficulty:Difficulty="normal"):Game {
   return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,touchX:0,touchY:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],warnings:[],fields:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,armor:3,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,runner:0,
-    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,zone:"중앙",zoneT:0,portalCd:0,route:[],lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0};
+    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,zone:"중앙",zoneT:0,portalCd:0,route:[],lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[]};
+}
+// 직업 전용 스킬 이펙트를 큐에 넣는다. dur 동안 grow 배율까지 확대되며 알파가 사라진다.
+function pushSkill(g:Game,sheet:CoreOrgan,index:number,x:number,y:number,size:number,dur:number,opts:{rot?:number;spin?:number;grow?:number}={}){
+  g.skillFx.push({sheet,index,x,y,size,life:dur,max:dur,rot:opts.rot??0,spin:opts.spin??0,grow:opts.grow??1});
+  if(g.skillFx.length>48)g.skillFx=g.skillFx.slice(-48);
 }
 function sendGameLabEvent(eventName:string,metadata:Record<string,unknown>={}){if(typeof window!=="undefined"&&window.opener)window.opener.postMessage({source:"game-lab-game",eventName,metadata},"*")}
 
@@ -277,17 +282,18 @@ export default function OrganGame() {
     if(active==="heart"){
       g.vx=dx*690;g.vy=dy*690;g.inv=.3;g.dashFx=.34;g.heartFx=.42;g.shake=13;
       for(const m of g.mobs){const tx=m.x-g.x,ty=m.y-g.y,d=Math.hypot(tx,ty),facing=(tx*dx+ty*dy)/Math.max(1,d);if(d<155&&facing>.25){m.hp-=g.damage*2.1;m.hit=.12}}
+      pushSkill(g,"heart",5,g.x+dx*40,g.y+dy*40,150,.36,{rot:Math.atan2(dy,dx),grow:1.6});
       g.effect="심장 액션 · 돌진 펀치";g.effectT=1;sound.current?.play("hit");
     }else if(active==="brain"){
       const targets=[...g.mobs].sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y)).slice(0,7);
       targets.forEach((m,i)=>{const a=Math.atan2(m.y-g.y,m.x-g.x)+(i%2?-.035:.035);g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*650,vy:Math.sin(a)*650,life:1.4,r:7})});
+      pushSkill(g,"brain",5,g.x,g.y,170,.45,{rot:Math.atan2(dy,dx),grow:1.7});
       g.castFx=.3;g.castAngle=Math.atan2(dy,dx);g.shake=6;g.effect="뇌 액션 · 코어 집중 사격";g.effectT=1;sound.current?.play("shot");
     }else if(active==="liver"){
-      g.fields.push({x:g.x,y:g.y,r:135*g.poisonRadiusMul,life:5.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.fields=g.fields.slice(-30);g.shake=8;g.effect="간 액션 · 독성 영역 점화";g.effectT=1;sound.current?.play("heart");
+      g.fields.push({x:g.x,y:g.y,r:135*g.poisonRadiusMul,life:5.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.fields=g.fields.slice(-30);pushSkill(g,"liver",3,g.x,g.y,190,.5,{grow:1.6});g.shake=8;g.effect="간 액션 · 독성 영역 점화";g.effectT=1;sound.current?.play("heart");
     }else{
       g.vx=dx*760;g.vy=dy*760;g.inv=.28;g.dashFx=.34;g.shake=7;sound.current?.play("dash");
     }
-    if(g.chemistries.includes("brain_lung")){for(let i=0;i<8;i++){const a=i/8*6.28;g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*520,vy:Math.sin(a)*520,life:1.2,r:6})}g.effect="케미 · 기동 마법 탄막";g.effectT=1}
   },[mode]);
 
   const moveStick=useCallback((e:React.PointerEvent<HTMLDivElement>)=>{
@@ -319,6 +325,10 @@ export default function OrganGame() {
     const playerArt=new Image();playerArt.src="/art/player-forms-v2-clean.png";
     const projectileArt=new Image();projectileArt.src="/art/projectiles.png";
     const vfxArt=new Image();vfxArt.src="/art/player-vfx.png";
+    const heartSkillArt=new Image();heartSkillArt.src="/art/vfx/heart-skills-v1.png";
+    const brainSkillArt=new Image();brainSkillArt.src="/art/vfx/brain-skills-v1.png";
+    const liverSkillArt=new Image();liverSkillArt.src="/art/vfx/liver-skills-v1.png";
+    const skillSheets:Record<CoreOrgan,HTMLImageElement>={heart:heartSkillArt,brain:brainSkillArt,liver:liverSkillArt};
     const drawEnvironment=(g:Game,camX:number,camY:number)=>{
       const map=stageMaps[g.stage];
       ctx.fillStyle=["#243a35","#30383d","#3c3931","#d9e4df"][g.stage];
@@ -362,19 +372,15 @@ export default function OrganGame() {
         if(!g.bossSpawned&&g.stageT>BOSS_AT){g.bossSpawned=true;if(g.stage===3)g.bossWeakTarget=ORGAN_KEYS.reduce((a,b)=>g.organs[a]<g.organs[b]?a:b);spawn(g,true);sound.current?.play("boss");g.effect=g.bossWeakTarget?`노화가 ${g.bossWeakTarget}을 노립니다`:`${STAGES[g.stage][1]} 등장`;g.effectT=2.8;sendGameLabEvent("game_boss_reached",{runNumber:runNumber.current,stage:g.stage+1,elapsedSeconds:Math.round(g.t),kills:g.kills,level:g.level,weakTarget:g.bossWeakTarget})}
         if(g.t>=480){const boss=g.mobs.find(m=>m.boss);if(!boss)spawn(g,true)}
         const dx=(g.keys.has("KeyD")?1:0)-(g.keys.has("KeyA")?1:0)+g.touchX,dy=(g.keys.has("KeyS")?1:0)-(g.keys.has("KeyW")?1:0)+g.touchY,n=Math.hypot(dx,dy)||1;
-        const lungActive=g.organs.폐>=70,lungDanger=g.organs.폐<30,moving=Boolean(dx||dy);
-        if(g.fatigue>0&&g.t-g.lastFatigue>=10){g.lastFatigue=g.t;g.organs.심장=Math.max(0,g.organs.심장-g.fatigue);g.effect=`야근 피로 · 심장 -${g.fatigue}`;g.effectT=1.1}
-        g.runner=g.chemistries.includes("heart_lung")?(moving?Math.min(5,g.runner+dt):Math.max(0,g.runner-dt*2.4)):0;
-        const runnerBoost=1+g.runner*.035,moveSpeed=g.speed*(lungActive&&moving ? 1.16 : lungDanger ? 0.82 : 1)*runnerBoost*(g.moveBuff>0?1.2:1);
+        const moving=Boolean(dx||dy);
+        const moveSpeed=g.speed*(g.moveBuff>0?1.2:1);
         if(g.inv<=.12){const power=Math.min(1,n);g.vx=dx/n*moveSpeed*power;g.vy=dy/n*moveSpeed*power}
         g.x=Math.max(18,Math.min(g.worldW-18,g.x+g.vx*dt));g.y=Math.max(18,Math.min(g.worldH-18,g.y+g.vy*dt));
         if(g.mainClass==="liver"&&moving){
           const moved=Math.hypot(g.x-g.lastTrailX,g.y-g.lastTrailY);g.poisonTrailDistance+=moved;g.lastTrailX=g.x;g.lastTrailY=g.y;
           const interval=cardLevel(g,"liver_footprints")?58*Math.pow(.82,cardLevel(g,"liver_footprints")-1):82;
-          if(g.poisonTrailDistance>=interval){g.poisonTrailDistance=0;const overlap=cardLevel(g,"liver_overlap")?g.fields.find(f=>Math.hypot(f.x-g.x,f.y-g.y)<f.r*.58):undefined;if(overlap){overlap.stack=Math.min(3,overlap.stack+1);overlap.r*=1.15;overlap.life=Math.max(overlap.life,4.8*g.poisonDurationMul);g.effect=`오염 중첩 · ${overlap.stack}단계`;g.effectT=.7}else g.fields.push({x:g.x,y:g.y,r:74*g.poisonRadiusMul,life:(4.8+(cardLevel(g,"liver_footprints")*.9))*g.poisonDurationMul,stack:1,kills:0,tick:0});g.fields=g.fields.slice(-36)}
+          if(g.poisonTrailDistance>=interval){g.poisonTrailDistance=0;const overlap=cardLevel(g,"liver_overlap")?g.fields.find(f=>Math.hypot(f.x-g.x,f.y-g.y)<f.r*.58):undefined;if(overlap){overlap.stack=Math.min(3,overlap.stack+1);overlap.r*=1.15;overlap.life=Math.max(overlap.life,4.8*g.poisonDurationMul);g.effect=`오염 중첩 · ${overlap.stack}단계`;g.effectT=.7}else g.fields.push({x:g.x,y:g.y,r:74*g.poisonRadiusMul,life:(4.8+(cardLevel(g,"liver_footprints")*.9))*g.poisonDurationMul,stack:1,kills:0,tick:0});g.fields=g.fields.slice(-36);pushSkill(g,"liver",0,g.x,g.y,52,.45,{rot:Math.atan2(g.vy,g.vx),grow:1.1})}
         }else{g.lastTrailX=g.x;g.lastTrailY=g.y}
-        if(g.chemistries.includes("heart_lung")&&moving){g.hp=Math.min(g.maxHp,g.hp+(0.55+g.runner*.42)*dt);if(Math.floor(g.t*2)%12===0){g.effect=`케미 · 심폐 러너 ${Math.ceil(g.runner)}단계`;g.effectT=.45}}
-        if(g.inv>0&&lungActive&&Math.random()<dt*35){burst(g,g.x-g.vx*.035,g.y-g.vy*.035,"#4ee5e1",2);g.effect="폐 활성 · 잔상 호흡";g.effectT=.5}
         const diff=DIFFICULTY[g.difficulty],cap=Math.min(coarse?140:190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count*(coarse ? .78 : 1)));
         const takeDamage=(raw:number)=>raw*100/(100+g.armor*5);
         const hurtPlayer=(raw:number)=>{let amount=takeDamage(raw);g.noDamage=0;if(g.shield>0){const blocked=Math.min(g.shield,amount);g.shield-=blocked;amount-=blocked}g.hp-=amount;if(g.hp<=0&&g.reviveAvailable){g.reviveAvailable=false;g.hp=g.maxHp*.4;g.inv=2;g.shield=g.maxHp*.15;g.heartFx=.8;g.effect="세포 분열 · 40% 체력으로 부활";g.effectT=3;sound.current?.play("level");return false}if(g.hp<=0){endGame(false);return true}return false};
@@ -387,13 +393,13 @@ export default function OrganGame() {
           if(g.mainClass==="heart"){
             const inRange=g.mobs.filter(m=>Math.hypot(m.x-g.x,m.y-g.y)<=g.meleeRange+m.r).sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y))[0];
             const adrenaline=cardLevel(g,"heart_adrenaline"),nearby=g.mobs.some(m=>Math.hypot(m.x-g.x,m.y-g.y)<g.meleeRange*1.8);g.fire=g.fireRate*(nearby&&adrenaline?Math.max(.5,.75-adrenaline*.05):1);
-            if(inRange){g.meleeCombo=(g.meleeCombo%4)+1;inRange.overloadHits++;let damage=g.damage*(1+cardLevel(g,"heart_overload")*.08);if(cardLevel(g,"heart_overload")&&inRange.overloadHits>=5){damage*=2.2;inRange.overloadHits=0;g.effect="과부하 연타 · 2.2×";g.effectT=.8}if(inRange.heartMark>0){damage*=1.3;inRange.heartMark=0}inRange.hp-=damage;inRange.hit=.12;g.heartFx=.2;sound.current?.play("hit");burst(g,inRange.x,inRange.y,"#ff715b",6);
+            if(inRange){g.meleeCombo=(g.meleeCombo%4)+1;inRange.overloadHits++;let damage=g.damage*(1+cardLevel(g,"heart_overload")*.08);if(cardLevel(g,"heart_overload")&&inRange.overloadHits>=5){damage*=2.2;inRange.overloadHits=0;pushSkill(g,"heart",4,inRange.x,inRange.y,120,.4,{grow:1.6});g.effect="과부하 연타 · 2.2×";g.effectT=.8}if(inRange.heartMark>0){damage*=1.3;inRange.heartMark=0;pushSkill(g,"heart",6,inRange.x,inRange.y,64,.35,{grow:1.3})}inRange.hp-=damage;inRange.hit=.12;g.heartFx=.2;sound.current?.play("hit");burst(g,inRange.x,inRange.y,"#ff715b",6);if(g.meleeCombo<4)pushSkill(g,"heart",g.meleeCombo-1,inRange.x,inRange.y,72,.2,{rot:Math.atan2(inRange.y-g.y,inRange.x-g.x),grow:1.2});
               if(cardLevel(g,"fusion_heart_liver")){inRange.poisonStacks=Math.min(8,inRange.poisonStacks+1);inRange.toxin=4}
-              if(g.meleeCombo===4){const shock=cardLevel(g,"heart_shock");if(shock){const radius=g.meleeRange*1.8*(1+(shock-1)*.25);for(const m of g.mobs){const d=Math.hypot(m.x-inRange.x,m.y-inRange.y);if(d<radius){m.hp-=g.damage*.8*(1+(shock-1)*.15);if(d>1){m.x+=(m.x-inRange.x)/d*18;m.y+=(m.y-inRange.y)/d*18}if(shock>=3)m.heartMark=3}}g.heartFx=.58;g.shake=9;burst(g,inRange.x,inRange.y,"#ff715b",24)}if(cardLevel(g,"fusion_heart_liver")&&inRange.poisonStacks){const blast=g.damage*.42*inRange.poisonStacks;for(const m of g.mobs)if(Math.hypot(m.x-inRange.x,m.y-inRange.y)<120)m.hp-=blast;inRange.poisonStacks=0;burst(g,inRange.x,inRange.y,"#a8d43a",20)}if(cardLevel(g,"fusion_heart_brain"))shootAt(inRange,{damageMul:.65,chain:g.chainBonus,core:true})}
+              if(g.meleeCombo===4){const shock=cardLevel(g,"heart_shock");pushSkill(g,"heart",3,inRange.x,inRange.y,shock?185:120,.5,{grow:1.7});if(shock){const radius=g.meleeRange*1.8*(1+(shock-1)*.25);for(const m of g.mobs){const d=Math.hypot(m.x-inRange.x,m.y-inRange.y);if(d<radius){m.hp-=g.damage*.8*(1+(shock-1)*.15);if(d>1){m.x+=(m.x-inRange.x)/d*18;m.y+=(m.y-inRange.y)/d*18}if(shock>=3)m.heartMark=3}}g.heartFx=.58;g.shake=9;burst(g,inRange.x,inRange.y,"#ff715b",24)}if(cardLevel(g,"fusion_heart_liver")&&inRange.poisonStacks){const blast=g.damage*.42*inRange.poisonStacks;for(const m of g.mobs)if(Math.hypot(m.x-inRange.x,m.y-inRange.y)<120)m.hp-=blast;inRange.poisonStacks=0;burst(g,inRange.x,inRange.y,"#a8d43a",20)}if(cardLevel(g,"fusion_heart_brain"))shootAt(inRange,{damageMul:.65,chain:g.chainBonus,core:true})}
             }
           }else if(g.mainClass==="brain"){
             const coreCount=2+cardLevel(g,"brain_synapse"),close=g.mobs.some(m=>Math.hypot(m.x-g.x,m.y-g.y)<180),speedBoost=(cardLevel(g,"fusion_brain_heart")&&close)?0.35:0;
-            g.fire=g.fireRate*.94/(1+speedBoost);const focus=cardLevel(g,"brain_focus"),toxic=cardLevel(g,"fusion_brain_liver");const targets=[...g.mobs].sort((a,b)=>toxic&&a.poisonStacks!==b.poisonStacks?b.poisonStacks-a.poisonStacks:focus?b.hp-a.hp:Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y));for(let i=0;i<coreCount;i++){const target=targets[i%Math.max(1,targets.length)]||nearest;shootAt(target,{damageMul:focus&&(target.elite||target.boss)?1.2:1,chain:cardLevel(g,"brain_chain")+g.chainBonus,poison:toxic?1:0,core:true,angle:Math.atan2(target.y-g.y,target.x-g.x)+(i-(coreCount-1)/2)*.035})}g.brainVolley=.24;g.castFx=.16;g.castAngle=Math.atan2(nearest.y-g.y,nearest.x-g.x);sound.current?.play("shot");
+            g.fire=g.fireRate*.94/(1+speedBoost);const focus=cardLevel(g,"brain_focus"),toxic=cardLevel(g,"fusion_brain_liver");const targets=[...g.mobs].sort((a,b)=>toxic&&a.poisonStacks!==b.poisonStacks?b.poisonStacks-a.poisonStacks:focus?b.hp-a.hp:Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y));for(let i=0;i<coreCount;i++){const target=targets[i%Math.max(1,targets.length)]||nearest;shootAt(target,{damageMul:focus&&(target.elite||target.boss)?1.2:1,chain:cardLevel(g,"brain_chain")+g.chainBonus,poison:toxic?1:0,core:true,angle:Math.atan2(target.y-g.y,target.x-g.x)+(i-(coreCount-1)/2)*.035})}g.brainVolley=.24;pushSkill(g,"brain",1,g.x,g.y,74,.16,{rot:Math.atan2(nearest.y-g.y,nearest.x-g.x),grow:1.3});g.castFx=.16;g.castAngle=Math.atan2(nearest.y-g.y,nearest.x-g.x);sound.current?.play("shot");
           }else if(g.mainClass==="liver"){
             g.fire=.55;
           }else{
@@ -422,23 +428,17 @@ export default function OrganGame() {
           if(d<m.r+(coarse?12:16)&&g.inv<=0){hurtPlayer((m.boss?18:8)*diff.damage);if(m.boss&&g.bossWeakTarget){g.organs[g.bossWeakTarget]=Math.max(0,g.organs[g.bossWeakTarget]-4);g.effect=`노화 침식 · ${g.bossWeakTarget} -4`;g.effectT=1.2}g.inv=.55;g.shake=10;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",12)}
           if(g.poison&&d<95){m.hp-=g.poison*6*dt}
         }
-        const berserk=g.chemistries.includes("heart_muscle")?1+(1-g.hp/g.maxHp)*.45:1;
-        const muscleDamage=(g.organs.근육>=70?1.18:g.organs.근육<30?0.78:1)*berserk*(moving?1+g.momentum*.18:1);
-        for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.enemy){if(Math.hypot(s.x-g.x,s.y-g.y)<s.r+(coarse?11:15)&&g.inv<=0){s.life=0;hurtPlayer(7*diff.damage);if(g.bossWeakTarget&&g.mobs.some(m=>m.boss)){g.organs[g.bossWeakTarget]=Math.max(0,g.organs[g.bossWeakTarget]-2);g.effect=`노화 탄막 · ${g.bossWeakTarget} -2`;g.effectT=.9}g.inv=.42;g.shake=7;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",8)}}else{for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){const hit=g.damage*muscleDamage*(s.r>9?1.65:1)*(s.damageMul??1)*g.rangedDamageMul;m.hp-=hit;s.life=0;m.hit=.08;if(s.poison){m.poisonStacks=Math.min(8,m.poisonStacks+s.poison);m.toxin=4}sound.current?.play("hit");burst(g,s.x,s.y,s.core?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e",s.r>9?10:4);if((s.chain??0)>0){const next=g.mobs.filter(o=>o!==m&&o.hp>0&&Math.hypot(o.x-m.x,o.y-m.y)<220).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];if(next){const a=Math.atan2(next.y-m.y,next.x-m.x);g.shots.push({x:m.x,y:m.y,vx:Math.cos(a)*610,vy:Math.sin(a)*610,life:.55,r:6,damageMul:(s.damageMul??1)*.7,chain:(s.chain??1)-1,poison:s.poison,core:true})}}break}}}}
+        for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.enemy){if(Math.hypot(s.x-g.x,s.y-g.y)<s.r+(coarse?11:15)&&g.inv<=0){s.life=0;hurtPlayer(7*diff.damage);if(g.bossWeakTarget&&g.mobs.some(m=>m.boss)){g.organs[g.bossWeakTarget]=Math.max(0,g.organs[g.bossWeakTarget]-2);g.effect=`노화 탄막 · ${g.bossWeakTarget} -2`;g.effectT=.9}g.inv=.42;g.shake=7;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",8)}}else{for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){const hit=g.damage*(s.r>9?1.65:1)*(s.damageMul??1)*g.rangedDamageMul;m.hp-=hit;s.life=0;m.hit=.08;if(s.poison){m.poisonStacks=Math.min(8,m.poisonStacks+s.poison);m.toxin=4}sound.current?.play("hit");burst(g,s.x,s.y,s.core?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e",s.r>9?10:4);if((s.chain??0)>0){const next=g.mobs.filter(o=>o!==m&&o.hp>0&&Math.hypot(o.x-m.x,o.y-m.y)<220).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];if(next){const a=Math.atan2(next.y-m.y,next.x-m.x);g.shots.push({x:m.x,y:m.y,vx:Math.cos(a)*610,vy:Math.sin(a)*610,life:.55,r:6,damageMul:(s.damageMul??1)*.7,chain:(s.chain??1)-1,poison:s.poison,core:true})}}break}}}}
         for(const f of g.fields){f.life-=dt;f.tick-=dt;for(const m of g.mobs)if(Math.hypot(m.x-f.x,m.y-f.y)<f.r){m.hp-=(7+f.stack*4)*dt;m.toxin=Math.max(m.toxin,.3);if(cardLevel(g,"liver_concentrated")&&f.tick<=0){m.poisonStacks=Math.min(8,m.poisonStacks+1);m.toxin=4}}if(f.tick<=0)f.tick=1}g.fields=g.fields.filter(f=>f.life>0);
-        if(cardLevel(g,"fusion_liver_brain")&&g.mainClass==="liver"&&g.toxicCoreCooldown<=0&&g.fields.length&&g.mobs.length){const source=g.fields[Math.floor(Math.random()*g.fields.length)],target=[...g.mobs].sort((a,b)=>Math.hypot(a.x-source.x,a.y-source.y)-Math.hypot(b.x-source.x,b.y-source.y))[0];if(target){g.fields.push({x:target.x,y:target.y,r:48*g.poisonRadiusMul,life:3.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.toxicCoreCooldown=4.5;burst(g,target.x,target.y,"#a8d43a",14);g.effect="추적 독성 · 오염 지역 전파";g.effectT=.8}}
-        if(g.organs.간>=70){for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<100)m.hp-=(2.8+g.poison*2)*dt}if(Math.floor(g.t*2)%8===0){g.effect="간 활성 · 해독 독성 오라";g.effectT=.45}}
-        const heartBeat=Math.floor(g.t/8);
-        if(g.organs.심장>=70&&heartBeat!==g.lastHeart){g.lastHeart=heartBeat;g.heartFx=.58;sound.current?.play("heart");g.hp=Math.min(g.maxHp,g.hp+5);for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<130)m.hp-=8+g.pulse*2}burst(g,g.x,g.y,"#ff715b",28);g.effect="심장 활성 · 회복 박동";g.effectT=1.1}
+        if(cardLevel(g,"fusion_liver_brain")&&g.mainClass==="liver"&&g.toxicCoreCooldown<=0&&g.fields.length&&g.mobs.length){const source=g.fields[Math.floor(Math.random()*g.fields.length)],target=[...g.mobs].sort((a,b)=>Math.hypot(a.x-source.x,a.y-source.y)-Math.hypot(b.x-source.x,b.y-source.y))[0];if(target){g.fields.push({x:target.x,y:target.y,r:48*g.poisonRadiusMul,life:3.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.toxicCoreCooldown=4.5;pushSkill(g,"liver",6,target.x,target.y,84,.45,{spin:5,grow:1.3});burst(g,target.x,target.y,"#a8d43a",14);g.effect="추적 독성 · 오염 지역 전파";g.effectT=.8}}
         const dead=g.mobs.filter(m=>m.hp<=0);for(const m of dead){
           g.kills++;burst(g,m.x,m.y,m.boss?"#ff715b":"#4ee5e1",m.boss?30:8);
           const closeKill=Math.hypot(m.x-g.x,m.y-g.y)<g.meleeRange*1.35;if(closeKill&&(cardLevel(g,"heart_bloodflow")||cardLevel(g,"life_sports")))g.moveBuff=2;
           if(cardLevel(g,"common_regen")){g.killsSinceRegen++;if(g.killsSinceRegen>=20){g.killsSinceRegen=0;const heal=g.maxHp*.08*(1-g.recoveryPenalty);g.hp=Math.min(g.maxHp,g.hp+heal);g.effect=`재생 인자 · 체력 +${Math.round(heal)}`;g.effectT=1.1}}
-          if(cardLevel(g,"liver_rupture")&&m.poisonStacks>0){const blast=(7+g.poison*2)*m.poisonStacks*1.5*(1+(cardLevel(g,"liver_rupture")-1)*.2);for(const other of g.mobs)if(other!==m&&Math.hypot(other.x-m.x,other.y-m.y)<145){other.hp-=blast;other.poisonStacks=Math.min(8,other.poisonStacks+1);other.toxin=4}burst(g,m.x,m.y,"#a8d43a",22);g.effect="독성 파열 · 연쇄 오염";g.effectT=.8}
-          if(cardLevel(g,"fusion_brain_liver")&&m.poisonStacks>0){const other=g.mobs.filter(o=>o!==m&&o.hp>0).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];if(other){other.poisonStacks=Math.min(8,other.poisonStacks+1);other.toxin=4}}
+          if(cardLevel(g,"liver_rupture")&&m.poisonStacks>0){const blast=(7+g.poison*2)*m.poisonStacks*1.5*(1+(cardLevel(g,"liver_rupture")-1)*.2);for(const other of g.mobs)if(other!==m&&Math.hypot(other.x-m.x,other.y-m.y)<145){other.hp-=blast;other.poisonStacks=Math.min(8,other.poisonStacks+1);other.toxin=4}pushSkill(g,"liver",5,m.x,m.y,150,.5,{grow:1.7});burst(g,m.x,m.y,"#a8d43a",22);g.effect="독성 파열 · 연쇄 오염";g.effectT=.8}
+          if(cardLevel(g,"fusion_brain_liver")&&m.poisonStacks>0){const other=g.mobs.filter(o=>o!==m&&o.hp>0).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];if(other){other.poisonStacks=Math.min(8,other.poisonStacks+1);other.toxin=4;pushSkill(g,"brain",6,other.x,other.y,72,.4,{grow:1.4})}}
           const deathField=g.fields.find(f=>Math.hypot(m.x-f.x,m.y-f.y)<f.r);if(deathField&&cardLevel(g,"fusion_liver_heart")){deathField.kills++;if(deathField.kills>=3){deathField.kills=0;for(const other of g.mobs)if(Math.hypot(other.x-deathField.x,other.y-deathField.y)<deathField.r*1.5)other.hp-=g.damage*2.1;burst(g,deathField.x,deathField.y,"#ff715b",28);g.shake=10;g.effect="독성 폭주 · 지대 폭발";g.effectT=1}}
-          if(g.mainClass==="brain"&&cardLevel(g,"brain_frenzy")&&g.kills%5===0){const coreCount=2+cardLevel(g,"brain_synapse"),targets=[...g.mobs].filter(o=>o!==m&&o.hp>0).sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y));for(let i=0;i<coreCount&&targets.length;i++){const target=targets[i%targets.length],a=Math.atan2(target.y-g.y,target.x-g.x);g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*650,vy:Math.sin(a)*650,life:1.4,r:8,damageMul:1.15,chain:cardLevel(g,"brain_chain")+g.chainBonus,core:true})}g.brainVolley=.5;g.effect="사고 폭주 · 코어 일제 사격";g.effectT=1}
-          if(g.chemistries.includes("brain_liver")&&m.toxin>0){for(const other of g.mobs)if(other!==m&&Math.hypot(other.x-m.x,other.y-m.y)<145)other.toxin=Math.max(other.toxin,3);burst(g,m.x,m.y,"#a49bd8",18);g.effect="케미 · 독성 연쇄 전염";g.effectT=.8}
+          if(g.mainClass==="brain"&&cardLevel(g,"brain_frenzy")&&g.kills%5===0){const coreCount=2+cardLevel(g,"brain_synapse"),targets=[...g.mobs].filter(o=>o!==m&&o.hp>0).sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y));for(let i=0;i<coreCount&&targets.length;i++){const target=targets[i%targets.length],a=Math.atan2(target.y-g.y,target.x-g.x);g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*650,vy:Math.sin(a)*650,life:1.4,r:8,damageMul:1.15,chain:cardLevel(g,"brain_chain")+g.chainBonus,core:true})}g.brainVolley=.5;pushSkill(g,"brain",5,g.x,g.y,175,.5,{grow:1.7});g.effect="사고 폭주 · 코어 일제 사격";g.effectT=1}
           const dropCount=m.boss?7:1;
           for(let i=0;i<dropCount;i++){
             const roll=Math.random(),a=Math.random()*6.28,s=35+Math.random()*90;
@@ -470,7 +470,7 @@ export default function OrganGame() {
         g.drops=g.drops.filter(d=>d.life>0);
         for(const w of g.warnings)w.life-=dt;g.warnings=g.warnings.filter(w=>w.life>0).slice(-40);
         for(const p of g.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}g.parts=g.parts.filter(p=>p.life>0).slice(coarse?-190:-280);
-        if(g.pulse&&Math.floor(g.t*2)%18===0){for(const m of g.mobs){if(Math.hypot(m.x-g.x,m.y-g.y)<115)m.hp-=g.pulse*.3}}
+        for(const fx of g.skillFx){fx.life-=dt;fx.rot+=fx.spin*dt}g.skillFx=g.skillFx.filter(fx=>fx.life>0);
         if(g.t-g.hudAt>.12){g.hudAt=g.t;setHud({hp:g.hp,max:g.maxHp,t:g.t,stage:g.stage,organs:{...g.organs},organLevels:{...g.organLevels},mainClass:g.mainClass,level:g.level,xp:g.xp,nextXp:g.nextXp,loot:picked,effect:g.effectT>0?g.effect:"",chemistries:[...g.chemistries],dashCharges:g.dashCharges,maxDash:g.maxDash,armor:g.armor,zone:g.zone,zoneT:g.zoneT})}
       }
       const sx=(Math.random()-.5)*g.shake,sy=(Math.random()-.5)*g.shake;
@@ -484,7 +484,7 @@ export default function OrganGame() {
         const px=g.zone==="중앙"?p.portalX:p.zoneX,py=g.zone==="중앙"?p.portalY:p.zoneY;if(!visible(px,py,90))continue;
         const pulse=1+Math.sin(g.t*4+p.portalX)*.08;ctx.save();ctx.translate(px,py);ctx.scale(pulse,pulse);ctx.globalAlpha=.2;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(0,0,52,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.9;ctx.strokeStyle=p.color;ctx.lineWidth=5;ctx.setLineDash([12,8]);ctx.lineDashOffset=-g.t*32;ctx.beginPath();ctx.arc(0,0,42,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.font="26px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(g.zone==="중앙"?p.icon:"↩",0,0);ctx.font="800 12px Arial";ctx.fillStyle="#fff";ctx.fillText(g.zone==="중앙"?p.label:"교차로 복귀",0,68);ctx.font="700 9px monospace";ctx.fillStyle=p.color;ctx.fillText(g.zone==="중앙"?p.focus:`${p.key} 구역 ${Math.floor(g.zoneT)}초`,0,83);ctx.restore();
       }
-      for(const f of g.fields){if(!visible(f.x,f.y,f.r))continue;ctx.save();ctx.globalAlpha=Math.min(.22+f.stack*.13,f.life*.2);ctx.fillStyle=f.stack>=3?"#62a51f":f.stack===2?"#83bf2c":"#9ed83b";ctx.strokeStyle=f.stack>=3?"#ecff6a":"#d8ff3e";ctx.lineWidth=1+f.stack;ctx.beginPath();ctx.arc(f.x,f.y,f.r+Math.sin(g.t*6+f.x)*4,0,Math.PI*2);ctx.fill();ctx.setLineDash([8,7]);ctx.stroke();if(f.stack>1){ctx.setLineDash([]);ctx.globalAlpha=.8;ctx.fillStyle="#f5ffd8";ctx.font="800 11px monospace";ctx.textAlign="center";ctx.fillText(`독 ${f.stack}단계`,f.x,f.y+4)}ctx.restore()}
+      for(const f of g.fields){if(!visible(f.x,f.y,f.r))continue;ctx.save();ctx.globalAlpha=Math.min(.22+f.stack*.13,f.life*.2);ctx.fillStyle=f.stack>=3?"#62a51f":f.stack===2?"#83bf2c":"#9ed83b";ctx.strokeStyle=f.stack>=3?"#ecff6a":"#d8ff3e";ctx.lineWidth=1+f.stack;ctx.beginPath();ctx.arc(f.x,f.y,f.r+Math.sin(g.t*6+f.x)*4,0,Math.PI*2);ctx.fill();ctx.setLineDash([8,7]);ctx.stroke();if(f.stack>1){ctx.setLineDash([]);ctx.globalAlpha=.8;ctx.fillStyle="#f5ffd8";ctx.font="800 11px monospace";ctx.textAlign="center";ctx.fillText(`독 ${f.stack}단계`,f.x,f.y+4)}ctx.restore();const ls=skillSheets.liver;if(ls.complete&&ls.naturalWidth){const idx=Math.min(3,f.stack),lcw=ls.naturalWidth/4,lch=ls.naturalHeight/2,fsz=f.r*1.9;ctx.save();ctx.globalAlpha=Math.min(.5,f.life*.3);ctx.globalCompositeOperation="screen";ctx.drawImage(ls,(idx%4)*lcw,Math.floor(idx/4)*lch,lcw,lch,f.x-fsz/2,f.y-fsz/2,fsz,fsz);ctx.restore()}}
       for(const w of g.warnings){
         if(!visible(w.x,w.y,160)&&!visible(w.tx,w.ty,160))continue;
         const progress=1-w.life/w.max,pulse=.35+Math.sin(g.t*24)*.15;ctx.save();ctx.globalAlpha=.42+progress*.42;ctx.strokeStyle="#ff715b";ctx.fillStyle=`rgba(255,113,91,${pulse})`;ctx.lineWidth=3;
@@ -499,6 +499,13 @@ export default function OrganGame() {
         const cellW=vfxArt.naturalWidth/4,cellH=vfxArt.naturalHeight/2,col=index%4,row=Math.floor(index/4);
         ctx.save();ctx.translate(x,y);ctx.rotate(rotation);ctx.globalAlpha=Math.max(0,Math.min(1,alpha));ctx.globalCompositeOperation="screen";
         ctx.drawImage(vfxArt,col*cellW,row*cellH,cellW,cellH,-size/2,-size/2,size,size);ctx.restore();
+      };
+      const drawSkill=(fx:SkillFx)=>{
+        const sheet=skillSheets[fx.sheet];if(!sheet.complete||!sheet.naturalWidth)return;
+        const cellW=sheet.naturalWidth/4,cellH=sheet.naturalHeight/2,col=fx.index%4,row=Math.floor(fx.index/4);
+        const p=1-fx.life/fx.max,scale=(1+(fx.grow-1)*p)*renderScale,size=fx.size*scale;
+        ctx.save();ctx.translate(fx.x,fx.y);ctx.rotate(fx.rot);ctx.globalAlpha=Math.max(0,Math.min(1,Math.sin(fx.life/fx.max*Math.PI*.5)));ctx.globalCompositeOperation="screen";
+        ctx.drawImage(sheet,col*cellW,row*cellH,cellW,cellH,-size/2,-size/2,size,size);ctx.restore();
       };
       for(const d of g.drops){
         if(!visible(d.x,d.y,30))continue;
@@ -537,6 +544,7 @@ export default function OrganGame() {
         if(m.boss){ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(-m.r,-m.r-13,m.r*2,5);ctx.fillStyle="#d8ff3e";ctx.fillRect(-m.r,-m.r-13,m.r*2*(m.hp/m.max),5)}ctx.restore();
         if(m.hit>0)drawVfx(3,m.x,m.y,(m.boss?92:52)*renderScale,Math.min(1,m.hit*12),g.t*2);
       }
+      for(const fx of g.skillFx)if(visible(fx.x,fx.y,fx.size*2))drawSkill(fx);
       const playerMoving=Math.hypot(g.vx,g.vy)>20,moveAngle=Math.atan2(g.vy,g.vx);
       if(g.mainClass==="brain"){const coreCount=2+cardLevel(g,"brain_synapse");for(let i=0;i<coreCount;i++){const a=g.t*(1.9+cardLevel(g,"brain_frenzy")*.08)+i/coreCount*Math.PI*2,r=50+Math.sin(g.t*3+i)*4,cx=g.x+Math.cos(a)*r,cy=g.y+Math.sin(a)*r;ctx.save();ctx.shadowBlur=g.brainVolley>0?28:16;ctx.shadowColor="#a49bd8";ctx.fillStyle=g.brainVolley>0?"#f2ebff":"#8f83dc";ctx.beginPath();ctx.arc(cx,cy,g.brainVolley>0?9:7,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#d8ff3e";ctx.globalAlpha=.7;ctx.beginPath();ctx.arc(cx,cy,12+Math.sin(g.t*8+i)*2,0,Math.PI*2);ctx.stroke();ctx.restore()}g.brainVolley=Math.max(0,g.brainVolley-.016)}
       if(g.shield>0){ctx.save();ctx.globalAlpha=.45+.12*Math.sin(g.t*7);ctx.strokeStyle="#4ee5e1";ctx.lineWidth=4;ctx.beginPath();ctx.arc(g.x,g.y,43+Math.sin(g.t*4)*2,0,Math.PI*2);ctx.stroke();ctx.restore()}
@@ -550,7 +558,6 @@ export default function OrganGame() {
       const formIndex=g.mainClass==="brain"?1:g.mainClass==="heart"?3:g.mainClass==="liver"?5:0,playerSize=(formIndex?86:74)*renderScale;
       const playerBob=Math.sin(g.t*(Math.hypot(g.vx,g.vy)>20?13:5))*2;
       ctx.fillStyle="rgba(0,0,0,.32)";ctx.beginPath();ctx.ellipse(0,25,23-Math.abs(playerBob),7,0,0,6.28);ctx.fill();
-      if(g.chemistries.includes("heart_muscle")&&g.hp/g.maxHp<.5){ctx.strokeStyle="#ff715b";ctx.lineWidth=4;ctx.globalAlpha=.5+Math.sin(g.t*12)*.2;ctx.beginPath();ctx.arc(0,0,32+(1-g.hp/g.maxHp)*12,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1}
       ctx.translate(0,playerBob);if(g.vx<0)ctx.scale(-1,1);
       ctx.globalAlpha=g.inv>0&&Math.floor(g.t*20)%2 ? .38 : 1;ctx.shadowBlur=22;ctx.shadowColor="#d8ff3e";
       if(playerArt.complete&&playerArt.naturalWidth)ctx.drawImage(playerArt,(formIndex%4)*384,Math.floor(formIndex/4)*512,384,512,-playerSize/2,-playerSize*.64,playerSize,playerSize);
@@ -563,7 +570,7 @@ export default function OrganGame() {
 
   const choose=(c:Choice)=>{const g=game.current;c.apply(g);g.effect=`${c.name} · ${c.effect}`;g.effectT=2.4;if(c.chemistry&&!g.chemistries.includes(c.chemistry)){g.chemistries.push(c.chemistry);g.effect=`케미 발견 · ${c.name}`;g.effectT=2.8;const found=new Set<string>(JSON.parse(localStorage.getItem("organ-chemistry")||"[]"));found.add(c.chemistry);const chemistries=[...found];localStorage.setItem("organ-chemistry",JSON.stringify(chemistries));setArchive(old=>({...old,chemistries}))}ORGAN_KEYS.forEach(k=>g.organs[k]=Math.max(0,Math.min(100,g.organs[k])));if(choiceType==="생활 선택")g.choices.push(c.name);else g.augments.push(c.name);sendGameLabEvent("game_choice_selected",{runNumber:runNumber.current,choiceType,choice:c.name,effect:c.effect,elapsedSeconds:Math.round(g.t),stage:g.stage+1,level:g.level,organLevels:{...g.organLevels},mainClass:g.mainClass});
     if(c.organLevel&&!g.awakened&&g.organLevels[c.organLevel]>=3){sound.current?.play("level");openChoice("장기 각성",awakeningChoices(c.organLevel));return}
-    if(c.awakening&&c.awakening!=="hold"){g.effect=`${CORE_META[c.awakening].className} 각성 · 전투 방식이 고정됩니다`;g.effectT=3.2;g.heartFx=.7;sound.current?.play("boss")}
+    if(c.awakening&&c.awakening!=="hold"){g.effect=`${CORE_META[c.awakening].className} 각성 · 전투 방식이 고정됩니다`;g.effectT=3.2;g.heartFx=.7;pushSkill(g,c.awakening,7,g.x,g.y,240,.85,{grow:1.9});sound.current?.play("boss")}
     g.paused=false;g.last=performance.now();setMode("play")};
   useEffect(()=>{
     if(mode!=="choice")return;

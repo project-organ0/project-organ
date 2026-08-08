@@ -12,6 +12,8 @@ export type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:
 export type Drop = {x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number};
 export type Telegraph = {x:number;y:number;tx:number;ty:number;life:number;max:number;kind:"line"|"circle";r:number};
 export type ToxicField = {x:number;y:number;r:number;life:number;stack:number;kills:number;tick:number};
+// 직업별 스킬 이펙트: 4x2 시트에서 index 프레임 하나를 위치/회전/확대/알파로 재생
+export type SkillFx = {sheet:CoreOrgan;index:number;x:number;y:number;size:number;life:number;max:number;rot:number;spin:number;grow:number};
 export type Game = {
   w:number;h:number;worldW:number;worldH:number;t:number;stage:number;stageT:number;hp:number;maxHp:number;
   x:number;y:number;vx:number;vy:number;touchX:number;touchY:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
@@ -25,4 +27,5 @@ export type Game = {
   organLevels:Record<CoreOrgan,number>;mainClass:MainClass;awakened:boolean;deferredAwakenings:CoreOrgan[];
   cardLevels:Record<string,number>;acquiredCards:string[];meleeCombo:number;moveBuff:number;poisonTrailDistance:number;lastTrailX:number;lastTrailY:number;toxicCoreCooldown:number;killsSinceRegen:number;noDamage:number;shield:number;reviveAvailable:boolean;meleeRange:number;rangedDamageMul:number;chainBonus:number;poisonRadiusMul:number;poisonDurationMul:number;brainVolley:number;
   fatigue:number;unstableAim:number;recoveryPenalty:number;momentum:number;bossWeakTarget:OrganKey|null;lastFatigue:number;
+  skillFx:SkillFx[];
 };
