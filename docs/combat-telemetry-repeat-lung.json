@@ -1,0 +1,598 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-08-08T18:23:52.430Z",
+  "runs": [
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786211710572-vnza6m",
+      "startedAt": "2026-08-08T17:55:10.572Z",
+      "endedAt": "2026-08-08T17:57:30.068Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "result": "defeat",
+      "class": "lung",
+      "survivalSeconds": 105.9,
+      "stage": 2,
+      "playerLevel": 5,
+      "kills": 173,
+      "bossKills": 0,
+      "damageDealt": 3996.53,
+      "damageBySource": {
+        "basic_projectile": 2388.89,
+        "lung_action": 852.93,
+        "lung_basic": 646.03,
+        "poison_aura": 58.5,
+        "muscle_collision": 50.18
+      },
+      "damageTaken": 196.38,
+      "damageBlocked": 0,
+      "hitsTaken": 29,
+      "healingReceived": 96.38,
+      "distanceTraveled": 19924.2,
+      "actionsUsed": 7,
+      "choices": [
+        {
+          "id": "life_dinner",
+          "name": "회식의 제왕",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18.02,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 24.29,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 52.75,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 96.1,
+          "stage": 1,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "awaken_lung",
+          "name": "질풍술사로 각성",
+          "kind": null,
+          "tier": null,
+          "choiceType": "장기 각성",
+          "time": 96.1,
+          "stage": 1,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "lung_circulation",
+          "name": "순환 가속",
+          "kind": "class",
+          "tier": 4,
+          "choiceType": "세포 진화",
+          "time": 97.72,
+          "stage": 1,
+          "playerLevel": 5,
+          "cardLevel": 1
+        }
+      ],
+      "bossResults": [],
+      "cardLevels": {
+        "life_dinner": 1,
+        "lung_circulation": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786211850587-5c7hmt",
+      "startedAt": "2026-08-08T17:57:30.587Z",
+      "endedAt": "2026-08-08T18:02:35.175Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "result": "defeat",
+      "class": "lung",
+      "survivalSeconds": 179.87,
+      "stage": 2,
+      "playerLevel": 4,
+      "kills": 168,
+      "bossKills": 0,
+      "damageDealt": 4535.66,
+      "damageBySource": {
+        "basic_projectile": 3220.63,
+        "lung_basic": 1149.35,
+        "brain_chain": 88.94,
+        "lung_action": 50.4,
+        "poison_aura": 26.36
+      },
+      "damageTaken": 158.91,
+      "damageBlocked": 0,
+      "hitsTaken": 24,
+      "healingReceived": 58.91,
+      "distanceTraveled": 39812.6,
+      "actionsUsed": 35,
+      "choices": [
+        {
+          "id": "life_dinner",
+          "name": "회식의 제왕",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 38.03,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 64.3,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        },
+        {
+          "id": "life_night_study",
+          "name": "밤샘 공부",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 122.02,
+          "stage": 2,
+          "playerLevel": 3,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 127.33,
+          "stage": 2,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "awaken_lung",
+          "name": "질풍술사로 각성",
+          "kind": null,
+          "tier": null,
+          "choiceType": "장기 각성",
+          "time": 127.33,
+          "stage": 2,
+          "playerLevel": 4,
+          "cardLevel": null
+        }
+      ],
+      "bossResults": [],
+      "cardLevels": {
+        "life_dinner": 1,
+        "life_night_study": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786212155693-7rn2pc",
+      "startedAt": "2026-08-08T18:02:35.693Z",
+      "endedAt": "2026-08-08T18:10:26.934Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "result": "defeat",
+      "class": "lung",
+      "survivalSeconds": 263.62,
+      "stage": 3,
+      "playerLevel": 5,
+      "kills": 263,
+      "bossKills": 1,
+      "damageDealt": 8944.12,
+      "damageBySource": {
+        "lung_action": 2543.07,
+        "basic_projectile": 2414.48,
+        "lung_basic": 2031.5,
+        "muscle_collision": 1275.81,
+        "lung_bladewind": 656.99,
+        "poison_aura": 22.28
+      },
+      "damageTaken": 205,
+      "damageBlocked": 0,
+      "hitsTaken": 32,
+      "healingReceived": 105,
+      "distanceTraveled": 75286.7,
+      "actionsUsed": 108,
+      "choices": [
+        {
+          "id": "life_dinner",
+          "name": "회식의 제왕",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18.02,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 24.14,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 60.08,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 96.94,
+          "stage": 1,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "awaken_lung",
+          "name": "질풍술사로 각성",
+          "kind": null,
+          "tier": null,
+          "choiceType": "장기 각성",
+          "time": 96.94,
+          "stage": 1,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "life_night_study",
+          "name": "밤샘 공부",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 122.06,
+          "stage": 2,
+          "playerLevel": 4,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "세포 진화",
+          "time": 150.45,
+          "stage": 2,
+          "playerLevel": 5,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_sports",
+          "name": "운동부 입단",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 222.01,
+          "stage": 3,
+          "playerLevel": 5,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "전투 증강",
+          "time": 252.6,
+          "stage": 3,
+          "playerLevel": 5,
+          "cardLevel": 2
+        }
+      ],
+      "bossResults": [
+        {
+          "stage": 3,
+          "killTime": 252.6,
+          "playerLevel": 5,
+          "hpPercent": 21
+        }
+      ],
+      "cardLevels": {
+        "life_dinner": 1,
+        "life_night_study": 1,
+        "lung_bladewind": 2,
+        "life_sports": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786212627455-acqiuk",
+      "startedAt": "2026-08-08T18:10:27.455Z",
+      "endedAt": "2026-08-08T18:12:28.205Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "result": "defeat",
+      "class": null,
+      "survivalSeconds": 78.13,
+      "stage": 1,
+      "playerLevel": 3,
+      "kills": 83,
+      "bossKills": 0,
+      "damageDealt": 1976.44,
+      "damageBySource": {
+        "basic_projectile": 1904.72,
+        "poison_aura": 71.73
+      },
+      "damageTaken": 160,
+      "damageBlocked": 0,
+      "hitsTaken": 24,
+      "healingReceived": 60,
+      "distanceTraveled": 15183.3,
+      "actionsUsed": 0,
+      "choices": [
+        {
+          "id": "life_dinner",
+          "name": "회식의 제왕",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18.02,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 31.73,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 59.94,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        }
+      ],
+      "bossResults": [],
+      "cardLevels": {
+        "life_dinner": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786212748718-gomljd",
+      "startedAt": "2026-08-08T18:12:28.718Z",
+      "endedAt": "2026-08-08T18:23:26.694Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "result": "defeat",
+      "class": "lung",
+      "survivalSeconds": 335.46,
+      "stage": 4,
+      "playerLevel": 6,
+      "kills": 268,
+      "bossKills": 1,
+      "damageDealt": 8565.07,
+      "damageBySource": {
+        "lung_basic": 3027.53,
+        "basic_projectile": 2619.97,
+        "lung_action": 1394.11,
+        "lung_bladewind": 784.87,
+        "muscle_collision": 631.3,
+        "poison_aura": 107.28
+      },
+      "damageTaken": 254.42,
+      "damageBlocked": 0,
+      "hitsTaken": 40,
+      "healingReceived": 154.42,
+      "distanceTraveled": 97963.3,
+      "actionsUsed": 150,
+      "choices": [
+        {
+          "id": "life_dinner",
+          "name": "회식의 제왕",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18.02,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 24.88,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 55.51,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 104.63,
+          "stage": 2,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "awaken_lung",
+          "name": "질풍술사로 각성",
+          "kind": null,
+          "tier": null,
+          "choiceType": "장기 각성",
+          "time": 104.63,
+          "stage": 2,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "전투 증강",
+          "time": 105.39,
+          "stage": 2,
+          "playerLevel": 4,
+          "cardLevel": 1
+        },
+        {
+          "id": "common_regen",
+          "name": "재생 인자",
+          "kind": "common",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 106.65,
+          "stage": 2,
+          "playerLevel": 5,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_night_study",
+          "name": "밤샘 공부",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 122.03,
+          "stage": 2,
+          "playerLevel": 5,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "세포 진화",
+          "time": 172.48,
+          "stage": 2,
+          "playerLevel": 6,
+          "cardLevel": 2
+        },
+        {
+          "id": "life_sports",
+          "name": "운동부 입단",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 222.01,
+          "stage": 3,
+          "playerLevel": 6,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "생활 선택",
+          "time": 322.03,
+          "stage": 4,
+          "playerLevel": 6,
+          "cardLevel": 3
+        }
+      ],
+      "bossResults": [
+        {
+          "stage": 2,
+          "killTime": 105.39,
+          "playerLevel": 4,
+          "hpPercent": 29
+        }
+      ],
+      "cardLevels": {
+        "life_dinner": 1,
+        "lung_bladewind": 3,
+        "common_regen": 1,
+        "life_night_study": 1,
+        "life_sports": 1
+      }
+    }
+  ]
+}

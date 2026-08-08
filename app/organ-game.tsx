@@ -19,6 +19,7 @@ const FIRST_CHOICE_AT = 18;
 const LATER_CHOICE_AT = 22;
 const BOSS_AT = 78;
 const RUN_TARGET = STAGE_LENGTH * 3 + BOSS_AT;
+const SIMULATION_DT = 1/60;
 const levelValue=(values:number[],level:number)=>values[Math.max(0,Math.min(values.length-1,level-1))];
 const percentLevels=(values:number[])=>values.map(value=>Math.round(value*100)).join("/");
 const ORGAN_KEYS: OrganKey[] = ["뇌","심장","폐","간","근육"];
@@ -158,13 +159,14 @@ const COMMON_CARDS:CardDef[]=[
 ];
 const cardLevel=(g:Game,id:string)=>g.cardLevels[id]||0;
 const toChoice=(d:CardDef):Choice=>({id:d.id,kind:d.kind,name:d.name,desc:d.desc,effect:d.effect,cost:d.cost,organs:d.organs,maxLevel:d.maxLevel,tier:d.tier,apply:g=>{g.cardLevels[d.id]=cardLevel(g,d.id)+1;if(!g.acquiredCards.includes(d.id))g.acquiredCards.push(d.id);if(d.kind==="class")recordAugmentPick(g,AUGMENT_CATALOG,d.id);d.apply?.(g)}});
-const shuffled=<T,>(items:T[])=>[...items].sort(()=>Math.random()-.5);
+const gameRandom=(g:Game)=>{let t=g.randomState=(g.randomState+0x6d2b79f5)>>>0;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296};
+const shuffled=<T,>(g:Game,items:T[])=>{const copy=[...items];for(let i=copy.length-1;i>0;i--){const j=Math.floor(gameRandom(g)*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]]}return copy};
 const available=(g:Game,items:CardDef[])=>items.filter(d=>cardLevel(g,d.id)<d.maxLevel);
 const eligibleFusions=(g:Game)=>FUSION_CARDS.filter(d=>d.main===g.mainClass&&d.support&&g.organLevels[d.support]>=2&&!g.acquiredCards.includes(d.id));
 type ChoiceSource="level"|"boss";
 const classCardCandidates=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4)=>getAvailableAugments({state:g,cards:CLASS_CARDS.filter((card):card is CardDef&{main:CoreOrgan;tier:AugmentTier}=>card.main!==undefined&&card.tier!==undefined),catalog:AUGMENT_CATALOG,excluded,weakestTier});
 const pickTieredClassCard=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4):Choice|undefined=>{
-  const card=pickTieredAugment({state:g,cards:CLASS_CARDS.filter((candidate):candidate is CardDef&{main:CoreOrgan;tier:AugmentTier}=>candidate.main!==undefined&&candidate.tier!==undefined),catalog:AUGMENT_CATALOG,config:AUGMENT_BALANCE,excluded,weakestTier});
+  const card=pickTieredAugment({state:g,cards:CLASS_CARDS.filter((candidate):candidate is CardDef&{main:CoreOrgan;tier:AugmentTier}=>candidate.main!==undefined&&candidate.tier!==undefined),catalog:AUGMENT_CATALOG,config:AUGMENT_BALANCE,excluded,weakestTier,random:()=>gameRandom(g)});
   return card?toChoice(card):undefined;
 };
 const weightedChoices=(g:Game,source:ChoiceSource="level"):Choice[]=>{
@@ -182,8 +184,8 @@ const weightedChoices=(g:Game,source:ChoiceSource="level"):Choice[]=>{
   }
   while(picks.length<3){
     const used=excluded(),usable=pools.filter(p=>p.kind==="class"?classCardCandidates(g,used).length:Boolean(p.c?.some(choice=>!used.has(choiceKey(choice)))));if(!usable.length)break;
-    let roll=Math.random()*usable.reduce((s,p)=>s+p.w,0),pool=usable[0];for(const p of usable){roll-=p.w;if(roll<=0){pool=p;break}}
-    const raw=pool.kind==="class"?pickTieredClassCard(g,used):shuffled(pool.c??[]).find(choice=>!used.has(choiceKey(choice)));if(!raw)continue;picks.push(raw);
+    let roll=gameRandom(g)*usable.reduce((s,p)=>s+p.w,0),pool=usable[0];for(const p of usable){roll-=p.w;if(roll<=0){pool=p;break}}
+    const raw=pool.kind==="class"?pickTieredClassCard(g,used):shuffled(g,pool.c??[]).find(choice=>!used.has(choiceKey(choice)));if(!raw)continue;picks.push(raw);
   }
   if(!g.awakened&&g.benchmarkTarget){const target=ORGAN_GROWTH.find(choice=>choice.organLevel===g.benchmarkTarget);if(target&&!picks.some(choice=>choice.id===target.id)){if(picks.length>=3)picks[picks.length-1]=target;else picks.push(target)}}
   if(g.awakened&&classCardCandidates(g,new Set()).length){g.tierPity=picks.some(choice=>choice.kind==="class"&&choice.tier&&choice.tier<=AUGMENT_BALANCE.tierSystem.pityWeakestGuaranteedTier)?0:g.tierPity+1}
@@ -219,11 +221,11 @@ function fresh(difficulty:Difficulty="normal"):Game {
   return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,touchX:0,touchY:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],warnings:[],fields:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,armor:3,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,runner:0,
-    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0,lung:0,muscle:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],tierPity:0,lastAugmentBranch:null,augmentBranchStreak:0,meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,benchmark:false,benchmarkTarget:null,invuln:false,galeMomentum:0,windTrailDist:0,galeKillLock:0,impactCharge:0,telemetry:{runId:`run-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,startedAt:new Date().toISOString(),damageDealt:0,damageBySource:{},damageTaken:0,damageBlocked:0,hitsTaken:0,healingReceived:0,distanceTraveled:0,actionsUsed:0,choices:[],bossResults:[]}};
+    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,simulationAccumulator:0,randomSeed:1,randomState:1,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0,lung:0,muscle:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],tierPity:0,lastAugmentBranch:null,augmentBranchStreak:0,meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,benchmark:false,benchmarkTarget:null,benchmarkSpeed:1,benchmarkStopAt:0,benchmarkActionCooldown:0,invuln:false,galeMomentum:0,windTrailDist:0,galeKillLock:0,impactCharge:0,telemetry:{runId:`run-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,startedAt:new Date().toISOString(),damageDealt:0,damageBySource:{},damageTaken:0,damageBlocked:0,hitsTaken:0,healingReceived:0,distanceTraveled:0,actionsUsed:0,choices:[],bossResults:[]}};
 }
 function dealDamage(g:Game,mob:Mob,amount:number,source:string){const dealt=Math.max(0,Math.min(mob.hp,amount));mob.hp-=dealt;g.telemetry.damageDealt+=dealt;g.telemetry.damageBySource[source]=(g.telemetry.damageBySource[source]||0)+dealt;return dealt}
 function healPlayer(g:Game,amount:number){const before=g.hp;g.hp=Math.min(g.maxHp,g.hp+amount);g.telemetry.healingReceived+=Math.max(0,g.hp-before);return g.hp-before}
-function finalizeTelemetry(g:Game,win:boolean):RunTelemetry{return{schemaVersion:1,runId:g.telemetry.runId,startedAt:g.telemetry.startedAt,endedAt:new Date().toISOString(),difficulty:g.difficulty,debug:g.debug,benchmark:g.benchmark,benchmarkTarget:g.benchmarkTarget,result:win?"clear":"defeat",class:g.mainClass,survivalSeconds:Number(g.t.toFixed(2)),stage:g.stage+1,playerLevel:g.level,kills:g.kills,bossKills:g.telemetry.bossResults.length,damageDealt:Number(g.telemetry.damageDealt.toFixed(2)),damageBySource:Object.fromEntries(Object.entries(g.telemetry.damageBySource).sort((a,b)=>b[1]-a[1]).map(([key,value])=>[key,Number(value.toFixed(2))])),damageTaken:Number(g.telemetry.damageTaken.toFixed(2)),damageBlocked:Number(g.telemetry.damageBlocked.toFixed(2)),hitsTaken:g.telemetry.hitsTaken,healingReceived:Number(g.telemetry.healingReceived.toFixed(2)),distanceTraveled:Number(g.telemetry.distanceTraveled.toFixed(1)),actionsUsed:g.telemetry.actionsUsed,choices:[...g.telemetry.choices],bossResults:[...g.telemetry.bossResults],cardLevels:{...g.cardLevels}}}
+function finalizeTelemetry(g:Game,win:boolean):RunTelemetry{return{schemaVersion:1,runId:g.telemetry.runId,startedAt:g.telemetry.startedAt,endedAt:new Date().toISOString(),difficulty:g.difficulty,debug:g.debug,benchmark:g.benchmark,benchmarkTarget:g.benchmarkTarget,benchmarkSpeed:g.benchmarkSpeed,benchmarkSeed:g.randomSeed,result:win?"clear":"defeat",class:g.mainClass,survivalSeconds:Number(g.t.toFixed(2)),stage:g.stage+1,playerLevel:g.level,kills:g.kills,bossKills:g.telemetry.bossResults.length,damageDealt:Number(g.telemetry.damageDealt.toFixed(2)),damageBySource:Object.fromEntries(Object.entries(g.telemetry.damageBySource).sort((a,b)=>b[1]-a[1]).map(([key,value])=>[key,Number(value.toFixed(2))])),damageTaken:Number(g.telemetry.damageTaken.toFixed(2)),damageBlocked:Number(g.telemetry.damageBlocked.toFixed(2)),hitsTaken:g.telemetry.hitsTaken,healingReceived:Number(g.telemetry.healingReceived.toFixed(2)),distanceTraveled:Number(g.telemetry.distanceTraveled.toFixed(1)),actionsUsed:g.telemetry.actionsUsed,choices:[...g.telemetry.choices],bossResults:[...g.telemetry.bossResults],cardLevels:{...g.cardLevels}}}
 function downloadTelemetry(filename:string,data:unknown){const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),anchor=document.createElement("a");anchor.href=url;anchor.download=filename;anchor.click();URL.revokeObjectURL(url)}
 const TELEMETRY_STORAGE_KEY="organ-run-telemetry";
 function readTelemetryHistory(){try{return JSON.parse(localStorage.getItem(TELEMETRY_STORAGE_KEY)||"[]") as RunTelemetry[]}catch{return[]}}
@@ -257,11 +259,15 @@ export default function OrganGame() {
   const [choiceType,setChoiceType]=useState<"생활 선택"|"세포 진화"|"빌드 각성"|"전투 증강"|"장기 각성">("생활 선택");
   const [report,setReport]=useState({win:false,kills:0,t:0,organs:game.current.organs,choices:[] as string[],augments:[] as string[],mainClass:null as MainClass,fusions:[] as string[],telemetry:null as RunTelemetry|null});
   const [telemetryRuns,setTelemetryRuns]=useState<RunTelemetry[]>([]);
+  const [benchmarkBatch,setBenchmarkBatch]=useState<RunTelemetry[]>([]);
+  const [benchmarkRunTarget,setBenchmarkRunTarget]=useState(1);
   const [archive,setArchive]=useState<{gene:OrganKey|null;chemistries:string[];bestKills:number;bestTime:number}>({gene:null,chemistries:[],bestKills:0,bestTime:0});
   const orientationPaused=useRef(false);
   const runNumber=useRef(0);
   const runStartedAt=useRef(0);
   const progressMilestones=useRef(new Set<number>());
+  const benchmarkBatchKey=useRef<string|null>(null);
+  const benchmarkRunOffset=useRef(0);
 
   useEffect(()=>{
     const gene=localStorage.getItem("organ-gene") as OrganKey|null;
@@ -305,6 +311,7 @@ export default function OrganGame() {
     const organs={...g.organs}; ORGAN_KEYS.forEach(k=>organs[k]=Math.max(0,Math.min(100,Math.round(organs[k]))));
     const fusions=FUSION_CARDS.filter(f=>g.acquiredCards.includes(f.id)).map(f=>f.name);
     const telemetry=finalizeTelemetry(g,win),history=[...readTelemetryHistory(),telemetry].slice(-100);localStorage.setItem(TELEMETRY_STORAGE_KEY,JSON.stringify(history));setTelemetryRuns(history);
+    if(g.benchmark&&g.benchmarkTarget)setBenchmarkBatch(old=>{const next=[...old,telemetry];if(benchmarkBatchKey.current)localStorage.setItem(benchmarkBatchKey.current,JSON.stringify(next));return next});
     setReport({win,kills:g.kills,t:g.t,organs,choices:[...g.choices],augments:[...g.augments],mainClass:g.mainClass,fusions,telemetry});
     const strongest=ORGAN_KEYS.reduce((a,b)=>organs[a]>organs[b]?a:b);
     if(!g.debug&&!g.benchmark){localStorage.setItem("organ-gene",strongest);const bestKills=Math.max(g.kills,Number(localStorage.getItem("organ-best-kills")||0)),bestTime=Math.max(g.t,Number(localStorage.getItem("organ-best-time")||0));localStorage.setItem("organ-best-kills",String(bestKills));localStorage.setItem("organ-best-time",String(bestTime));setArchive(old=>({...old,gene:strongest,bestKills,bestTime}))}
@@ -315,8 +322,11 @@ export default function OrganGame() {
 
   const start=useCallback((difficulty:Difficulty="normal")=>{
     const params=new URLSearchParams(window.location.search),preview=typeof window!=="undefined"&&params.get("preview")!==null;
+    setBenchmarkRunTarget(Math.max(1,Math.min(20,Number(params.get("runs"))||1)));
     sound.current??=createSoundEngine();sound.current.setMuted(isMuted||preview);if(!preview){sound.current.play("start");sound.current.startMusic();}
-    const g=fresh(difficulty),benchmarkTarget=params.get("autoplay") as CoreOrgan|null;g.benchmark=params.get("benchmark")==="1";g.benchmarkTarget=g.benchmark&&(["heart","brain","liver","lung","muscle"] as CoreOrgan[]).includes(benchmarkTarget)?benchmarkTarget:null;const gene=localStorage.getItem("organ-gene") as OrganKey|null;
+    const g=fresh(difficulty),benchmarkTarget=params.get("autoplay") as CoreOrgan|null;g.benchmark=params.get("benchmark")==="1";g.benchmarkTarget=g.benchmark&&(["heart","brain","liver","lung","muscle"] as CoreOrgan[]).includes(benchmarkTarget)?benchmarkTarget:null;g.benchmarkSpeed=g.benchmark?Math.max(1,Math.min(60,Math.floor(Number(params.get("speed"))||1))):1;g.benchmarkStopAt=g.benchmark?Math.max(0,Math.min(RUN_TARGET,Number(params.get("duration"))||0)):0;const gene=localStorage.getItem("organ-gene") as OrganKey|null;
+    if(g.benchmarkTarget&&runNumber.current===0){benchmarkBatchKey.current=`organ-benchmark-${params.get("batch")||"default"}-${g.benchmarkTarget}`;const saved=JSON.parse(localStorage.getItem(benchmarkBatchKey.current)||"[]") as RunTelemetry[];benchmarkRunOffset.current=saved.length;setBenchmarkBatch(saved)}
+    const requestedSeed=Number(params.get("seed")),baseSeed=Number.isFinite(requestedSeed)&&params.has("seed")?Math.trunc(requestedSeed)>>>0:(Date.now()^Math.floor(Math.random()*4294967296))>>>0;g.randomSeed=(baseSeed+benchmarkRunOffset.current+runNumber.current)>>>0||1;g.randomState=g.randomSeed;
     if(!g.benchmark&&gene&&ORGAN_KEYS.includes(gene)) g.organs[gene]+=8;
     // 개발용 빠른 검증 모드: /?debug=heart|brain|liver (&cards=0 &fusion=<보조장기> &common=1 &life=1)
     const dbg=new URLSearchParams(window.location.search).get("debug") as CoreOrgan|null;
@@ -332,6 +342,12 @@ export default function OrganGame() {
     runNumber.current+=1;runStartedAt.current=Date.now();progressMilestones.current.clear();if(runNumber.current>1)sendGameLabEvent("game_restarted",{runNumber:runNumber.current});sendGameLabEvent("game_run_started",{runNumber:runNumber.current,difficulty});
     game.current=g; setHud({hp:g.hp,max:g.maxHp,t:0,stage:0,organs:{...g.organs},organLevels:{...g.organLevels},mainClass:g.mainClass,level:1,xp:0,nextXp:g.nextXp,loot:"",effect:"",chemistries:[],dashCharges:g.dashCharges,maxDash:g.maxDash,armor:g.armor}); setMode("play");
   },[isMuted]);
+
+  useEffect(()=>{
+    if(mode!=="report"||!report.telemetry?.benchmark||!report.telemetry.benchmarkTarget||benchmarkBatch.length>=benchmarkRunTarget)return;
+    const timer=window.setTimeout(()=>start(report.telemetry?.difficulty??"normal"),500);
+    return()=>window.clearTimeout(timer);
+  },[mode,report.telemetry,benchmarkBatch.length,benchmarkRunTarget,start]);
 
   // /dev 갤러리용: ?debug=X&preview → 메뉴 건너뛰고 자동 시작(음소거)
   const autoStarted=useRef(false);
@@ -384,12 +400,6 @@ export default function OrganGame() {
     }
   },[mode]);
 
-  useEffect(()=>{
-    if(mode!=="play"||!game.current.benchmarkTarget)return;
-    const timer=window.setInterval(()=>{const g=game.current;if(!g.paused&&g.mainClass&&g.dashCharges>0)dashNow()},700);
-    return()=>window.clearInterval(timer);
-  },[mode,dashNow]);
-
   const moveStick=useCallback((e:React.PointerEvent<HTMLDivElement>)=>{
     if(touchPointer.current!==null&&touchPointer.current!==e.pointerId)return;
     touchPointer.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);
@@ -435,19 +445,17 @@ export default function OrganGame() {
       }
     };
     const spawn=(g:Game,boss=false)=>{
-      const angle=Math.random()*Math.PI*2,distance=Math.max(g.w,g.h)*(.62+Math.random()*.2);
+      const angle=gameRandom(g)*Math.PI*2,distance=Math.max(g.w,g.h)*(.62+gameRandom(g)*.2);
       const edge=boss?96:36;
       const x=Math.max(edge,Math.min(g.worldW-edge,g.x+Math.cos(angle)*distance));
       const y=Math.max(edge,Math.min(g.worldH-edge,g.y+Math.sin(angle)*distance));
       const diff=DIFFICULTY[g.difficulty],base=(20+g.stage*12+g.t*.035)*diff.hp;
-      g.mobs.push({x,y,r:(boss?(g.stage===3?52:38):10+Math.random()*8)*(coarse ? .8 : 1),hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+Math.random()*44+g.stage*8)*diff.speed,boss,elite:boss||Math.random()<.08+g.stage*.025,kind:Math.floor(Math.random()*3),hit:0,skill:1.5+Math.random()*3,cast:0,charge:0,aimX:x,aimY:y,toxin:0,poisonStacks:0,poisonTick:0,overloadHits:0,heartMark:0,kbX:0,kbY:0,collideCd:0});
+      g.mobs.push({x,y,r:(boss?(g.stage===3?52:38):10+gameRandom(g)*8)*(coarse ? .8 : 1),hp:boss?base*18:base,max:boss?base*18:base,speed:(boss?58:65+gameRandom(g)*44+g.stage*8)*diff.speed,boss,elite:boss||gameRandom(g)<.08+g.stage*.025,kind:Math.floor(gameRandom(g)*3),hit:0,skill:1.5+gameRandom(g)*3,cast:0,charge:0,aimX:x,aimY:y,toxin:0,poisonStacks:0,poisonTick:0,overloadHits:0,heartMark:0,kbX:0,kbY:0,collideCd:0});
     };
     const burst=(g:Game,x:number,y:number,color:string,n=7)=>{for(let i=0;i<n;i++){const a=Math.random()*6.28,s=40+Math.random()*150;g.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.35,color})}};
-    const loop=(now:number)=>{
-      const g=game.current;const dt=Math.min(.033,(now-(g.last||now))/1000);g.last=now;
-      if(g.debug&&typeof window!=="undefined")(window as unknown as {__og?:Game}).__og=g;
-      if(!g.paused&&mode==="play"){
+    const simulateStep=(g:Game,dt:number)=>{
         g.t+=dt;g.stageT+=dt;g.dash-=dt;g.inv-=dt;g.fire-=dt;g.effectT-=dt;g.dashFx-=dt;g.castFx-=dt;g.heartFx-=dt;g.moveBuff-=dt;g.toxicCoreCooldown-=dt;g.noDamage+=dt;g.shake=Math.max(0,g.shake-dt*30);
+        g.benchmarkActionCooldown-=dt;if(g.benchmarkTarget&&g.mainClass&&g.dashCharges>0&&g.benchmarkActionCooldown<=0){g.benchmarkActionCooldown=.7;dashNow()}
         for(const milestone of [10,30,60,120,180,300])if(g.t>=milestone&&!progressMilestones.current.has(milestone)){
           progressMilestones.current.add(milestone);
           sendGameLabEvent("game_progress",{runNumber:runNumber.current,checkpoint:`${milestone}s`,elapsedSeconds:milestone,stage:g.stage+1,level:g.level,kills:g.kills,hpPercent:Math.round(g.hp/g.maxHp*100),choices:g.choices.length,chemistries:g.chemistries.length});
@@ -455,7 +463,7 @@ export default function OrganGame() {
         if(g.dashCharges<g.maxDash&&g.dash<=0){g.dashCharges++;g.dash=g.dashCharges<g.maxDash?1.55:0}
         const targetStage=Math.min(3,Math.floor(g.t/STAGE_LENGTH));
         if(targetStage!==g.stage){g.stage=targetStage;g.stageT=0;g.bossSpawned=false;g.choiceDone=false;g.augmentDone=false;ORGAN_KEYS.forEach(k=>g.organs[k]-=3+targetStage);sendGameLabEvent("game_stage_reached",{runNumber:runNumber.current,stage:targetStage+1,elapsedSeconds:Math.round(g.t),kills:g.kills,level:g.level})}
-        if(!g.choiceDone&&g.stageT>(g.stage===0?FIRST_CHOICE_AT:LATER_CHOICE_AT)){g.choiceDone=true;const life=available(g,LIFE_CARDS);openChoice("생활 선택",(life.length?shuffled(life).slice(0,3).map(toChoice):weightedChoices(g)));}
+        if(!g.choiceDone&&g.stageT>(g.stage===0?FIRST_CHOICE_AT:LATER_CHOICE_AT)){g.choiceDone=true;const life=available(g,LIFE_CARDS);openChoice("생활 선택",(life.length?shuffled(g,life).slice(0,3).map(toChoice):weightedChoices(g)));}
         if(!g.bossSpawned&&g.stageT>BOSS_AT){g.bossSpawned=true;if(g.stage===3)g.bossWeakTarget=ORGAN_KEYS.reduce((a,b)=>g.organs[a]<g.organs[b]?a:b);spawn(g,true);sound.current?.play("boss");g.effect=g.bossWeakTarget?`노화가 ${g.bossWeakTarget}을 노립니다`:`${STAGES[g.stage][1]} 등장`;g.effectT=2.8;sendGameLabEvent("game_boss_reached",{runNumber:runNumber.current,stage:g.stage+1,elapsedSeconds:Math.round(g.t),kills:g.kills,level:g.level,weakTarget:g.bossWeakTarget})}
         if(g.t>=480){const boss=g.mobs.find(m=>m.boss);if(!boss)spawn(g,true)}
         let dx=(g.keys.has("KeyD")?1:0)-(g.keys.has("KeyA")?1:0)+g.touchX,dy=(g.keys.has("KeyS")?1:0)-(g.keys.has("KeyW")?1:0)+g.touchY;
@@ -479,14 +487,14 @@ export default function OrganGame() {
           const bw=cardLevel(g,"lung_bladewind");
           if(bw&&moving){g.windTrailDist+=Math.hypot(g.vx,g.vy)*dt;const iv=95*Math.pow(.78,bw-1);if(g.windTrailDist>=iv){g.windTrailDist=0;const a=Math.atan2(g.vy,g.vx);g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*710,vy:Math.sin(a)*710,life:.6,r:13,damageMul:1.1+g.galeMomentum*.15,source:"lung_bladewind"});pushSkill(g,"lung",0,g.x,g.y,60,.3,{rot:a,grow:1.4})}}
           if(cardLevel(g,"lung_afterimage")&&moving&&g.galeMomentum>=3.2){for(const m of g.mobs)if(Math.hypot(m.x-g.x,m.y-g.y)<72)dealDamage(g,m,(6+cardLevel(g,"lung_afterimage")*3)*dt,"lung_afterimage");if(Math.random()<dt*22)pushSkill(g,"lung",2,g.x-g.vx*.03,g.y-g.vy*.03,54,.3,{rot:Math.atan2(g.vy,g.vx),grow:1.1})}
-          if(cardLevel(g,"lung_eyestorm")&&moving&&Math.floor(g.t*2)!==Math.floor((g.t-dt)*2)){const cnt=cardLevel(g,"lung_eyestorm");for(let i=0;i<cnt;i++){const a=Math.random()*6.28,r=58+Math.random()*44,wx=g.x+Math.cos(a)*r,wy=g.y+Math.sin(a)*r;for(const m of g.mobs)if(Math.hypot(m.x-wx,m.y-wy)<52)dealDamage(g,m,g.damage*.5,"lung_eyestorm");pushSkill(g,"lung",5,wx,wy,72,.4,{spin:6,grow:1.3})}}
+          if(cardLevel(g,"lung_eyestorm")&&moving&&Math.floor(g.t*2)!==Math.floor((g.t-dt)*2)){const cnt=cardLevel(g,"lung_eyestorm");for(let i=0;i<cnt;i++){const a=gameRandom(g)*6.28,r=58+gameRandom(g)*44,wx=g.x+Math.cos(a)*r,wy=g.y+Math.sin(a)*r;for(const m of g.mobs)if(Math.hypot(m.x-wx,m.y-wy)<52)dealDamage(g,m,g.damage*.5,"lung_eyestorm");pushSkill(g,"lung",5,wx,wy,72,.4,{spin:6,grow:1.3})}}
         }
         if(g.mainClass==="muscle"){const near=g.mobs.filter(m=>Math.hypot(m.x-g.x,m.y-g.y)<240).length;g.impactCharge=Math.min(1,g.impactCharge+near*dt*.075)}
         const diff=DIFFICULTY[g.difficulty],cap=Math.min(coarse?140:190,Math.round((26+g.stage*18+Math.floor(g.stageT/3))*diff.count*(coarse ? .78 : 1)));
         const takeDamage=(raw:number)=>raw*100/(100+g.armor*5);
         const hurtPlayer=(raw:number)=>{if(g.invuln)return false;let amount=takeDamage(raw);g.noDamage=0;g.telemetry.hitsTaken++;if(g.mainClass==="muscle"){const pf=cardLevel(g,"muscle_painfuel");if(pf)g.impactCharge=Math.min(1,g.impactCharge+.05*pf)}if(g.shield>0){const blocked=Math.min(g.shield,amount);g.shield-=blocked;amount-=blocked;g.telemetry.damageBlocked+=blocked}const hpLoss=Math.min(g.hp,amount);g.hp-=amount;g.telemetry.damageTaken+=Math.max(0,hpLoss);if(g.hp<=0&&g.reviveAvailable){g.reviveAvailable=false;const revived=g.maxHp*.4;g.hp=0;healPlayer(g,revived);g.inv=2;g.shield=g.maxHp*.15;g.heartFx=.8;g.effect="세포 분열 · 40% 체력으로 부활";g.effectT=3;sound.current?.play("level");return false}if(g.hp<=0){endGame(false);return true}return false};
         if(cardLevel(g,"common_membrane")&&g.noDamage>=8&&g.shield<=0){g.shield=g.maxHp*.15;g.noDamage=0;g.effect="세포막 강화 · 보호막 생성";g.effectT=1.2;burst(g,g.x,g.y,"#4ee5e1",18)}
-        if(g.mobs.filter(m=>!m.boss).length<cap&&Math.random()<dt*(5+g.stage*3+g.stageT*.05)*diff.count)spawn(g);
+        if(g.mobs.filter(m=>!m.boss).length<cap&&gameRandom(g)<dt*(5+g.stage*3+g.stageT*.05)*diff.count)spawn(g);
         let nearest:Mob|undefined,nd=Infinity;for(const m of g.mobs){const d=(m.x-g.x)**2+(m.y-g.y)**2;if(d<nd){nd=d;nearest=m}}
         if(g.fire<=0&&nearest){
           const shootAt=(target:Mob,opts:{damageMul?:number;chain?:number;poison?:number;core?:boolean;angle?:number;source?:string}={})=>{const a=opts.angle??Math.atan2(target.y-g.y,target.x-g.x);g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*580,vy:Math.sin(a)*580,life:1.6,r:opts.core?7:5,damageMul:opts.damageMul??1,chain:opts.chain??0,poison:opts.poison??0,core:opts.core,source:opts.source??"basic_projectile"})};
@@ -515,7 +523,7 @@ export default function OrganGame() {
             if(hit){pushSkill(g,"muscle",1,g.x,g.y,range*1.7,.3,{grow:1.4});g.shake=Math.max(g.shake,4);sound.current?.play("hit")}
             g.impactCharge=Math.min(1,g.impactCharge+.08);
           }else{
-            g.fire=g.fireRate;const a=Math.atan2(nearest.y-g.y,nearest.x-g.x)+(Math.random()-.5)*(g.organs.뇌<30?.34:0);for(let j=0;j<g.projectiles;j++)shootAt(nearest,{chain:g.chainBonus,angle:a+(j-(g.projectiles-1)/2)*.13});g.castFx=.16;g.castAngle=a;sound.current?.play("shot");
+            g.fire=g.fireRate;const a=Math.atan2(nearest.y-g.y,nearest.x-g.x)+(gameRandom(g)-.5)*(g.organs.뇌<30?.34:0);for(let j=0;j<g.projectiles;j++)shootAt(nearest,{chain:g.chainBonus,angle:a+(j-(g.projectiles-1)/2)*.13});g.castFx=.16;g.castAngle=a;sound.current?.play("shot");
           }
         }
         for(const m of g.mobs){
@@ -530,7 +538,7 @@ export default function OrganGame() {
           }
           const distanceToPlayer=Math.hypot(g.x-m.x,g.y-m.y);
           if(m.elite&&m.skill<=0&&m.cast<=0&&m.charge<=0&&distanceToPlayer<680){
-            m.skill=m.boss?3.8:4.6+Math.random()*2.2;m.cast=m.boss ? 0.9 : 0.65;m.aimX=g.x;m.aimY=g.y;
+            m.skill=m.boss?3.8:4.6+gameRandom(g)*2.2;m.cast=m.boss ? 0.9 : 0.65;m.aimX=g.x;m.aimY=g.y;
             g.warnings.push({x:m.x,y:m.y,tx:g.x,ty:g.y,life:m.cast,max:m.cast,kind:m.boss?"circle":"line",r:m.boss?155:34});
           }
           const a=m.charge>0?Math.atan2(m.aimY-m.y,m.aimX-m.x):Math.atan2(g.y-m.y,g.x-m.x);
@@ -545,7 +553,7 @@ export default function OrganGame() {
         for(const s of g.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.enemy){if(Math.hypot(s.x-g.x,s.y-g.y)<s.r+(coarse?11:15)&&g.inv<=0){s.life=0;hurtPlayer(7*diff.damage);if(g.bossWeakTarget&&g.mobs.some(m=>m.boss)){g.organs[g.bossWeakTarget]=Math.max(0,g.organs[g.bossWeakTarget]-2);g.effect=`노화 탄막 · ${g.bossWeakTarget} -2`;g.effectT=.9}g.inv=.42;g.shake=7;sound.current?.play("hurt");burst(g,g.x,g.y,"#ff715b",8)}}else{for(const m of g.mobs){if(Math.hypot(s.x-m.x,s.y-m.y)<s.r+m.r){const hit=g.damage*(s.r>9?1.65:1)*(s.damageMul??1)*g.rangedDamageMul;dealDamage(g,m,hit,s.source??"basic_projectile");s.life=0;m.hit=.08;if(s.poison){m.poisonStacks=Math.min(8,m.poisonStacks+s.poison);m.toxin=4}sound.current?.play("hit");burst(g,s.x,s.y,s.core?"#a49bd8":s.r>9?"#ff715b":"#d8ff3e",s.r>9?10:4);if((s.chain??0)>0){const next=g.mobs.filter(o=>o!==m&&o.hp>0&&Math.hypot(o.x-m.x,o.y-m.y)<220).sort((a,b)=>Math.hypot(a.x-m.x,a.y-m.y)-Math.hypot(b.x-m.x,b.y-m.y))[0];if(next){const a=Math.atan2(next.y-m.y,next.x-m.x);g.shots.push({x:m.x,y:m.y,vx:Math.cos(a)*610,vy:Math.sin(a)*610,life:.55,r:6,damageMul:(s.damageMul??1)*.7,chain:(s.chain??1)-1,poison:s.poison,core:true,source:"brain_chain"})}}break}}}}
         const concentrated=cardLevel(g,"liver_concentrated"),concentratedTick=concentrated?levelValue(AUGMENT_BALANCE.liverConcentrated.tickSeconds,concentrated):1;
         for(const f of g.fields){f.life-=dt;f.tick-=dt;for(const m of g.mobs)if(Math.hypot(m.x-f.x,m.y-f.y)<f.r){dealDamage(g,m,(7+f.stack*4)*dt,"liver_field");m.toxin=Math.max(m.toxin,.3);if(concentrated&&f.tick<=0){m.poisonStacks=Math.min(8,m.poisonStacks+1);m.toxin=4}}if(f.tick<=0)f.tick=concentrated?concentratedTick:1}g.fields=g.fields.filter(f=>f.life>0);
-        if(cardLevel(g,"fusion_liver_brain")&&g.mainClass==="liver"&&g.toxicCoreCooldown<=0&&g.fields.length&&g.mobs.length){const source=g.fields[Math.floor(Math.random()*g.fields.length)],target=[...g.mobs].sort((a,b)=>Math.hypot(a.x-source.x,a.y-source.y)-Math.hypot(b.x-source.x,b.y-source.y))[0];if(target){g.fields.push({x:target.x,y:target.y,r:48*g.poisonRadiusMul,life:3.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.toxicCoreCooldown=4.5;pushSkill(g,"liver",6,target.x,target.y,84,.45,{spin:5,grow:1.3});burst(g,target.x,target.y,"#a8d43a",14);g.effect="추적 독성 · 오염 지역 전파";g.effectT=.8}}
+        if(cardLevel(g,"fusion_liver_brain")&&g.mainClass==="liver"&&g.toxicCoreCooldown<=0&&g.fields.length&&g.mobs.length){const source=g.fields[Math.floor(gameRandom(g)*g.fields.length)],target=[...g.mobs].sort((a,b)=>Math.hypot(a.x-source.x,a.y-source.y)-Math.hypot(b.x-source.x,b.y-source.y))[0];if(target){g.fields.push({x:target.x,y:target.y,r:48*g.poisonRadiusMul,life:3.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.toxicCoreCooldown=4.5;pushSkill(g,"liver",6,target.x,target.y,84,.45,{spin:5,grow:1.3});burst(g,target.x,target.y,"#a8d43a",14);g.effect="추적 독성 · 오염 지역 전파";g.effectT=.8}}
         const dead=g.mobs.filter(m=>m.hp<=0);for(const m of dead){
           g.kills++;burst(g,m.x,m.y,m.boss?"#ff715b":"#4ee5e1",m.boss?30:8);
           const closeKill=Math.hypot(m.x-g.x,m.y-g.y)<g.meleeRange*1.35,bloodflowLevel=cardLevel(g,"heart_bloodflow");if(closeKill&&(bloodflowLevel||cardLevel(g,"life_sports")))g.moveBuff=Math.max(g.moveBuff,bloodflowLevel?levelValue(AUGMENT_BALANCE.heartBloodflow.durationSeconds,bloodflowLevel):2);
@@ -557,9 +565,9 @@ export default function OrganGame() {
           const frenzy=cardLevel(g,"brain_frenzy");if(g.mainClass==="brain"&&frenzy&&g.kills%levelValue(AUGMENT_BALANCE.brainFrenzy.killsPerProc,frenzy)===0){const coreCount=2+cardLevel(g,"brain_synapse"),targets=[...g.mobs].filter(o=>o!==m&&o.hp>0).sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y));for(let i=0;i<coreCount&&targets.length;i++){const target=targets[i%targets.length],a=Math.atan2(target.y-g.y,target.x-g.x);g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*650,vy:Math.sin(a)*650,life:1.4,r:8,damageMul:1.15,chain:cardLevel(g,"brain_chain")+g.chainBonus,core:true,source:"brain_frenzy"})}g.brainVolley=.5;pushSkill(g,"brain",5,g.x,g.y,175,.5,{grow:1.7});g.effect="사고 폭주 · 코어 일제 사격";g.effectT=1}
           const dropCount=m.boss?7:1;
           for(let i=0;i<dropCount;i++){
-            const roll=Math.random(),a=Math.random()*6.28,s=35+Math.random()*90;
+            const roll=gameRandom(g),a=gameRandom(g)*6.28,s=35+gameRandom(g)*90;
             const kind=m.boss?(i<3?"xp":i<5?"heal":"organ"):(roll<.72?"xp":roll<.88?"heal":"organ");
-            g.drops.push({x:m.x,y:m.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,kind,organ:kind==="organ"?ORGAN_KEYS[Math.floor(Math.random()*ORGAN_KEYS.length)]:undefined,value:kind==="xp"?(m.boss?4:1):kind==="heal"?(m.boss?18:7):(m.boss?5:2),life:14,phase:Math.random()*6.28});
+            g.drops.push({x:m.x,y:m.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,kind,organ:kind==="organ"?ORGAN_KEYS[Math.floor(gameRandom(g)*ORGAN_KEYS.length)]:undefined,value:kind==="xp"?(m.boss?4:1):kind==="heal"?(m.boss?18:7):(m.boss?5:2),life:14,phase:Math.random()*6.28});
           }
           if(m.boss){g.telemetry.bossResults.push({stage:g.stage+1,killTime:Number(g.t.toFixed(2)),playerLevel:g.level,hpPercent:Math.max(0,Math.round(g.hp/g.maxHp*100))});if(g.stage===3&&g.stageT>BOSS_AT){endGame(true)}else if(!g.augmentDone){g.augmentDone=true;openChoice("전투 증강",weightedChoices(g,"boss"))}}
         }
@@ -588,6 +596,16 @@ export default function OrganGame() {
         for(const p of g.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}g.parts=g.parts.filter(p=>p.life>0).slice(coarse?-190:-280);
         for(const fx of g.skillFx){fx.life-=dt;fx.rot+=fx.spin*dt}g.skillFx=g.skillFx.filter(fx=>fx.life>0);
         if(g.t-g.hudAt>.12){g.hudAt=g.t;setHud({hp:g.hp,max:g.maxHp,t:g.t,stage:g.stage,organs:{...g.organs},organLevels:{...g.organLevels},mainClass:g.mainClass,level:g.level,xp:g.xp,nextXp:g.nextXp,loot:picked,effect:g.effectT>0?g.effect:"",chemistries:[...g.chemistries],dashCharges:g.dashCharges,maxDash:g.maxDash,armor:g.armor})}
+        if(g.benchmarkStopAt&&g.t>=g.benchmarkStopAt)endGame(false)
+    };
+    const loop=(now:number)=>{
+      const g=game.current,frameDt=Math.min(.033,(now-(g.last||now))/1000);g.last=now;
+      if(g.debug&&typeof window!=="undefined")(window as unknown as {__og?:Game}).__og=g;
+      if(!g.paused&&mode==="play"){
+        let stepCount:number;
+        if(g.benchmark)stepCount=g.benchmarkSpeed;
+        else{g.simulationAccumulator+=frameDt;stepCount=Math.floor(g.simulationAccumulator/SIMULATION_DT);g.simulationAccumulator-=stepCount*SIMULATION_DT}
+        for(let i=0;i<stepCount&&!g.paused;i++)simulateStep(g,SIMULATION_DT);
       }
       const sx=(Math.random()-.5)*g.shake,sy=(Math.random()-.5)*g.shake;
       const camX=Math.max(0,Math.min(g.worldW-g.w,g.x-g.w/2));
@@ -695,7 +713,7 @@ export default function OrganGame() {
     };
     addEventListener("keydown",onDebugKey);
     raf.current=requestAnimationFrame(loop);return()=>{cancelAnimationFrame(raf.current);removeEventListener("keydown",onDebugKey)};
-  },[mode,endGame,openChoice]);
+  },[mode,dashNow,endGame,openChoice]);
 
   const choose=(c:Choice)=>{const g=game.current;c.apply(g);g.telemetry.choices.push({id:c.id??null,name:c.name,kind:c.kind??null,tier:c.tier??null,choiceType,time:Number(g.t.toFixed(2)),stage:g.stage+1,playerLevel:g.level,cardLevel:c.id&&c.maxLevel?cardLevel(g,c.id):null});g.effect=`${c.name} · ${c.effect}`;g.effectT=2.4;if(c.kind==="fusion"&&c.id){const set=new Set<string>(JSON.parse(localStorage.getItem("organ-fusions")||"[]"));set.add(c.id);const arr=[...set];localStorage.setItem("organ-fusions",JSON.stringify(arr));setFoundFusions(arr)}if(c.chemistry&&!g.chemistries.includes(c.chemistry)){g.chemistries.push(c.chemistry);g.effect=`케미 발견 · ${c.name}`;g.effectT=2.8;const found=new Set<string>(JSON.parse(localStorage.getItem("organ-chemistry")||"[]"));found.add(c.chemistry);const chemistries=[...found];localStorage.setItem("organ-chemistry",JSON.stringify(chemistries));setArchive(old=>({...old,chemistries}))}ORGAN_KEYS.forEach(k=>g.organs[k]=Math.max(0,Math.min(100,g.organs[k])));if(choiceType==="생활 선택")g.choices.push(c.name);else g.augments.push(c.name);sendGameLabEvent("game_choice_selected",{runNumber:runNumber.current,choiceType,choice:c.name,effect:c.effect,elapsedSeconds:Math.round(g.t),stage:g.stage+1,level:g.level,organLevels:{...g.organLevels},mainClass:g.mainClass});
     if(c.organLevel&&!g.awakened&&g.organLevels[c.organLevel]>=3){sound.current?.play("level");openChoice("장기 각성",awakeningChoices(c.organLevel));return}
@@ -769,6 +787,6 @@ export default function OrganGame() {
       <div className="dash-hint"><span>SPACE {actionName}</span><i>{Array.from({length:hud.maxDash},(_,i)=><b className={i<hud.dashCharges?"ready":""} key={i}/>)}</i><em>{activeClass?`${activeClass.className} 전용 액션`:hud.dashCharges?"대시 준비":"재충전 중"}</em></div></>}
     {mode==="choice"&&<div className={`choice-wrap choice-${choiceType==="세포 진화"?"evolve":choiceType==="빌드 각성"||choiceType==="장기 각성"?"build":"life"}`}><div className="choice-head"><div><div className="eyebrow">{choiceType==="생활 선택"?"LIFE INTERRUPT":choiceType==="장기 각성"?"ORGAN AWAKENING":choiceType==="빌드 각성"?"BUILD AWAKENING":"CELL EVOLUTION"}</div><h2>{choiceType==="세포 진화"?"장기 성장":choiceType}</h2></div><p><b>1 · 2 · 3</b> 즉시 선택&nbsp;&nbsp; <b>A / D</b> 이동&nbsp;&nbsp; <b>SPACE</b> 확정</p></div><div className={`cards ${cards.length===2?"two":""}`}>{cards.map((c,i)=>{const tags=cardOrgans(c),nextLevel=c.id?cardLevel(game.current,c.id)+1:0;return <button className={`card card-${c.kind||"general"} ${c.tier?`augment-tier-${c.tier}`:""} ${selectedCard===i?"selected":""} ${c.awakening&&c.awakening!=="hold"?"awakening-card":""}`} key={c.name} onMouseEnter={()=>setSelectedCard(i)} onFocus={()=>setSelectedCard(i)} onClick={()=>choose(c)} aria-selected={selectedCard===i}><span className="card-no"><kbd>{i+1}</kbd> 선택 {c.kind==="fusion"&&<em>FUSION</em>}</span><div className="card-art">{tags.length?tags.map(k=><span key={k} style={{"--organ-color":ORGAN_META[k].color,color:ORGAN_META[k].color} as React.CSSProperties}><OrganGlyph k={k} size={30}/></span>):<span>✦</span>}</div><div className="organ-tags">{c.tier&&<span className="card-tier">T{c.tier}</span>}{tags.map(k=><span key={k}><OrganGlyph k={k} size={12}/> {k}{c.organLevel&&` Lv.${game.current.organLevels[c.organLevel]} → Lv.${Math.min(3,game.current.organLevels[c.organLevel]+1)}`}</span>)}{c.maxLevel===3&&<span>Lv.{nextLevel}</span>}</div><h3>{c.name}</h3><p>{c.desc}</p><div className="decision-effects"><strong><small>플레이 변화</small>{c.effect}</strong>{c.cost&&<em><small>대가</small>{c.cost}</em>}</div>{selectedCard===i&&<small className="confirm-hint">SPACE로 확정</small>}</button>})}</div></div>}
     {mode==="pause"&&<div className="pause"><div className="pause-menu"><div className="pause-summary"><div className="eyebrow">LIFE MENU / ESC</div><h2>잠시 숨 고르기</h2><p>{activeClass?<><b>{activeClass.className}</b><br/>{activeClass.key} Lv.3 각성 · {activeClass.action}</>:"아직 주 직업을 각성하지 않았습니다."}</p><div className="pause-organs">{(["heart","brain","liver","lung","muscle"] as CoreOrgan[]).map(k=><span key={k}><OrganGlyph k={CORE_META[k].key} size={12}/> {CORE_META[k].key} · Lv.{hud.organLevels[k]}</span>)}</div></div><div className="pause-actions"><button className="primary" onClick={()=>{game.current.paused=false;game.current.last=performance.now();sound.current?.resumeMusic();setMode("play")}}>계속하기</button><button onClick={()=>start(game.current.difficulty)}>현재 생애 다시 시작</button><button onClick={()=>{game.current.paused=true;sound.current?.stopMusic();setMenuSection("home");setMode("start")}}>메인 화면으로 나가기</button><small>ESC를 다시 누르면 바로 계속합니다.</small></div></div></div>}
-    {mode==="report"&&<div className="screen report"><div className="report-grid"><div><div className="eyebrow">LIFE REPORT / COMPLETE</div><h1>{report.win?"노화를 넘어섰습니다.":"생애가 끝났습니다."}</h1><p className="report-copy">{mainName?<><b>{mainName}</b>{josa(mainName,"으로","로")} 살아낸 생애였습니다. {report.fusions.length?<>융합 <b>{report.fusions.join(", ")}</b>{josa(report.fusions[report.fusions.length-1],"을","를")} 손에 넣었습니다. </>:null}다음 생애에는 <b>타고난 {strongest}</b>{josa(strongest,"이","가")} 유전됩니다.</>:<>주 직업을 각성하지 못한 채 스러진 생애였습니다. 다음 생애에는 <b>타고난 {strongest}</b>{josa(strongest,"이","가")} 유전됩니다.</>}</p><div className="stats"><div className="stat"><small>SURVIVAL</small><b>{fmt(report.t)}</b></div><div className="stat"><small>ZOMBIES</small><b>{report.kills} 처치</b></div><div className="stat"><small>BUILD</small><b>{build}</b></div><div className="stat"><small>GENE</small><b>타고난 {strongest}</b></div></div>{report.telemetry&&<div className="telemetry-summary"><div><small>DAMAGE</small><b>{Math.round(report.telemetry.damageDealt).toLocaleString()}</b></div><div><small>TAKEN / HITS</small><b>{Math.round(report.telemetry.damageTaken)} / {report.telemetry.hitsTaken}</b></div><div><small>MOVE / ACTION</small><b>{Math.round(report.telemetry.distanceTraveled)} / {report.telemetry.actionsUsed}</b></div><div><small>BOSSES</small><b>{report.telemetry.bossKills}</b></div></div>}<div className="report-actions"><button className="primary" onClick={()=>start(game.current.difficulty)}>같은 난이도로 다시 ↗</button><button className="report-menu-btn" onClick={()=>{game.current.paused=true;sound.current?.stopMusic();setMenuSection("home");setMode("start")}}>메인 화면으로</button></div></div><div><div className="organ-report">{ORGAN_KEYS.map(k=><div className="organ-line" key={k}><span>{k}</span><div className="bar"><i style={{width:`${report.organs[k]}%`}}/></div><b>{report.organs[k]}</b></div>)}</div><p className="gene">생활: {report.choices.join(" · ")||"기록 없음"}<br/>증강: {report.augments.join(" · ")||"기록 없음"}</p>{report.telemetry&&<div className="telemetry-export"><div><small>RUN TELEMETRY</small><b>{report.telemetry.debug?"DEBUG RUN":report.telemetry.benchmark?"BENCHMARK RUN":"VALID RUN"} · 최근 {telemetryRuns.length}회 저장</b></div><button onClick={()=>downloadTelemetry(`organ-run-${report.telemetry?.runId}.json`,report.telemetry)}>현재 JSON</button><button onClick={()=>downloadTelemetry("organ-run-history.json",{schemaVersion:1,exportedAt:new Date().toISOString(),runs:telemetryRuns})}>누적 JSON</button><details><summary>JSON 미리보기</summary><pre>{JSON.stringify(report.telemetry,null,2)}</pre></details></div>}</div></div></div>}
+    {mode==="report"&&<div className="screen report"><div className="report-grid"><div><div className="eyebrow">LIFE REPORT / COMPLETE</div><h1>{report.win?"노화를 넘어섰습니다.":"생애가 끝났습니다."}</h1><p className="report-copy">{mainName?<><b>{mainName}</b>{josa(mainName,"으로","로")} 살아낸 생애였습니다. {report.fusions.length?<>융합 <b>{report.fusions.join(", ")}</b>{josa(report.fusions[report.fusions.length-1],"을","를")} 손에 넣었습니다. </>:null}다음 생애에는 <b>타고난 {strongest}</b>{josa(strongest,"이","가")} 유전됩니다.</>:<>주 직업을 각성하지 못한 채 스러진 생애였습니다. 다음 생애에는 <b>타고난 {strongest}</b>{josa(strongest,"이","가")} 유전됩니다.</>}</p><div className="stats"><div className="stat"><small>SURVIVAL</small><b>{fmt(report.t)}</b></div><div className="stat"><small>ZOMBIES</small><b>{report.kills} 처치</b></div><div className="stat"><small>BUILD</small><b>{build}</b></div><div className="stat"><small>GENE</small><b>타고난 {strongest}</b></div></div>{report.telemetry&&<div className="telemetry-summary"><div><small>DAMAGE</small><b>{Math.round(report.telemetry.damageDealt).toLocaleString()}</b></div><div><small>TAKEN / HITS</small><b>{Math.round(report.telemetry.damageTaken)} / {report.telemetry.hitsTaken}</b></div><div><small>MOVE / ACTION</small><b>{Math.round(report.telemetry.distanceTraveled)} / {report.telemetry.actionsUsed}</b></div><div><small>BOSSES</small><b>{report.telemetry.bossKills}</b></div></div>}<div className="report-actions"><button className="primary" onClick={()=>start(game.current.difficulty)}>같은 난이도로 다시 ↗</button><button className="report-menu-btn" onClick={()=>{game.current.paused=true;sound.current?.stopMusic();setMenuSection("home");setMode("start")}}>메인 화면으로</button></div></div><div><div className="organ-report">{ORGAN_KEYS.map(k=><div className="organ-line" key={k}><span>{k}</span><div className="bar"><i style={{width:`${report.organs[k]}%`}}/></div><b>{report.organs[k]}</b></div>)}</div><p className="gene">생활: {report.choices.join(" · ")||"기록 없음"}<br/>증강: {report.augments.join(" · ")||"기록 없음"}</p>{report.telemetry&&<div className="telemetry-export"><div><small>RUN TELEMETRY</small><b>{report.telemetry.debug?"DEBUG RUN":report.telemetry.benchmark?`BENCHMARK ${benchmarkBatch.length}/${benchmarkRunTarget}`:"VALID RUN"} · 최근 {telemetryRuns.length}회 저장</b></div><button onClick={()=>downloadTelemetry(`organ-run-${report.telemetry?.runId}.json`,report.telemetry)}>현재 JSON</button><button onClick={()=>downloadTelemetry("organ-run-history.json",{schemaVersion:1,exportedAt:new Date().toISOString(),runs:telemetryRuns})}>누적 JSON</button>{report.telemetry.benchmark&&benchmarkBatch.length>=benchmarkRunTarget&&<button onClick={()=>downloadTelemetry(`organ-benchmark-${report.telemetry?.benchmarkTarget}.json`,{schemaVersion:1,exportedAt:new Date().toISOString(),runs:benchmarkBatch})}>배치 JSON</button>}<details><summary>JSON 미리보기</summary><pre>{JSON.stringify(report.telemetry,null,2)}</pre></details>{report.telemetry.benchmark&&benchmarkBatch.length>=benchmarkRunTarget&&<details><summary>배치 JSON 미리보기</summary><pre data-testid="benchmark-batch-json">{JSON.stringify({schemaVersion:1,exportedAt:new Date().toISOString(),runs:benchmarkBatch},null,2)}</pre></details>}</div>}</div></div></div>}
   </section></main>;
 }
