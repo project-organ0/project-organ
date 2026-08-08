@@ -1,7 +1,12 @@
 export type SoundName = "start"|"dash"|"shot"|"hit"|"hurt"|"pickup"|"level"|"boss"|"heart"|"win"|"lose";
 
 export function createSoundEngine(){
-  let audio:AudioContext|null=null,muted=false;
+  let audio:AudioContext|null=null,muted=false,music:HTMLAudioElement|null=null;
+  const startMusic=()=>{
+    music??=new Audio("/audio/circuit-bloom.ogg");
+    music.loop=true;music.preload="auto";music.volume=.22;music.muted=muted;
+    if(music.paused)void music.play().catch(()=>{});
+  };
   const last:Partial<Record<SoundName,number>>={};
   const play=(name:SoundName)=>{
     if(muted)return;
@@ -19,5 +24,9 @@ export function createSoundEngine(){
     gain.gain.setValueAtTime((name==="boss"||name==="hurt") ? .1 : .055,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+duration);
     osc.connect(gain).connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration);
   };
-  return {play,setMuted:(value:boolean)=>{muted=value;if(audio)void (value?audio.suspend():audio.resume())}};
+  const setMuted=(value:boolean)=>{muted=value;if(music)music.muted=value;if(audio)void (value?audio.suspend():audio.resume())};
+  const pauseMusic=()=>{music?.pause()};
+  const resumeMusic=()=>{if(music&&!muted)void music.play().catch(()=>{})};
+  const stopMusic=()=>{if(music){music.pause();music.currentTime=0}};
+  return {play,setMuted,startMusic,pauseMusic,resumeMusic,stopMusic};
 }

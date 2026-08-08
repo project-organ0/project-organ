@@ -1,14 +1,17 @@
 export type OrganKey = "뇌" | "심장" | "폐" | "간" | "근육";
+export type CoreOrgan = "heart" | "brain" | "liver";
+export type MainClass = CoreOrgan | null;
 export type Organs = Record<OrganKey, number>;
 export type Mode = "start" | "play" | "choice" | "pause" | "report";
 export type Difficulty = "easy" | "normal" | "hard";
-export type Choice = { name:string;desc:string;effect:string;apply:(g:Game)=>void;organs?:OrganKey[];chemistry?:string };
-export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number };
-export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean };
+export type CardKind = "organ" | "class" | "fusion" | "life" | "common" | "awakening";
+export type Choice = { id?:string;name:string;desc:string;effect:string;cost?:string;apply:(g:Game)=>void;organs?:OrganKey[];chemistry?:string;organLevel?:CoreOrgan;awakening?:CoreOrgan|"hold";kind?:CardKind;maxLevel?:number };
+export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number;poisonStacks:number;poisonTick:number;overloadHits:number;heartMark:number };
+export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean;damageMul?:number;chain?:number;poison?:number;core?:boolean };
 export type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
 export type Drop = {x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number};
 export type Telegraph = {x:number;y:number;tx:number;ty:number;life:number;max:number;kind:"line"|"circle";r:number};
-export type ToxicField = {x:number;y:number;r:number;life:number};
+export type ToxicField = {x:number;y:number;r:number;life:number;stack:number;kills:number;tick:number};
 export type Game = {
   w:number;h:number;worldW:number;worldH:number;t:number;stage:number;stageT:number;hp:number;maxHp:number;
   x:number;y:number;vx:number;vy:number;touchX:number;touchY:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
@@ -18,4 +21,8 @@ export type Game = {
   bossSpawned:boolean;choiceDone:boolean;augmentDone:boolean;last:number;shake:number;difficulty:Difficulty;
   zone:OrganKey|"중앙";zoneT:number;portalCd:number;route:OrganKey[];
   lastHeart:number;effect:string;effectT:number;shotCount:number;hudAt:number;chemistries:string[];
+  dashFx:number;castFx:number;castAngle:number;heartFx:number;
+  organLevels:Record<CoreOrgan,number>;mainClass:MainClass;awakened:boolean;deferredAwakenings:CoreOrgan[];
+  cardLevels:Record<string,number>;acquiredCards:string[];meleeCombo:number;moveBuff:number;poisonTrailDistance:number;lastTrailX:number;lastTrailY:number;toxicCoreCooldown:number;killsSinceRegen:number;noDamage:number;shield:number;reviveAvailable:boolean;meleeRange:number;rangedDamageMul:number;chainBonus:number;poisonRadiusMul:number;poisonDurationMul:number;brainVolley:number;
+  fatigue:number;unstableAim:number;recoveryPenalty:number;momentum:number;bossWeakTarget:OrganKey|null;lastFatigue:number;
 };
