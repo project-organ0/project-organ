@@ -1,0 +1,29 @@
+{
+  "heartBloodflow": {
+    "durationSeconds": [2, 3, 4],
+    "speedBonus": [0.2, 0.25, 0.3]
+  },
+  "brainFocus": {
+    "eliteBossDamageBonus": [0.2, 0.4, 0.6]
+  },
+  "brainFrenzy": {
+    "killsPerProc": [5, 4, 3]
+  },
+  "liverOverlap": {
+    "maxStacks": [3, 4, 5],
+    "baseRadius": 74,
+    "radiusGrowth": 1.15
+  },
+  "liverConcentrated": {
+    "tickSeconds": [1, 0.75, 0.5],
+    "maxPoisonStacks": 8
+  },
+  "lungCirculation": {
+    "durationSeconds": [2, 3, 4],
+    "speedBonus": [0.2, 0.25, 0.3]
+  },
+  "muscleGravity": {
+    "rangeMultiplier": [1.5, 1.75, 2],
+    "pullDistance": [80, 110, 140]
+  }
+}

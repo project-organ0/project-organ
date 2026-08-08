@@ -1,0 +1,456 @@
+{
+  "generatedAt": "2026-08-08T13:27:44.041Z",
+  "model": "headless-macro-v1",
+  "runsPerScenario": 2000,
+  "seed": 20260808,
+  "difficulty": "normal",
+  "assumptions": {
+    "durationSeconds": 480,
+    "timeStepSeconds": 0.5,
+    "finalBossAtSeconds": 378,
+    "choicePolicy": "각성 전 목표 장기 우선, 각성 후 직업 카드 균등 성장",
+    "marginalPolicy": "각성 시 같은 직업의 다른 증강은 Lv.1, 대상 증강만 Lv.0~3 고정"
+  },
+  "natural": {
+    "heart": {
+      "runs": 2000,
+      "clearRate": 0,
+      "avgSurvival": 243.8,
+      "p50Survival": 248.5,
+      "p90Survival": 282,
+      "avgKills": 330.2,
+      "avgBosses": 1.75,
+      "avgLevel": 8.15,
+      "avgAwakening": 58.7,
+      "avgDamageTaken": 255.6
+    },
+    "brain": {
+      "runs": 2000,
+      "clearRate": 2.4,
+      "avgSurvival": 293.1,
+      "p50Survival": 287.5,
+      "p90Survival": 371.5,
+      "avgKills": 344.5,
+      "avgBosses": 2.31,
+      "avgLevel": 8.21,
+      "avgAwakening": 58.7,
+      "avgDamageTaken": 261.4
+    },
+    "liver": {
+      "runs": 2000,
+      "clearRate": 15.2,
+      "avgSurvival": 315,
+      "p50Survival": 295,
+      "p90Survival": 392,
+      "avgKills": 453.3,
+      "avgBosses": 2.54,
+      "avgLevel": 9.15,
+      "avgAwakening": 58.7,
+      "avgDamageTaken": 307.2
+    },
+    "lung": {
+      "runs": 2000,
+      "clearRate": 65.3,
+      "avgSurvival": 405.1,
+      "p50Survival": 407.5,
+      "p90Survival": 411,
+      "avgKills": 531.6,
+      "avgBosses": 3.65,
+      "avgLevel": 9.9,
+      "avgAwakening": 58.6,
+      "avgDamageTaken": 295.9
+    },
+    "muscle": {
+      "runs": 2000,
+      "clearRate": 2.1,
+      "avgSurvival": 322.3,
+      "p50Survival": 299.5,
+      "p90Survival": 386,
+      "avgKills": 521.8,
+      "avgBosses": 2.51,
+      "avgLevel": 9.71,
+      "avgAwakening": 58.6,
+      "avgDamageTaken": 341.9
+    }
+  },
+  "marginal": {
+    "heart_bloodflow": {
+      "name": "혈류 가속",
+      "classKey": "heart",
+      "levels": {
+        "0": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 274.3,
+          "p50Survival": 274.5,
+          "p90Survival": 277,
+          "avgKills": 451.1,
+          "avgBosses": 2,
+          "avgLevel": 9,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 300.6
+        },
+        "1": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 282.9,
+          "p50Survival": 283,
+          "p90Survival": 284,
+          "avgKills": 475.1,
+          "avgBosses": 2,
+          "avgLevel": 9.79,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 304.9
+        },
+        "2": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 286.9,
+          "p50Survival": 287,
+          "p90Survival": 288,
+          "avgKills": 487,
+          "avgBosses": 2,
+          "avgLevel": 10,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 306
+        },
+        "3": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 291,
+          "p50Survival": 291,
+          "p90Survival": 292.5,
+          "avgKills": 499.8,
+          "avgBosses": 2,
+          "avgLevel": 10,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 306.7
+        }
+      }
+    },
+    "brain_focus": {
+      "name": "집중 사고",
+      "classKey": "brain",
+      "levels": {
+        "0": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 300.2,
+          "p50Survival": 300,
+          "p90Survival": 301.5,
+          "avgKills": 421.6,
+          "avgBosses": 2.01,
+          "avgLevel": 9,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 272
+        },
+        "1": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 310.5,
+          "p50Survival": 311.5,
+          "p90Survival": 316.5,
+          "avgKills": 441.1,
+          "avgBosses": 2.99,
+          "avgLevel": 9,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 280.1
+        },
+        "2": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 316.4,
+          "p50Survival": 316.5,
+          "p90Survival": 320.5,
+          "avgKills": 449.3,
+          "avgBosses": 3,
+          "avgLevel": 9,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 283.4
+        },
+        "3": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 319.4,
+          "p50Survival": 319.5,
+          "p90Survival": 323,
+          "avgKills": 452.4,
+          "avgBosses": 3,
+          "avgLevel": 9,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 284.4
+        }
+      }
+    },
+    "brain_frenzy": {
+      "name": "사고 폭주",
+      "classKey": "brain",
+      "levels": {
+        "0": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 301.7,
+          "p50Survival": 300.5,
+          "p90Survival": 308,
+          "avgKills": 404.1,
+          "avgBosses": 2.7,
+          "avgLevel": 9,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 271
+        },
+        "1": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 310.4,
+          "p50Survival": 311.5,
+          "p90Survival": 316.5,
+          "avgKills": 440.9,
+          "avgBosses": 2.99,
+          "avgLevel": 9,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 280
+        },
+        "2": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 312.4,
+          "p50Survival": 313.5,
+          "p90Survival": 317.5,
+          "avgKills": 450.1,
+          "avgBosses": 3,
+          "avgLevel": 9,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 281.9
+        },
+        "3": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 315.4,
+          "p50Survival": 316,
+          "p90Survival": 320,
+          "avgKills": 465.5,
+          "avgBosses": 3,
+          "avgLevel": 9.09,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 284.8
+        }
+      }
+    },
+    "liver_overlap": {
+      "name": "오염 중첩",
+      "classKey": "liver",
+      "levels": {
+        "0": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 283.8,
+          "p50Survival": 284,
+          "p90Survival": 285,
+          "avgKills": 369.4,
+          "avgBosses": 2,
+          "avgLevel": 9,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 267
+        },
+        "1": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 328.8,
+          "p50Survival": 329,
+          "p90Survival": 333.5,
+          "avgKills": 552.9,
+          "avgBosses": 3,
+          "avgLevel": 10,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 321.8
+        },
+        "2": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 381.5,
+          "p50Survival": 381.5,
+          "p90Survival": 383.5,
+          "avgKills": 731.3,
+          "avgBosses": 3,
+          "avgLevel": 11,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 376.4
+        },
+        "3": {
+          "runs": 2000,
+          "clearRate": 100,
+          "avgSurvival": 399.2,
+          "p50Survival": 399,
+          "p90Survival": 399.5,
+          "avgKills": 894.6,
+          "avgBosses": 4,
+          "avgLevel": 12,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 399.3
+        }
+      }
+    },
+    "liver_concentrated": {
+      "name": "농축 독",
+      "classKey": "liver",
+      "levels": {
+        "0": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 296.8,
+          "p50Survival": 297,
+          "p90Survival": 298,
+          "avgKills": 456,
+          "avgBosses": 2,
+          "avgLevel": 9,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 286.4
+        },
+        "1": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 328.7,
+          "p50Survival": 329,
+          "p90Survival": 333.5,
+          "avgKills": 552.6,
+          "avgBosses": 3,
+          "avgLevel": 10,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 321.7
+        },
+        "2": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 378.4,
+          "p50Survival": 379,
+          "p90Survival": 380.5,
+          "avgKills": 709.6,
+          "avgBosses": 3,
+          "avgLevel": 11,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 371
+        },
+        "3": {
+          "runs": 2000,
+          "clearRate": 100,
+          "avgSurvival": 396.1,
+          "p50Survival": 396,
+          "p90Survival": 396.5,
+          "avgKills": 913.4,
+          "avgBosses": 4,
+          "avgLevel": 12,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 391.6
+        }
+      }
+    },
+    "lung_circulation": {
+      "name": "순환 가속",
+      "classKey": "lung",
+      "levels": {
+        "0": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 396.6,
+          "p50Survival": 396.5,
+          "p90Survival": 398.5,
+          "avgKills": 540.1,
+          "avgBosses": 3,
+          "avgLevel": 10,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 297.6
+        },
+        "1": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 407.4,
+          "p50Survival": 407.5,
+          "p90Survival": 409.5,
+          "avgKills": 553.7,
+          "avgBosses": 3,
+          "avgLevel": 10,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 296.3
+        },
+        "2": {
+          "runs": 2000,
+          "clearRate": 23.2,
+          "avgSurvival": 413.3,
+          "p50Survival": 413.5,
+          "p90Survival": 415,
+          "avgKills": 560.4,
+          "avgBosses": 3.23,
+          "avgLevel": 10,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 296
+        },
+        "3": {
+          "runs": 2000,
+          "clearRate": 99.9,
+          "avgSurvival": 415,
+          "p50Survival": 415,
+          "p90Survival": 415.5,
+          "avgKills": 567,
+          "avgBosses": 4,
+          "avgLevel": 10,
+          "avgAwakening": 58.6,
+          "avgDamageTaken": 291.1
+        }
+      }
+    },
+    "muscle_gravity": {
+      "name": "중력 압박",
+      "classKey": "muscle",
+      "levels": {
+        "0": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 285.7,
+          "p50Survival": 285.5,
+          "p90Survival": 287,
+          "avgKills": 458.2,
+          "avgBosses": 2,
+          "avgLevel": 9,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 299.9
+        },
+        "1": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 300.7,
+          "p50Survival": 300.5,
+          "p90Survival": 302,
+          "avgKills": 530.7,
+          "avgBosses": 2.19,
+          "avgLevel": 10,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 316.1
+        },
+        "2": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 337.2,
+          "p50Survival": 337,
+          "p90Survival": 342,
+          "avgKills": 628.4,
+          "avgBosses": 3,
+          "avgLevel": 10.91,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 347.8
+        },
+        "3": {
+          "runs": 2000,
+          "clearRate": 0,
+          "avgSurvival": 369.9,
+          "p50Survival": 370,
+          "p90Survival": 375,
+          "avgKills": 707.3,
+          "avgBosses": 3,
+          "avgLevel": 11,
+          "avgAwakening": 58.7,
+          "avgDamageTaken": 371.2
+        }
+      }
+    }
+  }
+}
