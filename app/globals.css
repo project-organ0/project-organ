@@ -245,6 +245,14 @@ canvas { display: block; width: 100%; height: 100%; }
 .card-life { background:linear-gradient(180deg,#222823,#18201f)!important; }
 .card-class { border-color:rgba(164,155,216,.42); }
 .card-no em { float:right;padding:4px 7px;border-radius:999px;background:#a49bd8;color:#111;font:900 8px/1 monospace;font-style:normal;letter-spacing:.08em; }
+.augment-tier-1 { border-color:#f0c85a;box-shadow:inset 0 3px #f0c85a; }
+.augment-tier-1 .organ-tags .card-tier { border-color:#f0c85a;background:#f0c85a;color:#101515; }
+.augment-tier-2 { border-color:#b29be0;box-shadow:inset 0 3px #b29be0; }
+.augment-tier-2 .organ-tags .card-tier { border-color:#b29be0;background:#b29be0;color:#101515; }
+.augment-tier-3 { border-color:#4ee5e1;box-shadow:inset 0 3px #4ee5e1; }
+.augment-tier-3 .organ-tags .card-tier { border-color:#4ee5e1;background:#4ee5e1;color:#101515; }
+.augment-tier-4 { border-color:#8a938f;box-shadow:inset 0 3px #8a938f; }
+.augment-tier-4 .organ-tags .card-tier { border-color:#8a938f;background:#8a938f;color:#101515; }
 .card-no { font: 800 10px/1 monospace; color: var(--acid); }
 .card-no kbd { display:inline-grid;place-items:center;width:25px;height:25px;margin-right:7px;border:1px solid var(--acid);border-radius:6px;background:rgba(216,255,62,.09);color:var(--acid);font:900 11px/1 monospace; }
 .card-art { height:66px;display:flex;align-items:center;gap:8px;margin-top:12px; }

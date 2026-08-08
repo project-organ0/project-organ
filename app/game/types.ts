@@ -25,7 +25,7 @@ export type Game = {
   lastHeart:number;effect:string;effectT:number;shotCount:number;hudAt:number;chemistries:string[];
   dashFx:number;castFx:number;castAngle:number;heartFx:number;
   organLevels:Record<CoreOrgan,number>;mainClass:MainClass;awakened:boolean;deferredAwakenings:CoreOrgan[];
-  cardLevels:Record<string,number>;acquiredCards:string[];meleeCombo:number;moveBuff:number;poisonTrailDistance:number;lastTrailX:number;lastTrailY:number;toxicCoreCooldown:number;killsSinceRegen:number;noDamage:number;shield:number;reviveAvailable:boolean;meleeRange:number;rangedDamageMul:number;chainBonus:number;poisonRadiusMul:number;poisonDurationMul:number;brainVolley:number;
+  cardLevels:Record<string,number>;acquiredCards:string[];tierPity:number;meleeCombo:number;moveBuff:number;poisonTrailDistance:number;lastTrailX:number;lastTrailY:number;toxicCoreCooldown:number;killsSinceRegen:number;noDamage:number;shield:number;reviveAvailable:boolean;meleeRange:number;rangedDamageMul:number;chainBonus:number;poisonRadiusMul:number;poisonDurationMul:number;brainVolley:number;
   fatigue:number;unstableAim:number;recoveryPenalty:number;momentum:number;bossWeakTarget:OrganKey|null;lastFatigue:number;
   skillFx:SkillFx[];
   debug:boolean;invuln:boolean;

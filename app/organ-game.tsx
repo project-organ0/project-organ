@@ -165,17 +165,44 @@ const CARD_TREE:Record<string,{depth:number;parent?:string}> = {
   muscle_overcontract:{depth:1},muscle_painfuel:{depth:1},muscle_chaincollide:{depth:2,parent:"muscle_overcontract"},muscle_gravity:{depth:2,parent:"muscle_painfuel"},
 };
 const classCardUnlocked=(g:Game,id:string)=>{const p=CARD_TREE[id]?.parent;return !p||g.acquiredCards.includes(p)};
-const weightedChoices=(g:Game):Choice[]=>{
+const TIER_ORDER:AugmentTier[]=[1,2,3,4];
+type ChoiceSource="level"|"boss";
+const tierBand=(g:Game)=>{
+  const [middleLevel,lateLevel,finalLevel]=AUGMENT_BALANCE.tierSystem.levelThresholds;
+  if(g.stage>=3||g.level>=finalLevel)return "final";
+  if(g.stage>=2||g.level>=lateLevel)return "late";
+  if(g.stage>=1||g.level>=middleLevel)return "middle";
+  return "awakened";
+};
+const classCardCandidates=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4)=>available(g,CLASS_CARDS.filter(d=>d.main===g.mainClass&&classCardUnlocked(g,d.id)&&d.tier!==undefined&&d.tier<=weakestTier&&!excluded.has(d.id)));
+const pickTieredClassCard=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4):Choice|undefined=>{
+  const candidates=classCardCandidates(g,excluded,weakestTier);if(!candidates.length)return;
+  const chances=AUGMENT_BALANCE.tierSystem.chances[tierBand(g)];
+  const groups=TIER_ORDER.map(tier=>candidates.filter(card=>card.tier===tier));
+  const weights=groups.map((group,index)=>group.length?chances[index]:0),total=weights.reduce((sum,value)=>sum+value,0);
+  if(total<=0)return toChoice(candidates[Math.floor(Math.random()*candidates.length)]);
+  let roll=Math.random()*total,tierIndex=0;for(;tierIndex<weights.length;tierIndex++){roll-=weights[tierIndex];if(roll<=0)break}
+  const group=groups[Math.min(tierIndex,groups.length-1)];return toChoice(group[Math.floor(Math.random()*group.length)]);
+};
+const weightedChoices=(g:Game,source:ChoiceSource="level"):Choice[]=>{
   const fusion=eligibleFusions(g)[0];
-  const pools:{w:number;c:Choice[]}[]=g.awakened
-    ? [{w:45,c:available(g,CLASS_CARDS.filter(d=>d.main===g.mainClass&&classCardUnlocked(g,d.id))).map(toChoice)},{w:25,c:ORGAN_GROWTH},{w:15,c:available(g,LIFE_CARDS).map(toChoice)},{w:15,c:available(g,COMMON_CARDS).map(toChoice)}]
-    : [{w:60,c:ORGAN_GROWTH},{w:20,c:available(g,LIFE_CARDS).map(toChoice)},{w:20,c:available(g,COMMON_CARDS).map(toChoice)}];
+  const pools:{w:number;kind:"class"|"fixed";c?:Choice[]}[]=g.awakened
+    ? [{w:45,kind:"class"},{w:25,kind:"fixed",c:ORGAN_GROWTH},{w:15,kind:"fixed",c:available(g,LIFE_CARDS).map(toChoice)},{w:15,kind:"fixed",c:available(g,COMMON_CARDS).map(toChoice)}]
+    : [{w:60,kind:"fixed",c:ORGAN_GROWTH},{w:20,kind:"fixed",c:available(g,LIFE_CARDS).map(toChoice)},{w:20,kind:"fixed",c:available(g,COMMON_CARDS).map(toChoice)}];
   const picks:Choice[]=fusion?[toChoice(fusion)]:[];
-  while(picks.length<3){
-    const usable=pools.filter(p=>p.c.length&&p.c.some(x=>!picks.some(y=>y.id===("id" in x?x.id:undefined))));if(!usable.length)break;
-    let roll=Math.random()*usable.reduce((s,p)=>s+p.w,0),pool=usable[0];for(const p of usable){roll-=p.w;if(roll<=0){pool=p;break}}
-    const candidates=shuffled(pool.c).filter(x=>!picks.some(y=>y.id===x.id));const raw=candidates[0];if(!raw)continue;picks.push(raw);
+  const choiceKey=(choice:Choice)=>choice.id??(choice.organLevel?`organ:${choice.organLevel}`:`name:${choice.name}`);
+  const excluded=()=>new Set(picks.map(choiceKey));
+  if(g.awakened&&picks.length<3){
+    const pityDue=g.tierPity>=AUGMENT_BALANCE.tierSystem.pityAfterOffers-1;
+    const weakestTier=(pityDue?AUGMENT_BALANCE.tierSystem.pityWeakestGuaranteedTier:source==="boss"?AUGMENT_BALANCE.tierSystem.bossWeakestGuaranteedTier:0) as AugmentTier|0;
+    if(weakestTier){const guaranteed=pickTieredClassCard(g,excluded(),weakestTier);if(guaranteed)picks.push(guaranteed)}
   }
+  while(picks.length<3){
+    const used=excluded(),usable=pools.filter(p=>p.kind==="class"?classCardCandidates(g,used).length:Boolean(p.c?.some(choice=>!used.has(choiceKey(choice)))));if(!usable.length)break;
+    let roll=Math.random()*usable.reduce((s,p)=>s+p.w,0),pool=usable[0];for(const p of usable){roll-=p.w;if(roll<=0){pool=p;break}}
+    const raw=pool.kind==="class"?pickTieredClassCard(g,used):shuffled(pool.c??[]).find(choice=>!used.has(choiceKey(choice)));if(!raw)continue;picks.push(raw);
+  }
+  if(g.awakened&&classCardCandidates(g,new Set()).length){g.tierPity=picks.some(choice=>choice.kind==="class"&&choice.tier&&choice.tier<=AUGMENT_BALANCE.tierSystem.pityWeakestGuaranteedTier)?0:g.tierPity+1}
   return picks;
 };
 const awakeningChoices=(organ:CoreOrgan):Choice[]=>{
@@ -208,7 +235,7 @@ function fresh(difficulty:Difficulty="normal"):Game {
   return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,touchX:0,touchY:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],warnings:[],fields:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,armor:3,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,runner:0,
-    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0,lung:0,muscle:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,invuln:false,galeMomentum:0,windTrailDist:0,galeKillLock:0,impactCharge:0};
+    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0,lung:0,muscle:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],tierPity:0,meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,invuln:false,galeMomentum:0,windTrailDist:0,galeKillLock:0,impactCharge:0};
 }
 // 직업 전용 스킬 이펙트를 큐에 넣는다. dur 동안 grow 배율까지 확대되며 알파가 사라진다.
 function pushSkill(g:Game,sheet:CoreOrgan,index:number,x:number,y:number,size:number,dur:number,opts:{rot?:number;spin?:number;grow?:number}={}){
@@ -302,12 +329,12 @@ export default function OrganGame() {
     sound.current??=createSoundEngine();sound.current.setMuted(isMuted);sound.current.play("start");sound.current.startMusic();
     const g=fresh(difficulty); const gene=localStorage.getItem("organ-gene") as OrganKey|null;
     if(gene&&ORGAN_KEYS.includes(gene)) g.organs[gene]+=8;
-    // 개발용 빠른 검증 모드: /?debug=heart|brain|liver (&fusion=<보조장기> &common=1 &life=1)
+    // 개발용 빠른 검증 모드: /?debug=heart|brain|liver (&cards=0 &fusion=<보조장기> &common=1 &life=1)
     const dbg=new URLSearchParams(window.location.search).get("debug") as CoreOrgan|null;
     if(dbg&&(["heart","brain","liver","lung","muscle"] as CoreOrgan[]).includes(dbg)){
       const params=new URLSearchParams(window.location.search);
       g.debug=true;g.organLevels[dbg]=3;g.mainClass=dbg;g.awakened=true;if(dbg==="heart"||dbg==="lung"){g.maxDash=2;g.dashCharges=2}
-      for(const c of CLASS_CARDS)if(c.main===dbg){g.cardLevels[c.id]=c.maxLevel;g.acquiredCards.push(c.id)}
+      if(params.get("cards")!=="0")for(const c of CLASS_CARDS)if(c.main===dbg){g.cardLevels[c.id]=c.maxLevel;g.acquiredCards.push(c.id)}
       const fus=params.get("fusion") as CoreOrgan|null;
       if((fus==="heart"||fus==="brain"||fus==="liver")&&fus!==dbg){g.organLevels[fus]=2;const f=FUSION_CARDS.find(d=>d.main===dbg&&d.support===fus);if(f){g.cardLevels[f.id]=1;g.acquiredCards.push(f.id)}}
       if(params.get("common")==="1")for(const c of COMMON_CARDS){g.cardLevels[c.id]=1;g.acquiredCards.push(c.id);c.apply?.(g)}
@@ -527,7 +554,7 @@ export default function OrganGame() {
             const kind=m.boss?(i<3?"xp":i<5?"heal":"organ"):(roll<.72?"xp":roll<.88?"heal":"organ");
             g.drops.push({x:m.x,y:m.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,kind,organ:kind==="organ"?ORGAN_KEYS[Math.floor(Math.random()*ORGAN_KEYS.length)]:undefined,value:kind==="xp"?(m.boss?4:1):kind==="heal"?(m.boss?18:7):(m.boss?5:2),life:14,phase:Math.random()*6.28});
           }
-          if(m.boss){if(g.stage===3&&g.stageT>BOSS_AT){endGame(true)}else if(!g.augmentDone){g.augmentDone=true;openChoice("전투 증강",weightedChoices(g))}}
+          if(m.boss){if(g.stage===3&&g.stageT>BOSS_AT){endGame(true)}else if(!g.augmentDone){g.augmentDone=true;openChoice("전투 증강",weightedChoices(g,"boss"))}}
         }
         g.mobs=g.mobs.filter(m=>m.hp>0);g.shots=g.shots.filter(s=>s.life>0&&s.x>-30&&s.x<g.worldW+30&&s.y>-30&&s.y<g.worldH+30);if(g.shots.filter(s=>s.enemy).length>70){let trim=g.shots.filter(s=>s.enemy).length-70;g.shots=g.shots.filter(s=>!s.enemy||trim--<=0)}
         let picked="";
@@ -709,7 +736,7 @@ export default function OrganGame() {
       <div className="defense-hud"><b>🛡 방어 {hud.armor.toFixed(1)}</b><span>피해 감소 {Math.round(100-10000/(100+hud.armor*5))}%</span></div>
       <div className={`body-hud ${activeClass?"awakened":""}`} style={activeClass?{"--core-color":activeClass.color} as React.CSSProperties:undefined}><small>신체 상태</small><div className="body-figure"><svg viewBox="0 0 120 170" aria-hidden="true"><g className="silhouette"><circle cx="60" cy="20" r="15"/><rect x="42" y="38" width="36" height="70" rx="14"/><rect x="22" y="42" width="14" height="52" rx="7"/><rect x="84" y="42" width="14" height="52" rx="7"/><rect x="47" y="104" width="12" height="54" rx="6"/><rect x="61" y="104" width="12" height="54" rx="6"/></g></svg>{(["brain","heart","lung","liver","muscle"] as CoreOrgan[]).map(core=>{const pos=({brain:["7%","50%"],heart:["33%","39%"],lung:["31%","63%"],liver:["50%","59%"],muscle:["47%","20%"]} as Record<CoreOrgan,[string,string]>)[core];const st=state(hud.organs[CORE_META[core].key]);const lv=hud.organLevels[core];return <div className={`bmark core ${st} ${hud.mainClass===core?"awoken":""}`} key={core} style={{top:pos[0],left:pos[1],"--core-color":CORE_META[core].color} as React.CSSProperties}><span>{CORE_META[core].icon}</span><i>{[1,2,3].map(v=><u className={lv>=v?"on":""} key={v}/>)}</i></div>})}</div>{hud.mainClass==="lung"&&<div className="class-gauge" style={{"--core-color":CORE_META.lung.color} as React.CSSProperties}><span>질풍 모멘텀</span><b><i style={{width:`${Math.min(100,game.current.galeMomentum/3.5*100)}%`}}/></b></div>}{hud.mainClass==="muscle"&&<div className="class-gauge" style={{"--core-color":CORE_META.muscle.color} as React.CSSProperties}><span>강타 충전</span><b><i style={{width:`${Math.min(100,game.current.impactCharge*100)}%`}}/></b></div>}</div>
       <div className="dash-hint"><span>SPACE {actionName}</span><i>{Array.from({length:hud.maxDash},(_,i)=><b className={i<hud.dashCharges?"ready":""} key={i}/>)}</i><em>{activeClass?`${activeClass.className} 전용 액션`:hud.dashCharges?"대시 준비":"재충전 중"}</em></div></>}
-    {mode==="choice"&&<div className={`choice-wrap choice-${choiceType==="세포 진화"?"evolve":choiceType==="빌드 각성"||choiceType==="장기 각성"?"build":"life"}`}><div className="choice-head"><div><div className="eyebrow">{choiceType==="생활 선택"?"LIFE INTERRUPT":choiceType==="장기 각성"?"ORGAN AWAKENING":choiceType==="빌드 각성"?"BUILD AWAKENING":"CELL EVOLUTION"}</div><h2>{choiceType==="세포 진화"?"장기 성장":choiceType}</h2></div><p><b>1 · 2 · 3</b> 즉시 선택&nbsp;&nbsp; <b>A / D</b> 이동&nbsp;&nbsp; <b>SPACE</b> 확정</p></div><div className={`cards ${cards.length===2?"two":""}`}>{cards.map((c,i)=>{const tags=cardOrgans(c),nextLevel=c.id?cardLevel(game.current,c.id)+1:0;return <button className={`card card-${c.kind||"general"} ${selectedCard===i?"selected":""} ${c.awakening&&c.awakening!=="hold"?"awakening-card":""}`} key={c.name} onMouseEnter={()=>setSelectedCard(i)} onFocus={()=>setSelectedCard(i)} onClick={()=>choose(c)} aria-selected={selectedCard===i}><span className="card-no"><kbd>{i+1}</kbd> 선택 {c.kind==="fusion"&&<em>FUSION</em>}</span><div className="card-art">{tags.length?tags.map(k=><span key={k} style={{"--organ-color":ORGAN_META[k].color} as React.CSSProperties}>{ORGAN_META[k].icon}</span>):<span>✦</span>}</div><div className="organ-tags">{tags.map(k=><span key={k}>{ORGAN_META[k].icon} {k}{c.organLevel&&` Lv.${game.current.organLevels[c.organLevel]} → Lv.${Math.min(3,game.current.organLevels[c.organLevel]+1)}`}</span>)}{c.maxLevel===3&&<span>Lv.{nextLevel}</span>}</div><h3>{c.name}</h3><p>{c.desc}</p><div className="decision-effects"><strong><small>플레이 변화</small>{c.effect}</strong>{c.cost&&<em><small>대가</small>{c.cost}</em>}</div>{selectedCard===i&&<small className="confirm-hint">SPACE로 확정</small>}</button>})}</div></div>}
+    {mode==="choice"&&<div className={`choice-wrap choice-${choiceType==="세포 진화"?"evolve":choiceType==="빌드 각성"||choiceType==="장기 각성"?"build":"life"}`}><div className="choice-head"><div><div className="eyebrow">{choiceType==="생활 선택"?"LIFE INTERRUPT":choiceType==="장기 각성"?"ORGAN AWAKENING":choiceType==="빌드 각성"?"BUILD AWAKENING":"CELL EVOLUTION"}</div><h2>{choiceType==="세포 진화"?"장기 성장":choiceType}</h2></div><p><b>1 · 2 · 3</b> 즉시 선택&nbsp;&nbsp; <b>A / D</b> 이동&nbsp;&nbsp; <b>SPACE</b> 확정</p></div><div className={`cards ${cards.length===2?"two":""}`}>{cards.map((c,i)=>{const tags=cardOrgans(c),nextLevel=c.id?cardLevel(game.current,c.id)+1:0;return <button className={`card card-${c.kind||"general"} ${c.tier?`augment-tier-${c.tier}`:""} ${selectedCard===i?"selected":""} ${c.awakening&&c.awakening!=="hold"?"awakening-card":""}`} key={c.name} onMouseEnter={()=>setSelectedCard(i)} onFocus={()=>setSelectedCard(i)} onClick={()=>choose(c)} aria-selected={selectedCard===i}><span className="card-no"><kbd>{i+1}</kbd> 선택 {c.kind==="fusion"&&<em>FUSION</em>}</span><div className="card-art">{tags.length?tags.map(k=><span key={k} style={{"--organ-color":ORGAN_META[k].color} as React.CSSProperties}>{ORGAN_META[k].icon}</span>):<span>✦</span>}</div><div className="organ-tags">{c.tier&&<span className="card-tier">T{c.tier}</span>}{tags.map(k=><span key={k}>{ORGAN_META[k].icon} {k}{c.organLevel&&` Lv.${game.current.organLevels[c.organLevel]} → Lv.${Math.min(3,game.current.organLevels[c.organLevel]+1)}`}</span>)}{c.maxLevel===3&&<span>Lv.{nextLevel}</span>}</div><h3>{c.name}</h3><p>{c.desc}</p><div className="decision-effects"><strong><small>플레이 변화</small>{c.effect}</strong>{c.cost&&<em><small>대가</small>{c.cost}</em>}</div>{selectedCard===i&&<small className="confirm-hint">SPACE로 확정</small>}</button>})}</div></div>}
     {mode==="pause"&&<div className="pause"><div className="pause-menu"><div className="pause-summary"><div className="eyebrow">LIFE MENU / ESC</div><h2>잠시 숨 고르기</h2><p>{activeClass?<><b>{activeClass.className}</b><br/>{activeClass.key} Lv.3 각성 · {activeClass.action}</>:"아직 주 직업을 각성하지 않았습니다."}</p><div className="pause-organs">{(["heart","brain","liver","lung","muscle"] as CoreOrgan[]).map(k=><span key={k}>{CORE_META[k].icon} {CORE_META[k].key} · Lv.{hud.organLevels[k]}</span>)}</div></div><div className="pause-actions"><button className="primary" onClick={()=>{game.current.paused=false;game.current.last=performance.now();sound.current?.resumeMusic();setMode("play")}}>계속하기</button><button onClick={()=>start(game.current.difficulty)}>현재 생애 다시 시작</button><button onClick={()=>{game.current.paused=true;sound.current?.stopMusic();setMenuSection("home");setMode("start")}}>메인 화면으로 나가기</button><small>ESC를 다시 누르면 바로 계속합니다.</small></div></div></div>}
     {mode==="report"&&<div className="screen report"><div className="report-grid"><div><div className="eyebrow">LIFE REPORT / COMPLETE</div><h1>{report.win?"노화를 넘어섰습니다.":"생애가 끝났습니다."}</h1><p className="report-copy">{mainName?<><b>{mainName}</b>{josa(mainName,"으로","로")} 살아낸 생애였습니다. {report.fusions.length?<>융합 <b>{report.fusions.join(", ")}</b>{josa(report.fusions[report.fusions.length-1],"을","를")} 손에 넣었습니다. </>:null}다음 생애에는 <b>타고난 {strongest}</b>{josa(strongest,"이","가")} 유전됩니다.</>:<>주 직업을 각성하지 못한 채 스러진 생애였습니다. 다음 생애에는 <b>타고난 {strongest}</b>{josa(strongest,"이","가")} 유전됩니다.</>}</p><div className="stats"><div className="stat"><small>SURVIVAL</small><b>{fmt(report.t)}</b></div><div className="stat"><small>ZOMBIES</small><b>{report.kills} 처치</b></div><div className="stat"><small>BUILD</small><b>{build}</b></div><div className="stat"><small>GENE</small><b>타고난 {strongest}</b></div></div><div className="report-actions"><button className="primary" onClick={()=>start(game.current.difficulty)}>같은 난이도로 다시 ↗</button><button className="report-menu-btn" onClick={()=>{game.current.paused=true;sound.current?.stopMusic();setMenuSection("home");setMode("start")}}>메인 화면으로</button></div></div><div><div className="organ-report">{ORGAN_KEYS.map(k=><div className="organ-line" key={k}><span>{k}</span><div className="bar"><i style={{width:`${report.organs[k]}%`}}/></div><b>{report.organs[k]}</b></div>)}</div><p className="gene">생활: {report.choices.join(" · ")||"기록 없음"}<br/>증강: {report.augments.join(" · ")||"기록 없음"}</p></div></div></div>}
   </section></main>;
