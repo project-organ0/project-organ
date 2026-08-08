@@ -70,6 +70,15 @@ const cardSpecs:CardSpec[] = ([
 const labels={all:"전체",characters:"캐릭터",monsters:"몬스터",maps:"배경",effects:"아이템·효과"} as const;
 const cardLabels={all:"전체 카드",organ:"장기 성장",class:"직업 전용",fusion:"융합",life:"생활 선택",common:"공용 생존"} as const;
 
+type TreeNode = {cls:string;icon:string;organ:string;color:string;t1:string[];t2:[string,string][];fusion:string[]};
+const SKILL_TREE:TreeNode[] = [
+  {cls:"격투가",icon:"♥",organ:"심장 강화",color:"#ff715b",t1:["아드레날린","혈류 가속"],t2:[["심박 충격","아드레날린"],["과부하 연타","혈류 가속"]],fusion:["뇌근 동기화","독성 파이터"]},
+  {cls:"에너지술사",icon:"🧠",organ:"신경 확장",color:"#a49bd8",t1:["시냅스 증식","연쇄 사고"],t2:[["사고 폭주","시냅스 증식"],["집중 사고","연쇄 사고"]],fusion:["맥동 코어","신경 독성"]},
+  {cls:"독술사",icon:"◆",organ:"간 활성화",color:"#a8d43a",t1:["독성 발자국","오염 중첩"],t2:[["독성 파열","독성 발자국"],["농축 독","오염 중첩"]],fusion:["독성 폭주","추적 독성"]},
+  {cls:"질풍술사",icon:"🫁",organ:"폐활량 강화",color:"#4ee5e1",t1:["칼바람","순환 가속"],t2:[["태풍의 눈","칼바람"],["잔상 호흡","순환 가속"]],fusion:[]},
+  {cls:"파괴자",icon:"💪",organ:"근섬유 강화",color:"#d8ff3e",t1:["과잉 수축","고통 연료"],t2:[["연쇄 충돌","과잉 수축"],["중력 압박","고통 연료"]],fusion:[]},
+];
+
 export default function AssetsPage(){
   const [filter,setFilter]=useState<keyof typeof labels>("all");
   const [copied,setCopied]=useState("");
@@ -84,6 +93,16 @@ export default function AssetsPage(){
       <div className="asset-info"><div><small>{labels[asset.category]}</small><h2>{asset.name}</h2><p>{asset.note}</p></div><dl><div><dt>FILE</dt><dd>{asset.file}</dd></div><div><dt>SIZE</dt><dd>{asset.size}</dd></div>{asset.cols&&<div><dt>GRID</dt><dd>{asset.cols} × {asset.rows} · {asset.cols*asset.rows!} CELLS</dd></div>}</dl><button onClick={()=>copy(asset.file)}>{copied===asset.file?"복사 완료 ✓":"경로 복사"}</button></div>
     </article>)}</section>
     <section className="card-board"><header><div><span>CHOICE SYSTEM / MVP 37</span><h2>카드 시스템 명세</h2><p><b className="status-live">LIVE</b> 카드 37장이 현재 전투 시스템에 연결되어 있습니다.</p></div><b>{cardSpecs.length} CARDS</b></header><nav>{Object.entries(cardLabels).map(([key,label])=><button className={cardFilter===key?"active":""} onClick={()=>setCardFilter(key as "all"|CardKind)} key={key}>{label}<small>{key==="all"?cardSpecs.length:cardSpecs.filter(c=>c.kind===key).length}</small></button>)}</nav><div className="card-catalog">{cardSpecs.filter(c=>cardFilter==="all"||c.kind===cardFilter).map((card,index)=><article className={`dev-choice-card ${card.kind} ${card.status}`} key={`${card.kind}-${card.name}-${index}`}><div className="dev-card-top"><small>{cardLabels[card.kind]}</small><span>{card.status.toUpperCase()}</span></div><div className="dev-card-organs">{card.organs.length?card.organs.map(o=><b key={o}>{o}</b>):<b>공용</b>}</div><h3>{card.name}</h3><strong><small>플레이 변화</small>{card.effect}</strong>{card.cost&&<em><small>대가</small>{card.cost}</em>}</article>)}</div></section>
+    <section className="tree-board"><header><div><span>SKILL TREE / 티어 해금</span><h2>직업 스킬트리</h2><p>장기를 Lv.3까지 키워 각성하면 <b>T1</b> 카드가 열리고, 그 카드를 획득하면 연결된 <b>T2</b> 카드가 선택지에 등장합니다. 융합은 보조 장기 Lv.2에서 해금됩니다.</p></div></header>
+      <div className="tree-rows">{SKILL_TREE.map(t=><article className="tree-row" style={{"--c":t.color} as React.CSSProperties} key={t.cls}>
+        <div className="tree-root"><span>{t.icon}</span><b>{t.cls}</b><small>{t.organ} · Lv.3 각성</small></div>
+        <div className="tree-arrow">→</div>
+        <div className="tree-col"><span className="tier-tag">T1 · 각성 즉시</span>{t.t1.map(n=><b key={n}>{n}</b>)}</div>
+        <div className="tree-arrow">→</div>
+        <div className="tree-col"><span className="tier-tag">T2 · 부모 해금</span>{t.t2.map(([n,p])=><b key={n}>{n}<em>↳ {p}</em></b>)}</div>
+        {t.fusion.length>0&&<><div className="tree-arrow">→</div><div className="tree-col fusion"><span className="tier-tag">융합 · 보조 Lv.2</span>{t.fusion.map(n=><b key={n}>{n}</b>)}</div></>}
+      </article>)}</div>
+    </section>
     <section className="audio-board"><div><span>AUDIO / BGM 01</span><h2>Circuit Bloom</h2><p>Neon Pulse 원본 · 127.9 BPM · 게임 플레이 루프</p></div><audio controls loop preload="metadata" src="/audio/circuit-bloom.ogg"/><button onClick={()=>copy("/audio/circuit-bloom.ogg")}>{copied==="/audio/circuit-bloom.ogg"?"복사 완료 ✓":"오디오 경로 복사"}</button></section>
   </main>
 }
