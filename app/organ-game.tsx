@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import AUGMENT_BALANCE from "./game/augment-balance.json";
 import { createSoundEngine } from "./game/audio";
-import type { CardKind, Choice, CoreOrgan, Difficulty, Game, MainClass, Mob, Mode, OrganKey, SkillFx } from "./game/types";
+import type { AugmentTier, CardKind, Choice, CoreOrgan, Difficulty, Game, MainClass, Mob, Mode, OrganKey, SkillFx } from "./game/types";
 
 const STAGES = [
   ["0—20세 · 학교", "학생들의 식욕"],
@@ -110,28 +110,28 @@ const ORGAN_GROWTH:Choice[] = [
   {id:"organ_lung",kind:"organ",name:"폐활량 강화",desc:"호흡이 깊어지고 몸이 바람을 다루기 시작합니다.",effect:"폐 레벨 +1 · Lv.3에서 질풍술사 각성 가능",organs:["폐"],organLevel:"lung",apply:g=>{g.organLevels.lung=Math.min(3,g.organLevels.lung+1);g.organs.폐=Math.min(100,g.organs.폐+8)}},
   {id:"organ_muscle",kind:"organ",name:"근섬유 강화",desc:"근섬유가 굵어지고 타격에 무게가 실립니다.",effect:"근육 레벨 +1 · Lv.3에서 파괴자 각성 가능",organs:["근육"],organLevel:"muscle",apply:g=>{g.organLevels.muscle=Math.min(3,g.organLevels.muscle+1);g.organs.근육=Math.min(100,g.organs.근육+8)}},
 ];
-type CardDef={id:string;name:string;kind:CardKind;organs:OrganKey[];main?:CoreOrgan;support?:CoreOrgan;maxLevel:number;desc:string;effect:string;cost?:string;apply?:(g:Game)=>void};
+type CardDef={id:string;name:string;kind:CardKind;organs:OrganKey[];main?:CoreOrgan;support?:CoreOrgan;maxLevel:number;desc:string;effect:string;cost?:string;tier?:AugmentTier;apply?:(g:Game)=>void};
 const CLASS_CARDS:CardDef[]=[
-  {id:"heart_adrenaline",name:"아드레날린",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"근처에 적이 있으면 공격 간격이 감소합니다.",effect:"근처 적 존재 시 공격 간격 -30/-35/-40%"},
-  {id:"heart_shock",name:"심박 충격",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"연타의 마지막 공격이 주변을 밀어내는 충격파로 변합니다.",effect:"4번째 공격마다 80% 범위 피해 · Lv.3 심장 표식"},
-  {id:"heart_overload",name:"과부하 연타",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"한 적을 계속 공격하면 강력한 일격이 발생합니다.",effect:"동일 대상 5회 타격 뒤 2.2배 피해"},
-  {id:"heart_bloodflow",name:"혈류 가속",kind:"class",organs:["심장"],main:"heart",maxLevel:3,desc:"가까운 적을 쓰러뜨리면 잠시 이동 속도가 증가합니다.",effect:`근거리 처치 후 ${AUGMENT_BALANCE.heartBloodflow.durationSeconds.join("/")}초간 이동 속도 +${percentLevels(AUGMENT_BALANCE.heartBloodflow.speedBonus)}%`},
-  {id:"brain_synapse",name:"시냅스 증식",kind:"class",organs:["뇌"],main:"brain",maxLevel:3,desc:"주변을 도는 에너지 코어가 하나 추가됩니다.",effect:"실제 에너지 코어 +1"},
-  {id:"brain_chain",name:"연쇄 사고",kind:"class",organs:["뇌"],main:"brain",maxLevel:3,desc:"코어 공격이 근처의 적에게 튕깁니다.",effect:"연쇄 +1 · 연쇄 피해 70%"},
-  {id:"brain_focus",name:"집중 사고",kind:"class",organs:["뇌"],main:"brain",maxLevel:3,desc:"코어가 강한 적을 우선적으로 공격합니다.",effect:`최고 체력 우선 · 엘리트/보스 피해 +${percentLevels(AUGMENT_BALANCE.brainFocus.eliteBossDamageBonus)}%`},
-  {id:"brain_frenzy",name:"사고 폭주",kind:"class",organs:["뇌"],main:"brain",maxLevel:3,desc:"적을 연속으로 처치하면 모든 코어가 동시에 폭주합니다.",effect:`${AUGMENT_BALANCE.brainFrenzy.killsPerProc.join("/")}킬마다 모든 코어 추가 사격`},
-  {id:"liver_footprints",name:"독성 발자국",kind:"class",organs:["간"],main:"liver",maxLevel:3,desc:"더 촘촘하게 오래 남는 독 흔적을 만듭니다.",effect:"생성 간격 -30% · 지속시간 +20%"},
-  {id:"liver_overlap",name:"오염 중첩",kind:"class",organs:["간"],main:"liver",maxLevel:3,desc:"같은 길을 다시 지나가면 독 지대가 강해집니다.",effect:`최대 ${AUGMENT_BALANCE.liverOverlap.maxStacks.join("/")}중첩 · 중첩마다 범위 +${Math.round((AUGMENT_BALANCE.liverOverlap.radiusGrowth-1)*100)}%`},
-  {id:"liver_rupture",name:"독성 파열",kind:"class",organs:["간"],main:"liver",maxLevel:3,desc:"중독된 적이 죽으면 주변에 독을 터뜨립니다.",effect:"중독 중첩 비례 폭발 · 주변 적 중독"},
-  {id:"liver_concentrated",name:"농축 독",kind:"class",organs:["간"],main:"liver",maxLevel:3,desc:"독 지대에 오래 머문 적일수록 빠르게 중독됩니다.",effect:`지대 안에서 ${AUGMENT_BALANCE.liverConcentrated.tickSeconds.join("/")}초마다 독 중첩 +1`},
-  {id:"lung_bladewind",name:"칼바람",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"일정 거리마다 이동 방향으로 바람 칼날을 날립니다.",effect:"이동 거리마다 관통 바람 칼날 발사 · 레벨마다 발사 간격 감소"},
-  {id:"lung_afterimage",name:"잔상 호흡",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"모멘텀이 가득 찰수록 남긴 잔상이 적을 벱니다.",effect:"최대 모멘텀에서 이동 잔상이 주변 적에게 지속 피해"},
-  {id:"lung_eyestorm",name:"태풍의 눈",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"계속 이동하면 주변에 작은 회오리가 돕니다.",effect:"이동 중 주기적으로 회오리 생성 · 레벨마다 개수 증가"},
-  {id:"lung_circulation",name:"순환 가속",kind:"class",organs:["폐"],main:"lung",maxLevel:3,desc:"적을 쓰러뜨리면 숨 돌릴 틈 없이 더 빨라집니다.",effect:`처치 시 ${AUGMENT_BALANCE.lungCirculation.durationSeconds.join("/")}초간 모멘텀 유지 · 이동 속도 +${percentLevels(AUGMENT_BALANCE.lungCirculation.speedBonus)}%`},
-  {id:"muscle_overcontract",name:"과잉 수축",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"근수축이 폭발적으로 커집니다.",effect:"기본 강타 범위와 넉백 증가 · 레벨마다 강화"},
-  {id:"muscle_chaincollide",name:"연쇄 충돌",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"밀린 적이 다른 적과 충돌하면 주변에 추가 폭발이 발생합니다.",effect:"주변 적에게 공격력 80% 피해 · 폭발 반경 88/114/141"},
-  {id:"muscle_painfuel",name:"고통 연료",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"맞을수록 다음 강타가 무거워집니다.",effect:"피해를 받으면 지면 강타 충전 증가"},
-  {id:"muscle_gravity",name:"중력 압박",kind:"class",organs:["근육"],main:"muscle",maxLevel:3,desc:"강타 직전 적을 끌어모아 함께 터뜨립니다.",effect:`강타 탐색 범위 ${AUGMENT_BALANCE.muscleGravity.rangeMultiplier.join("/")}배 · 당김 거리 ${AUGMENT_BALANCE.muscleGravity.pullDistance.join("/")}`},
+  {id:"heart_adrenaline",name:"아드레날린",kind:"class",tier:2,organs:["심장"],main:"heart",maxLevel:3,desc:"근처에 적이 있으면 공격 간격이 감소합니다.",effect:"근처 적 존재 시 공격 간격 -30/-35/-40%"},
+  {id:"heart_shock",name:"심박 충격",kind:"class",tier:2,organs:["심장"],main:"heart",maxLevel:3,desc:"연타의 마지막 공격이 주변을 밀어내는 충격파로 변합니다.",effect:"4번째 공격마다 80% 범위 피해 · Lv.3 심장 표식"},
+  {id:"heart_overload",name:"과부하 연타",kind:"class",tier:2,organs:["심장"],main:"heart",maxLevel:3,desc:"한 적을 계속 공격하면 강력한 일격이 발생합니다.",effect:"동일 대상 5회 타격 뒤 2.2배 피해"},
+  {id:"heart_bloodflow",name:"혈류 가속",kind:"class",tier:4,organs:["심장"],main:"heart",maxLevel:3,desc:"가까운 적을 쓰러뜨리면 잠시 이동 속도가 증가합니다.",effect:`근거리 처치 후 ${AUGMENT_BALANCE.heartBloodflow.durationSeconds.join("/")}초간 이동 속도 +${percentLevels(AUGMENT_BALANCE.heartBloodflow.speedBonus)}%`},
+  {id:"brain_synapse",name:"시냅스 증식",kind:"class",tier:2,organs:["뇌"],main:"brain",maxLevel:3,desc:"주변을 도는 에너지 코어가 하나 추가됩니다.",effect:"실제 에너지 코어 +1"},
+  {id:"brain_chain",name:"연쇄 사고",kind:"class",tier:1,organs:["뇌"],main:"brain",maxLevel:3,desc:"코어 공격이 근처의 적에게 튕깁니다.",effect:"연쇄 +1 · 연쇄 피해 70%"},
+  {id:"brain_focus",name:"집중 사고",kind:"class",tier:4,organs:["뇌"],main:"brain",maxLevel:3,desc:"코어가 강한 적을 우선적으로 공격합니다.",effect:`최고 체력 우선 · 엘리트/보스 피해 +${percentLevels(AUGMENT_BALANCE.brainFocus.eliteBossDamageBonus)}%`},
+  {id:"brain_frenzy",name:"사고 폭주",kind:"class",tier:3,organs:["뇌"],main:"brain",maxLevel:3,desc:"적을 연속으로 처치하면 모든 코어가 동시에 폭주합니다.",effect:`${AUGMENT_BALANCE.brainFrenzy.killsPerProc.join("/")}킬마다 모든 코어 추가 사격`},
+  {id:"liver_footprints",name:"독성 발자국",kind:"class",tier:3,organs:["간"],main:"liver",maxLevel:3,desc:"더 촘촘하게 오래 남는 독 흔적을 만듭니다.",effect:"생성 간격 -30% · 지속시간 +20%"},
+  {id:"liver_overlap",name:"오염 중첩",kind:"class",tier:1,organs:["간"],main:"liver",maxLevel:3,desc:"같은 길을 다시 지나가면 독 지대가 강해집니다.",effect:`최대 ${AUGMENT_BALANCE.liverOverlap.maxStacks.join("/")}중첩 · 중첩마다 범위 +${Math.round((AUGMENT_BALANCE.liverOverlap.radiusGrowth-1)*100)}%`},
+  {id:"liver_rupture",name:"독성 파열",kind:"class",tier:2,organs:["간"],main:"liver",maxLevel:3,desc:"중독된 적이 죽으면 주변에 독을 터뜨립니다.",effect:"중독 중첩 비례 폭발 · 주변 적 중독"},
+  {id:"liver_concentrated",name:"농축 독",kind:"class",tier:2,organs:["간"],main:"liver",maxLevel:3,desc:"독 지대에 오래 머문 적일수록 빠르게 중독됩니다.",effect:`지대 안에서 ${AUGMENT_BALANCE.liverConcentrated.tickSeconds.join("/")}초마다 독 중첩 +1`},
+  {id:"lung_bladewind",name:"칼바람",kind:"class",tier:2,organs:["폐"],main:"lung",maxLevel:3,desc:"일정 거리마다 이동 방향으로 바람 칼날을 날립니다.",effect:"이동 거리마다 관통 바람 칼날 발사 · 레벨마다 발사 간격 감소"},
+  {id:"lung_afterimage",name:"잔상 호흡",kind:"class",tier:3,organs:["폐"],main:"lung",maxLevel:3,desc:"모멘텀이 가득 찰수록 남긴 잔상이 적을 벱니다.",effect:"최대 모멘텀에서 이동 잔상이 주변 적에게 지속 피해"},
+  {id:"lung_eyestorm",name:"태풍의 눈",kind:"class",tier:1,organs:["폐"],main:"lung",maxLevel:3,desc:"계속 이동하면 주변에 작은 회오리가 돕니다.",effect:"이동 중 주기적으로 회오리 생성 · 레벨마다 개수 증가"},
+  {id:"lung_circulation",name:"순환 가속",kind:"class",tier:4,organs:["폐"],main:"lung",maxLevel:3,desc:"적을 쓰러뜨리면 숨 돌릴 틈 없이 더 빨라집니다.",effect:`처치 시 ${AUGMENT_BALANCE.lungCirculation.durationSeconds.join("/")}초간 모멘텀 유지 · 이동 속도 +${percentLevels(AUGMENT_BALANCE.lungCirculation.speedBonus)}%`},
+  {id:"muscle_overcontract",name:"과잉 수축",kind:"class",tier:3,organs:["근육"],main:"muscle",maxLevel:3,desc:"근수축이 폭발적으로 커집니다.",effect:"기본 강타 범위와 넉백 증가 · 레벨마다 강화"},
+  {id:"muscle_chaincollide",name:"연쇄 충돌",kind:"class",tier:2,organs:["근육"],main:"muscle",maxLevel:3,desc:"밀린 적이 다른 적과 충돌하면 주변에 추가 폭발이 발생합니다.",effect:"주변 적에게 공격력 80% 피해 · 폭발 반경 88/114/141"},
+  {id:"muscle_painfuel",name:"고통 연료",kind:"class",tier:4,organs:["근육"],main:"muscle",maxLevel:3,desc:"맞을수록 다음 강타가 무거워집니다.",effect:"피해를 받으면 지면 강타 충전 증가"},
+  {id:"muscle_gravity",name:"중력 압박",kind:"class",tier:1,organs:["근육"],main:"muscle",maxLevel:3,desc:"강타 직전 적을 끌어모아 함께 터뜨립니다.",effect:`강타 탐색 범위 ${AUGMENT_BALANCE.muscleGravity.rangeMultiplier.join("/")}배 · 당김 거리 ${AUGMENT_BALANCE.muscleGravity.pullDistance.join("/")}`},
 ];
 const FUSION_CARDS:CardDef[]=[
   {id:"fusion_heart_brain",name:"뇌근 동기화",kind:"fusion",organs:["심장","뇌"],main:"heart",support:"brain",maxLevel:1,desc:"주먹과 신경 코어가 동기화됩니다.",effect:"콤보 피니시마다 추적 에너지탄 발사"},
@@ -152,17 +152,17 @@ const COMMON_CARDS:CardDef[]=[
   {id:"common_membrane",name:"세포막 강화",kind:"common",organs:[],maxLevel:1,desc:"잠시 피해를 받지 않으면 보호막이 생성됩니다.",effect:"8초 무피격 시 최대 체력 15% 보호막"},
 ];
 const cardLevel=(g:Game,id:string)=>g.cardLevels[id]||0;
-const toChoice=(d:CardDef):Choice=>({id:d.id,kind:d.kind,name:d.name,desc:d.desc,effect:d.effect,cost:d.cost,organs:d.organs,maxLevel:d.maxLevel,apply:g=>{g.cardLevels[d.id]=cardLevel(g,d.id)+1;if(!g.acquiredCards.includes(d.id))g.acquiredCards.push(d.id);d.apply?.(g)}});
+const toChoice=(d:CardDef):Choice=>({id:d.id,kind:d.kind,name:d.name,desc:d.desc,effect:d.effect,cost:d.cost,organs:d.organs,maxLevel:d.maxLevel,tier:d.tier,apply:g=>{g.cardLevels[d.id]=cardLevel(g,d.id)+1;if(!g.acquiredCards.includes(d.id))g.acquiredCards.push(d.id);d.apply?.(g)}});
 const shuffled=<T,>(items:T[])=>[...items].sort(()=>Math.random()-.5);
 const available=(g:Game,items:CardDef[])=>items.filter(d=>cardLevel(g,d.id)<d.maxLevel);
 const eligibleFusions=(g:Game)=>FUSION_CARDS.filter(d=>d.main===g.mainClass&&d.support&&g.organLevels[d.support]>=2&&!g.acquiredCards.includes(d.id));
-// 직업 카드 스킬트리: T1(각성 즉시 등장) → T2(부모 카드 보유 시 해금). 융합은 보조 장기 Lv.2에서 별도 해금.
-const CARD_TREE:Record<string,{tier:number;parent?:string}> = {
-  heart_adrenaline:{tier:1},heart_bloodflow:{tier:1},heart_shock:{tier:2,parent:"heart_adrenaline"},heart_overload:{tier:2,parent:"heart_bloodflow"},
-  brain_synapse:{tier:1},brain_chain:{tier:1},brain_frenzy:{tier:2,parent:"brain_synapse"},brain_focus:{tier:2,parent:"brain_chain"},
-  liver_footprints:{tier:1},liver_overlap:{tier:1},liver_rupture:{tier:2,parent:"liver_footprints"},liver_concentrated:{tier:2,parent:"liver_overlap"},
-  lung_bladewind:{tier:1},lung_circulation:{tier:1},lung_eyestorm:{tier:2,parent:"lung_bladewind"},lung_afterimage:{tier:2,parent:"lung_circulation"},
-  muscle_overcontract:{tier:1},muscle_painfuel:{tier:1},muscle_chaincollide:{tier:2,parent:"muscle_overcontract"},muscle_gravity:{tier:2,parent:"muscle_painfuel"},
+// 직업 카드 스킬트리: 선행 증강 → 후속 증강. 희귀도 T1~T4와 트리 깊이는 별개다.
+const CARD_TREE:Record<string,{depth:number;parent?:string}> = {
+  heart_adrenaline:{depth:1},heart_bloodflow:{depth:1},heart_shock:{depth:2,parent:"heart_adrenaline"},heart_overload:{depth:2,parent:"heart_bloodflow"},
+  brain_frenzy:{depth:1},brain_focus:{depth:1},brain_synapse:{depth:2,parent:"brain_frenzy"},brain_chain:{depth:2,parent:"brain_focus"},
+  liver_footprints:{depth:1},liver_concentrated:{depth:1},liver_rupture:{depth:2,parent:"liver_footprints"},liver_overlap:{depth:2,parent:"liver_concentrated"},
+  lung_bladewind:{depth:1},lung_circulation:{depth:1},lung_eyestorm:{depth:2,parent:"lung_bladewind"},lung_afterimage:{depth:2,parent:"lung_circulation"},
+  muscle_overcontract:{depth:1},muscle_painfuel:{depth:1},muscle_chaincollide:{depth:2,parent:"muscle_overcontract"},muscle_gravity:{depth:2,parent:"muscle_painfuel"},
 };
 const classCardUnlocked=(g:Game,id:string)=>{const p=CARD_TREE[id]?.parent;return !p||g.acquiredCards.includes(p)};
 const weightedChoices=(g:Game):Choice[]=>{
