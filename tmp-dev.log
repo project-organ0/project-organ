@@ -1,0 +1,15 @@
+
+> site-creator-vinext-starter@0.1.0 dev
+> WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev
+
+
+  vinext dev  (Vite 8.0.13)
+
+Using secrets defined in .env.local
+(node:90773) ExperimentalWarning: glob is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ➜  Local:   http://localhost:3000/
+  ➜  Debug:   http://localhost:3000/__debug
+ GET /?debug=heart&common=1 200 in 2.2s (compile: 1786174664.6s, render: 2.1s)
+ GET /?debug=brain&common=1 200 in 128ms (compile: 1786174664.6s, render: 55ms)
+  ➜  Tunnel closed
