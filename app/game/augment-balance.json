@@ -11,6 +11,13 @@
     "pityWeakestGuaranteedTier": 2,
     "pityAfterOffers": 5
   },
+  "branchWeighting": {
+    "sameBranch": 1.35,
+    "ownedCardLevelUp": 1.15,
+    "combinedCap": 1.5,
+    "softenAfterConsecutivePicks": 2,
+    "softenedSameBranch": 1.15
+  },
   "heartBloodflow": {
     "durationSeconds": [2, 3, 4],
     "speedBonus": [0.2, 0.25, 0.3]

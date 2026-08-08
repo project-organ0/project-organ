@@ -152,7 +152,7 @@ const COMMON_CARDS:CardDef[]=[
   {id:"common_membrane",name:"세포막 강화",kind:"common",organs:[],maxLevel:1,desc:"잠시 피해를 받지 않으면 보호막이 생성됩니다.",effect:"8초 무피격 시 최대 체력 15% 보호막"},
 ];
 const cardLevel=(g:Game,id:string)=>g.cardLevels[id]||0;
-const toChoice=(d:CardDef):Choice=>({id:d.id,kind:d.kind,name:d.name,desc:d.desc,effect:d.effect,cost:d.cost,organs:d.organs,maxLevel:d.maxLevel,tier:d.tier,apply:g=>{g.cardLevels[d.id]=cardLevel(g,d.id)+1;if(!g.acquiredCards.includes(d.id))g.acquiredCards.push(d.id);d.apply?.(g)}});
+const toChoice=(d:CardDef):Choice=>({id:d.id,kind:d.kind,name:d.name,desc:d.desc,effect:d.effect,cost:d.cost,organs:d.organs,maxLevel:d.maxLevel,tier:d.tier,apply:g=>{g.cardLevels[d.id]=cardLevel(g,d.id)+1;if(!g.acquiredCards.includes(d.id))g.acquiredCards.push(d.id);if(d.kind==="class"){const branch=cardBranch(d.id);if(g.lastAugmentBranch===branch)g.augmentBranchStreak++;else{g.lastAugmentBranch=branch;g.augmentBranchStreak=1}}d.apply?.(g)}});
 const shuffled=<T,>(items:T[])=>[...items].sort(()=>Math.random()-.5);
 const available=(g:Game,items:CardDef[])=>items.filter(d=>cardLevel(g,d.id)<d.maxLevel);
 const eligibleFusions=(g:Game)=>FUSION_CARDS.filter(d=>d.main===g.mainClass&&d.support&&g.organLevels[d.support]>=2&&!g.acquiredCards.includes(d.id));
@@ -165,6 +165,18 @@ const CARD_TREE:Record<string,{depth:number;parent?:string}> = {
   muscle_overcontract:{depth:1},muscle_painfuel:{depth:1},muscle_chaincollide:{depth:2,parent:"muscle_overcontract"},muscle_gravity:{depth:2,parent:"muscle_painfuel"},
 };
 const classCardUnlocked=(g:Game,id:string)=>{const p=CARD_TREE[id]?.parent;return !p||g.acquiredCards.includes(p)};
+const cardBranch=(id:string)=>CARD_TREE[id]?.parent??id;
+const classCardOfferWeight=(g:Game,card:CardDef)=>{
+  const config=AUGMENT_BALANCE.branchWeighting,branch=cardBranch(card.id),sameBranch=g.acquiredCards.some(id=>cardBranch(id)===branch);
+  const branchWeight=sameBranch?(g.lastAugmentBranch===branch&&g.augmentBranchStreak>=config.softenAfterConsecutivePicks?config.softenedSameBranch:config.sameBranch):1;
+  const levelWeight=cardLevel(g,card.id)>0?config.ownedCardLevelUp:1;
+  return Math.min(config.combinedCap,branchWeight*levelWeight);
+};
+const pickWeightedClassCard=(g:Game,cards:CardDef[])=>{
+  const total=cards.reduce((sum,card)=>sum+classCardOfferWeight(g,card),0);let roll=Math.random()*total;
+  for(const card of cards){roll-=classCardOfferWeight(g,card);if(roll<=0)return card}
+  return cards[cards.length-1];
+};
 const TIER_ORDER:AugmentTier[]=[1,2,3,4];
 type ChoiceSource="level"|"boss";
 const tierBand=(g:Game)=>{
@@ -178,11 +190,11 @@ const classCardCandidates=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4
 const pickTieredClassCard=(g:Game,excluded:Set<string>,weakestTier:AugmentTier=4):Choice|undefined=>{
   const candidates=classCardCandidates(g,excluded,weakestTier);if(!candidates.length)return;
   const chances=AUGMENT_BALANCE.tierSystem.chances[tierBand(g)];
-  const groups=TIER_ORDER.map(tier=>candidates.filter(card=>card.tier===tier));
-  const weights=groups.map((group,index)=>group.length?chances[index]:0),total=weights.reduce((sum,value)=>sum+value,0);
-  if(total<=0)return toChoice(candidates[Math.floor(Math.random()*candidates.length)]);
-  let roll=Math.random()*total,tierIndex=0;for(;tierIndex<weights.length;tierIndex++){roll-=weights[tierIndex];if(roll<=0)break}
-  const group=groups[Math.min(tierIndex,groups.length-1)];return toChoice(group[Math.floor(Math.random()*group.length)]);
+  const tierCounts=TIER_ORDER.map(tier=>candidates.filter(card=>card.tier===tier).length);
+  const weights=candidates.map(card=>chances[(card.tier??4)-1]/Math.max(1,tierCounts[(card.tier??4)-1])*classCardOfferWeight(g,card)),total=weights.reduce((sum,value)=>sum+value,0);
+  if(total<=0)return toChoice(pickWeightedClassCard(g,candidates));
+  let roll=Math.random()*total;for(let index=0;index<candidates.length;index++){roll-=weights[index];if(roll<=0)return toChoice(candidates[index])}
+  return toChoice(candidates[candidates.length-1]);
 };
 const weightedChoices=(g:Game,source:ChoiceSource="level"):Choice[]=>{
   const fusion=eligibleFusions(g)[0];
@@ -235,7 +247,7 @@ function fresh(difficulty:Difficulty="normal"):Game {
   return {w:1280,h:720,worldW:2400,worldH:1600,t:0,stage:0,stageT:0,hp:100,maxHp:100,x:1200,y:800,vx:0,vy:0,touchX:0,touchY:0,dash:0,dashCharges:1,maxDash:1,inv:0,fire:0,kills:0,
     organs:{뇌:55,심장:55,폐:55,간:55,근육:55},mobs:[],shots:[],parts:[],drops:[],warnings:[],fields:[],keys:new Set(),choices:[],augments:[],
     level:1,xp:0,nextXp:12,paused:false,damage:14,armor:3,fireRate:.42,speed:210,projectiles:1,poison:0,pulse:0,runner:0,
-    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0,lung:0,muscle:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],tierPity:0,meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,invuln:false,galeMomentum:0,windTrailDist:0,galeKillLock:0,impactCharge:0};
+    bossSpawned:false,choiceDone:false,augmentDone:false,last:0,shake:0,difficulty,lastHeart:-1,effect:"",effectT:0,shotCount:0,hudAt:0,chemistries:[],dashFx:0,castFx:0,castAngle:0,heartFx:0,organLevels:{heart:0,brain:0,liver:0,lung:0,muscle:0},mainClass:null,awakened:false,deferredAwakenings:[],cardLevels:{},acquiredCards:[],tierPity:0,lastAugmentBranch:null,augmentBranchStreak:0,meleeCombo:0,moveBuff:0,poisonTrailDistance:0,lastTrailX:1200,lastTrailY:800,toxicCoreCooldown:0,killsSinceRegen:0,noDamage:0,shield:0,reviveAvailable:false,meleeRange:115,rangedDamageMul:1,chainBonus:0,poisonRadiusMul:1,poisonDurationMul:1,brainVolley:0,fatigue:0,unstableAim:0,recoveryPenalty:0,momentum:0,bossWeakTarget:null,lastFatigue:0,skillFx:[],debug:false,invuln:false,galeMomentum:0,windTrailDist:0,galeKillLock:0,impactCharge:0};
 }
 // 직업 전용 스킬 이펙트를 큐에 넣는다. dur 동안 grow 배율까지 확대되며 알파가 사라진다.
 function pushSkill(g:Game,sheet:CoreOrgan,index:number,x:number,y:number,size:number,dur:number,opts:{rot?:number;spin?:number;grow?:number}={}){
