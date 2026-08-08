@@ -341,26 +341,29 @@ export default function OrganGame() {
       g.vx=dx*690;g.vy=dy*690;g.inv=.3;g.dashFx=.34;g.heartFx=.42;g.shake=13;
       for(const m of g.mobs){const tx=m.x-g.x,ty=m.y-g.y,d=Math.hypot(tx,ty),facing=(tx*dx+ty*dy)/Math.max(1,d);if(d<155&&facing>.25){m.hp-=g.damage*2.1;m.hit=.12}}
       pushSkill(g,"heart",5,g.x+dx*40,g.y+dy*40,150,.36,{rot:Math.atan2(dy,dx),grow:1.6});
+      const shock=cardLevel(g,"heart_shock");if(shock>=2)pushSkill(g,"heart",3,g.x+dx*72,g.y+dy*72,150+shock*28,.46,{grow:1.8});if(shock>=3)pushSkill(g,"heart",6,g.x+dx*105,g.y+dy*105,110,.52,{rot:Math.atan2(dy,dx),spin:2.4,grow:1.45});
       g.effect="심장 액션 · 돌진 펀치";g.effectT=1;sound.current?.play("hit");
     }else if(active==="brain"){
       const targets=[...g.mobs].sort((a,b)=>Math.hypot(a.x-g.x,a.y-g.y)-Math.hypot(b.x-g.x,b.y-g.y)).slice(0,7);
       targets.forEach((m,i)=>{const a=Math.atan2(m.y-g.y,m.x-g.x)+(i%2?-.035:.035);g.shots.push({x:g.x,y:g.y,vx:Math.cos(a)*650,vy:Math.sin(a)*650,life:1.4,r:7})});
       pushSkill(g,"brain",5,g.x,g.y,170,.45,{rot:Math.atan2(dy,dx),grow:1.7});
+      const synapse=cardLevel(g,"brain_synapse"),chain=cardLevel(g,"brain_chain");for(let i=0;i<synapse;i++)pushSkill(g,"brain",i%2?2:4,g.x,g.y,115+i*34,.42+i*.05,{rot:i*Math.PI/3,spin:(i%2?1:-1)*2.2,grow:1.55});if(chain>=3)pushSkill(g,"brain",6,g.x,g.y,235,.58,{spin:1.8,grow:1.75});
       g.castFx=.3;g.castAngle=Math.atan2(dy,dx);g.shake=6;g.effect="뇌 액션 · 코어 집중 사격";g.effectT=1;sound.current?.play("shot");
     }else if(active==="liver"){
-      g.fields.push({x:g.x,y:g.y,r:135*g.poisonRadiusMul,life:5.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.fields=g.fields.slice(-30);pushSkill(g,"liver",3,g.x,g.y,190,.5,{grow:1.6});g.shake=8;g.effect="간 액션 · 독성 영역 점화";g.effectT=1;sound.current?.play("heart");
+      g.fields.push({x:g.x,y:g.y,r:135*g.poisonRadiusMul,life:5.2*g.poisonDurationMul,stack:1,kills:0,tick:0});g.fields=g.fields.slice(-30);pushSkill(g,"liver",3,g.x,g.y,190,.5,{grow:1.6});const overlap=cardLevel(g,"liver_overlap"),concentrated=cardLevel(g,"liver_concentrated");if(overlap>=2)pushSkill(g,"liver",4,g.x,g.y,220+overlap*24,.62,{spin:1.1,grow:1.65});if(concentrated>=3)pushSkill(g,"liver",6,g.x,g.y,145,.7,{spin:-2,grow:1.35});g.shake=8;g.effect="간 액션 · 독성 영역 점화";g.effectT=1;sound.current?.play("heart");
     }else if(active==="lung"){
       g.vx=dx*940;g.vy=dy*940;g.inv=.34;g.dashFx=.4;g.galeMomentum=3.5;g.shake=7;
       const gx=g.x+dx*185,gy=g.y+dy*185;
       for(const m of g.mobs){const tx=m.x-g.x,ty=m.y-g.y,d=Math.hypot(tx,ty),facing=(tx*dx+ty*dy)/Math.max(1,d);if(d<210&&facing>.15){m.hp-=g.damage*1.8;m.hit=.12;const gd=Math.hypot(m.x-gx,m.y-gy)||1;m.kbX+=(m.x-gx)/gd*230;m.kbY+=(m.y-gy)/gd*230}}
       pushSkill(g,"lung",3,g.x+dx*60,g.y+dy*60,150,.34,{rot:Math.atan2(dy,dx),grow:1.7});pushSkill(g,"lung",4,gx,gy,155,.5,{grow:1.9});
+      const storm=cardLevel(g,"lung_eyestorm"),blade=cardLevel(g,"lung_bladewind");for(let i=1;i<storm;i++)pushSkill(g,"lung",4,gx+dx*i*34,gy+dy*i*34,155+i*42,.5+i*.06,{rot:i*.7,spin:(i%2?1:-1)*2,grow:1.9});if(blade>=3)pushSkill(g,"lung",6,g.x+dx*115,g.y+dy*115,185,.44,{rot:Math.atan2(dy,dx),grow:1.65});
       g.effect="폐 액션 · 관통 대시 · 돌풍";g.effectT=1;sound.current?.play("dash");
     }else if(active==="muscle"){
       const power=g.impactCharge,radius=145+power*165,dmg=g.damage*(1.6+power*3.2),kb=340+power*380;
       const gravity=cardLevel(g,"muscle_gravity");
       if(gravity){const pullRange=levelValue(AUGMENT_BALANCE.muscleGravity.rangeMultiplier,gravity),pullDistance=levelValue(AUGMENT_BALANCE.muscleGravity.pullDistance,gravity);for(const m of g.mobs){const d=Math.hypot(m.x-g.x,m.y-g.y);if(d<radius*pullRange&&d>1){m.x+=(g.x-m.x)/d*Math.min(d,pullDistance);m.y+=(g.y-m.y)/d*Math.min(d,pullDistance)}}}
       for(const m of g.mobs){const d=Math.hypot(m.x-g.x,m.y-g.y);if(d<radius+m.r){m.hp-=dmg;m.hit=.14;const nx=(m.x-g.x)/(d||1),ny=(m.y-g.y)/(d||1);m.kbX+=nx*kb;m.kbY+=ny*kb}}
-      g.impactCharge=0;g.shake=10+power*12;pushSkill(g,"muscle",5,g.x,g.y,radius*2,.55,{grow:1.5});pushSkill(g,"muscle",7,g.x,g.y,radius*1.3,.4,{grow:1.6});
+      g.impactCharge=0;g.shake=10+power*12;pushSkill(g,"muscle",5,g.x,g.y,radius*2,.55,{grow:1.5});pushSkill(g,"muscle",7,g.x,g.y,radius*1.3,.4,{grow:1.6});if(gravity>=2)pushSkill(g,"muscle",4,g.x,g.y,radius*(1.5+gravity*.35),.66,{spin:gravity%2?1.5:-1.5,grow:.72});if(gravity>=3)pushSkill(g,"muscle",6,g.x,g.y,radius*2.35,.72,{spin:2.2,grow:.58});
       g.effect=`근육 액션 · 지면 강타 ${Math.round(power*100)}%`;g.effectT=1;sound.current?.play("boss");
     }else{
       g.vx=dx*760;g.vy=dy*760;g.inv=.28;g.dashFx=.34;g.shake=7;sound.current?.play("dash");
@@ -632,9 +635,17 @@ export default function OrganGame() {
       }
       for(const fx of g.skillFx)if(visible(fx.x,fx.y,fx.size*2))drawSkill(fx);
       const playerMoving=Math.hypot(g.vx,g.vy)>20,moveAngle=Math.atan2(g.vy,g.vx);
-      if(g.mainClass==="brain"){const coreCount=2+cardLevel(g,"brain_synapse");for(let i=0;i<coreCount;i++){const a=g.t*(1.9+cardLevel(g,"brain_frenzy")*.08)+i/coreCount*Math.PI*2,r=50+Math.sin(g.t*3+i)*4,cx=g.x+Math.cos(a)*r,cy=g.y+Math.sin(a)*r;ctx.save();ctx.shadowBlur=g.brainVolley>0?28:16;ctx.shadowColor="#a49bd8";ctx.fillStyle=g.brainVolley>0?"#f2ebff":"#8f83dc";ctx.beginPath();ctx.arc(cx,cy,g.brainVolley>0?9:7,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#d8ff3e";ctx.globalAlpha=.7;ctx.beginPath();ctx.arc(cx,cy,12+Math.sin(g.t*8+i)*2,0,Math.PI*2);ctx.stroke();ctx.restore()}g.brainVolley=Math.max(0,g.brainVolley-.016)}
+      if(g.mainClass==="brain"){
+        const synapse=cardLevel(g,"brain_synapse"),chain=cardLevel(g,"brain_chain"),coreCount=2+synapse;
+        const cores=Array.from({length:coreCount},(_,i)=>{const a=g.t*(1.9+cardLevel(g,"brain_frenzy")*.08)+i/coreCount*Math.PI*2,r=50+Math.sin(g.t*3+i)*4;return{x:g.x+Math.cos(a)*r,y:g.y+Math.sin(a)*r}});
+        if(synapse||chain){ctx.save();ctx.strokeStyle=chain>=3?"#d8ff3e":"#a49bd8";ctx.lineWidth=1.5+Math.min(2,chain*.55);ctx.globalAlpha=.2+Math.min(.35,synapse*.08)+(g.brainVolley>0?.22:0);ctx.setLineDash(chain>=2?[7,5]:[]);ctx.beginPath();for(let i=0;i<cores.length;i++){const next=cores[(i+1)%cores.length];ctx.moveTo(cores[i].x,cores[i].y);ctx.lineTo(next.x,next.y)}ctx.stroke();ctx.restore()}
+        for(let i=0;i<cores.length;i++){const core=cores[i];ctx.save();ctx.shadowBlur=g.brainVolley>0?28:16;ctx.shadowColor="#a49bd8";ctx.fillStyle=g.brainVolley>0?"#f2ebff":"#8f83dc";ctx.beginPath();ctx.arc(core.x,core.y,g.brainVolley>0?9:7,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#d8ff3e";ctx.globalAlpha=.7;ctx.beginPath();ctx.arc(core.x,core.y,12+Math.sin(g.t*8+i)*2,0,Math.PI*2);ctx.stroke();ctx.restore()}
+        g.brainVolley=Math.max(0,g.brainVolley-.016);
+      }
       if(g.shield>0){ctx.save();ctx.globalAlpha=.45+.12*Math.sin(g.t*7);ctx.strokeStyle="#4ee5e1";ctx.lineWidth=4;ctx.beginPath();ctx.arc(g.x,g.y,43+Math.sin(g.t*4)*2,0,Math.PI*2);ctx.stroke();ctx.restore()}
       if(playerMoving)drawVfx(0,g.x-Math.cos(moveAngle)*28,g.y-Math.sin(moveAngle)*28,62*renderScale,.28+Math.sin(g.t*15)*.08,moveAngle);
+      if(g.mainClass==="lung"&&playerMoving&&g.galeMomentum>.35){const blade=cardLevel(g,"lung_bladewind"),trails=1+Math.min(2,blade);ctx.save();ctx.strokeStyle=cardLevel(g,"lung_eyestorm")>=3?"#d8ff3e":"#4ee5e1";ctx.lineWidth=2+g.galeMomentum*.45;ctx.globalAlpha=.18+g.galeMomentum*.09;ctx.lineCap="round";for(let i=0;i<trails;i++){const side=(i-(trails-1)/2)*13,nx=-Math.sin(moveAngle)*side,ny=Math.cos(moveAngle)*side;ctx.beginPath();ctx.moveTo(g.x+nx-Math.cos(moveAngle)*20,g.y+ny-Math.sin(moveAngle)*20);ctx.lineTo(g.x+nx-Math.cos(moveAngle)*(70+g.galeMomentum*18),g.y+ny-Math.sin(moveAngle)*(70+g.galeMomentum*18));ctx.stroke()}ctx.restore()}
+      if(g.mainClass==="muscle"&&g.impactCharge>.02){const gravity=cardLevel(g,"muscle_gravity"),radius=45+g.impactCharge*42;ctx.save();ctx.strokeStyle=g.impactCharge>.75?"#f4ffaf":"#d8ff3e";ctx.lineWidth=2+g.impactCharge*4;ctx.globalAlpha=.28+g.impactCharge*.42;ctx.setLineDash(gravity?[7,5]:[]);ctx.beginPath();ctx.arc(g.x,g.y,radius,0,Math.PI*2);ctx.stroke();if(gravity){ctx.globalAlpha*=.7;ctx.beginPath();ctx.arc(g.x,g.y,radius*(1.35+gravity*.18),-g.t*1.8,Math.PI*.8-g.t*1.8);ctx.stroke()}ctx.restore()}
       if(g.dashFx>0)drawVfx(1,g.x-Math.cos(moveAngle)*12,g.y-Math.sin(moveAngle)*12,(92+(0.34-g.dashFx)*120)*renderScale,g.dashFx/.34,moveAngle);
       if(g.mainClass==="liver")drawVfx(6,g.x,g.y+18,(104+Math.sin(g.t*3)*6)*renderScale,.24,g.t*.08);
       if(g.mainClass==="brain")drawVfx(5,g.x,g.y-8,(88+Math.sin(g.t*4)*4)*renderScale,.34,g.t*.35);
@@ -695,7 +706,7 @@ export default function OrganGame() {
   const cardOrgans=(c:Choice)=>c.organs??ORGAN_KEYS.filter(k=>c.name.includes(k)||({뇌:["시냅스","신경","집중","공부","야근"],심장:["심실","맥박","아드레날린"],폐:["폐포","호흡","대시","등산"],간:["해독","독성","회식","식단"],근육:["근육","근섬유","운동","헬스","재활"]}[k] as string[]).some(v=>c.name.includes(v)));
 
   return <main className="game-shell"><section className="frame">
-    <canvas ref={canvas} width={1280} height={720} aria-label="장기 프로젝트 게임 화면"/>
+    <canvas ref={canvas} width={1280} height={720} tabIndex={0} aria-label="장기 프로젝트 게임 화면"/>
     {(mode==="start"||mode==="play")&&<><button className="sound-btn" onClick={()=>{const next=!isMuted;setIsMuted(next);sound.current??=createSoundEngine();sound.current.setMuted(next);if(!next)sound.current.play("pickup")}} aria-label={isMuted?"사운드 켜기":"사운드 끄기"}>{isMuted?"🔇 소리 켜기":"🔊 사운드"}</button>
     <button className="fullscreen-btn" onClick={toggleFullscreen} aria-label={isFullscreen?"전체화면 종료":"전체화면 시작"}>{isFullscreen?"⊡ 나가기":"⛶ 전체화면"} <kbd>F</kbd></button></>}
     {mode==="play"&&<div className="mobile-controls"><div ref={joystick} className="touch-stick" onPointerDown={moveStick} onPointerMove={moveStick} onPointerUp={releaseStick} onPointerCancel={releaseStick}><span style={{transform:`translate(${stick.x}px,${stick.y}px)`}}/></div><button className="touch-dash" onPointerDown={e=>{e.preventDefault();dashNow()}}><b>{actionName}</b><span>{Array.from({length:hud.maxDash},(_,i)=><i className={i<hud.dashCharges?"ready":""} key={i}/>)}</span></button></div>}
