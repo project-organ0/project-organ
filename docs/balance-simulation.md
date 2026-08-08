@@ -33,7 +33,7 @@
 - 선택지는 본게임과 같은 3장이며 각 슬롯의 직업 카드 풀 기본 비중은 45%다.
 - 보스 선택의 T3 이상 보장과 5회 누적 보장의 T2 이상 규칙을 적용한다.
 - 선택 AI는 이미 획득한 카드의 레벨업, 현재 계열, 높은 티어 순으로 직업 카드를 고른다.
-- 티어별 평균 획득량, T1 획득 확률과 최초 시점, 계열 완성률, 고유 카드 노출 수, 반복 제시율을 기록한다.
+- 티어별 평균 획득량, T1 획득 확률과 최초 시점, 계열 완성률, 반대 계열 제시율, 고유 카드 노출 수, 반복 제시율을 기록한다.
 
 ## 4. 직업별 전투 프로필
 
@@ -87,6 +87,12 @@ npm run balance:simulate
 
 ```bash
 npm run balance:simulate -- --runs=5000 --seed=20260808 --difficulty=normal --out=docs/balance-simulation-candidate
+```
+
+같은 난수 시드로 계열 가중치를 비교하려면 다음 옵션을 추가한다.
+
+```bash
+npm run balance:simulate -- --compare-branch-weights=1,1.25,1.35,1.5 --out=docs/augment-branch-weight-comparison
 ```
 
 실행하면 같은 경로에 사람이 읽는 비교표와 자동 판독을 담은 `.md`, 조건과 모든 집계값을 담은 `.json`을 생성한다. 현재 카드 선택 구조 기준 결과는 `docs/balance-simulation-2026-08-09.md`와 `docs/balance-simulation-2026-08-09.json`에 보관한다.

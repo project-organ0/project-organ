@@ -30,6 +30,7 @@ const runs = Math.max(100, Number(argv.runs||2000));
 const baseSeed = Number(argv.seed||20260808);
 const difficultyName = ["easy","normal","hard"].includes(argv.difficulty)?argv.difficulty:"normal";
 const reportBase = argv.out||path.join("docs",`balance-simulation-${new Date().toISOString().slice(0,10)}`);
+const branchWeights = argv["compare-branch-weights"]?.split(",").map(Number).filter(value=>Number.isFinite(value)&&value>=1)??[];
 
 const makeRandom=(seed)=>{let state=seed>>>0;return()=>{state+=0x6d2b79f5;let value=state;value=Math.imul(value^value>>>15,value|1);value^=value+Math.imul(value^value>>>7,value|61);return((value^value>>>14)>>>0)/4294967296}};
 const atLevel=(values,level)=>level>0?values[Math.min(values.length,level)-1]:0;
@@ -64,6 +65,10 @@ function makeAugmentOffer(state,random,source){
   state.classCardsOffered+=classPicks.length;
   state.repeatedClassCardsOffered+=classPicks.filter(card=>(state.cardLevels[card.id]||0)>0).length;
   for(const card of classPicks){state.uniqueCardsOffered.add(card.id);state.tierCardsOffered[card.tier]++}
+  if(state.lastAugmentBranch){
+    state.branchEstablishedOffers++;
+    if(classPicks.some(card=>getAugmentBranch(augmentCatalog,card.id)!==state.lastAugmentBranch))state.alternativeBranchOffers++;
+  }
   return picks;
 }
 
@@ -125,7 +130,7 @@ function combatProfile(state){
 
 function simulateRun({classKey,seed,forced}){
   const random=makeRandom(seed),diff=DIFFICULTY[difficultyName],dt=.5;
-  const state={classKey,mainClass:null,t:0,hp:100,maxHp:100,stage:0,stageT:0,kills:0,recentKills:0,xp:0,level:1,nextXp:12,organGrowth:0,awakened:false,awakeningAt:null,cardLevels:{},acquiredCards:[],tierPity:0,lastAugmentBranch:null,augmentBranchStreak:0,offers:0,classCardsOffered:0,repeatedClassCardsOffered:0,uniqueCardsOffered:new Set(),tierCardsOffered:[0,0,0,0,0],classCardsChosen:0,tierCardsChosen:[0,0,0,0,0],firstTier1At:null,firstTier1Level:null,firstBranchCompleteAt:null,enemyCount:0,enemyHealth:0,bosses:[],bossSpawned:[false,false,false,false],bossesKilled:0,damageTaken:0,hitsTaken:0,choices:0};
+  const state={classKey,mainClass:null,t:0,hp:100,maxHp:100,stage:0,stageT:0,kills:0,recentKills:0,xp:0,level:1,nextXp:12,organGrowth:0,awakened:false,awakeningAt:null,cardLevels:{},acquiredCards:[],tierPity:0,lastAugmentBranch:null,augmentBranchStreak:0,offers:0,classCardsOffered:0,repeatedClassCardsOffered:0,uniqueCardsOffered:new Set(),branchEstablishedOffers:0,alternativeBranchOffers:0,tierCardsOffered:[0,0,0,0,0],classCardsChosen:0,tierCardsChosen:[0,0,0,0,0],firstTier1At:null,firstTier1Level:null,firstBranchCompleteAt:null,enemyCount:0,enemyHealth:0,bosses:[],bossSpawned:[false,false,false,false],bossesKilled:0,damageTaken:0,hitsTaken:0,choices:0};
   let win=false;
   for(;state.t<480&&state.hp>0&&!win;state.t+=dt){
     state.stage=Math.min(3,Math.floor(state.t/100));state.stageT=state.t-state.stage*100;
@@ -151,13 +156,13 @@ function simulateRun({classKey,seed,forced}){
     const pressure=cap?state.enemyCount/cap:0,bossPressure=state.bosses.length*.8,incoming=([.8,1.2,1.8,1.6][state.stage]*(.25+pressure*.9)+bossPressure)*profile.avoidance*diff.damage*.87,damage=incoming*dt*(.72+random()*.56);
     state.hp-=damage;state.damageTaken+=damage;state.hitsTaken+=poisson(incoming/8*dt,random);
   }
-  return{classKey,win,survivalSeconds:Math.min(480,state.t),kills:state.kills,bossesKilled:state.bossesKilled,stage:state.stage+1,level:state.level,awakeningAt:state.awakeningAt??480,damageTaken:state.damageTaken,hitsTaken:state.hitsTaken,cardLevels:state.cardLevels,offers:state.offers,classCardsOffered:state.classCardsOffered,repeatedClassCardsOffered:state.repeatedClassCardsOffered,uniqueCardsOffered:state.uniqueCardsOffered.size,classCardsChosen:state.classCardsChosen,tierCardsChosen:state.tierCardsChosen,firstTier1At:state.firstTier1At,firstTier1Level:state.firstTier1Level,firstBranchCompleteAt:state.firstBranchCompleteAt};
+  return{classKey,win,survivalSeconds:Math.min(480,state.t),kills:state.kills,bossesKilled:state.bossesKilled,stage:state.stage+1,level:state.level,awakeningAt:state.awakeningAt??480,damageTaken:state.damageTaken,hitsTaken:state.hitsTaken,cardLevels:state.cardLevels,offers:state.offers,classCardsOffered:state.classCardsOffered,repeatedClassCardsOffered:state.repeatedClassCardsOffered,uniqueCardsOffered:state.uniqueCardsOffered.size,branchEstablishedOffers:state.branchEstablishedOffers,alternativeBranchOffers:state.alternativeBranchOffers,classCardsChosen:state.classCardsChosen,tierCardsChosen:state.tierCardsChosen,firstTier1At:state.firstTier1At,firstTier1Level:state.firstTier1Level,firstBranchCompleteAt:state.firstBranchCompleteAt};
 }
 
 function summarize(results){
   const tier1Runs=results.filter(result=>result.firstTier1At!==null),completed=results.filter(result=>result.firstBranchCompleteAt!==null);
   const tierAverages=[1,2,3,4].map(tier=>round(results.reduce((sum,result)=>sum+result.tierCardsChosen[tier],0)/results.length,2));
-  return{runs:results.length,clearRate:round(results.filter(result=>result.win).length/results.length*100),avgSurvival:round(average(results,"survivalSeconds")),p50Survival:round(percentile(results,"survivalSeconds",.5)),p90Survival:round(percentile(results,"survivalSeconds",.9)),avgKills:round(average(results,"kills")),avgBosses:round(average(results,"bossesKilled"),2),avgLevel:round(average(results,"level"),2),avgAwakening:round(average(results,"awakeningAt")),avgDamageTaken:round(average(results,"damageTaken")),avgOffers:round(average(results,"offers"),2),avgClassCardsOffered:round(average(results,"classCardsOffered"),2),avgClassCardsChosen:round(average(results,"classCardsChosen"),2),avgUniqueCardsOffered:round(average(results,"uniqueCardsOffered"),2),repeatOfferRate:round(results.reduce((sum,result)=>sum+result.repeatedClassCardsOffered,0)/Math.max(1,results.reduce((sum,result)=>sum+result.classCardsOffered,0))*100),tier1AcquisitionRate:round(tier1Runs.length/results.length*100),avgFirstTier1At:tier1Runs.length?round(average(tier1Runs,"firstTier1At")):null,avgFirstTier1Level:tier1Runs.length?round(average(tier1Runs,"firstTier1Level"),2):null,branchCompletionRate:round(completed.length/results.length*100),avgBranchCompletionAt:completed.length?round(average(completed,"firstBranchCompleteAt")):null,avgTierCardsChosen:tierAverages};
+  return{runs:results.length,clearRate:round(results.filter(result=>result.win).length/results.length*100),avgSurvival:round(average(results,"survivalSeconds")),p50Survival:round(percentile(results,"survivalSeconds",.5)),p90Survival:round(percentile(results,"survivalSeconds",.9)),avgKills:round(average(results,"kills")),avgBosses:round(average(results,"bossesKilled"),2),avgLevel:round(average(results,"level"),2),avgAwakening:round(average(results,"awakeningAt")),avgDamageTaken:round(average(results,"damageTaken")),avgOffers:round(average(results,"offers"),2),avgClassCardsOffered:round(average(results,"classCardsOffered"),2),avgClassCardsChosen:round(average(results,"classCardsChosen"),2),avgUniqueCardsOffered:round(average(results,"uniqueCardsOffered"),2),repeatOfferRate:round(results.reduce((sum,result)=>sum+result.repeatedClassCardsOffered,0)/Math.max(1,results.reduce((sum,result)=>sum+result.classCardsOffered,0))*100),alternativeBranchOfferRate:round(results.reduce((sum,result)=>sum+result.alternativeBranchOffers,0)/Math.max(1,results.reduce((sum,result)=>sum+result.branchEstablishedOffers,0))*100),tier1AcquisitionRate:round(tier1Runs.length/results.length*100),avgFirstTier1At:tier1Runs.length?round(average(tier1Runs,"firstTier1At")):null,avgFirstTier1Level:tier1Runs.length?round(average(tier1Runs,"firstTier1Level"),2):null,branchCompletionRate:round(completed.length/results.length*100),avgBranchCompletionAt:completed.length?round(average(completed,"firstBranchCompleteAt")):null,avgTierCardsChosen:tierAverages};
 }
 
 const natural={};
@@ -171,11 +176,29 @@ for(let augmentIndex=0;augmentIndex<MARGINAL_AUGMENTS.length;augmentIndex++){
   for(let level=0;level<=3;level++){const results=[];for(let run=0;run<runs;run++)results.push(simulateRun({classKey,seed:baseSeed+500000+augmentIndex*100000+run,forced:{id,level}}));marginal[id].levels[level]=summarize(results)}
 }
 
-const payload={generatedAt:new Date().toISOString(),model:"headless-macro-v2",runsPerScenario:runs,seed:baseSeed,difficulty:difficultyName,assumptions:{durationSeconds:480,timeStepSeconds:.5,finalBossAtSeconds:378,classPoolChance:.45,offerSize:3,choicePolicy:"각성 전 목표 장기 우선, 각성 후 보유 카드 레벨업과 기존 계열을 우선하는 직업 카드 선택",offerPolicy:"본게임과 같은 트리 해금·티어 확률·계열 가중치·보스/누적 보장·중복 제외",marginalPolicy:"각성 시 같은 직업의 다른 증강은 Lv.1, 대상 증강만 Lv.0~3 고정"},natural,marginal};
+const branchWeightComparison={};
+if(branchWeights.length){
+  const originalWeight=balance.branchWeighting.sameBranch;
+  for(const weight of branchWeights){
+    balance.branchWeighting.sameBranch=weight;
+    const allResults=[],classes={};
+    for(let classIndex=0;classIndex<CLASS_KEYS.length;classIndex++){
+      const classKey=CLASS_KEYS[classIndex],results=[];
+      for(let run=0;run<runs;run++)results.push(simulateRun({classKey,seed:baseSeed+classIndex*100000+run,forced:null}));
+      classes[classKey]=summarize(results);allResults.push(...results);
+    }
+    branchWeightComparison[weight]={overall:summarize(allResults),classes};
+  }
+  balance.branchWeighting.sameBranch=originalWeight;
+}
+
+const payload={generatedAt:new Date().toISOString(),model:"headless-macro-v2",runsPerScenario:runs,seed:baseSeed,difficulty:difficultyName,assumptions:{durationSeconds:480,timeStepSeconds:.5,finalBossAtSeconds:378,classPoolChance:.45,offerSize:3,choicePolicy:"각성 전 목표 장기 우선, 각성 후 보유 카드 레벨업과 기존 계열을 우선하는 직업 카드 선택",offerPolicy:"본게임과 같은 트리 해금·티어 확률·계열 가중치·보스/누적 보장·중복 제외",marginalPolicy:"각성 시 같은 직업의 다른 증강은 Lv.1, 대상 증강만 Lv.0~3 고정"},natural,marginal,branchWeightComparison};
 
 const naturalRowsBase=CLASS_KEYS.map(key=>{const item=natural[key];return`| ${CLASS_NAMES[key]} | ${item.clearRate}% | ${item.avgSurvival}s | ${item.p50Survival}s | ${item.avgKills} | ${item.avgBosses} | ${item.avgLevel} | ${item.avgAwakening}s |`}).join("\n");
 const selectionRows=CLASS_KEYS.map(key=>{const item=natural[key];return`| ${CLASS_NAMES[key]} | ${item.avgOffers} | ${item.avgClassCardsOffered} | ${item.avgClassCardsChosen} | ${item.avgUniqueCardsOffered} | ${item.repeatOfferRate}% | ${item.tier1AcquisitionRate}% | ${item.avgFirstTier1At??"-"}s | ${item.branchCompletionRate}% | ${item.avgTierCardsChosen.join(" / ")} |`}).join("\n");
 const naturalRows=`${naturalRowsBase}\n\n## 카드 선택 구조\n\n| 목표 장기 | 평균 제시 | 직업 카드 제시 | 직업 카드 선택 | 고유 카드 노출 | 반복 제시율 | T1 획득률 | 첫 T1 시점 | 계열 완성률 | 평균 T1/T2/T3/T4 선택 |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |\n${selectionRows}\n\n- 한 선택 화면은 실제 게임과 같이 3장이고, 각 슬롯의 직업 카드 풀 기본 비중은 45%다.\n- 보스 선택은 획득 가능한 T3 이상 카드 한 장을 보장하고, T2 이상이 4회 연속 제시되지 않으면 5회째에 T2 이상을 보장한다.\n- 선택 AI는 제시된 직업 카드 중 이미 가진 카드, 현재 계열, 강한 티어 순으로 고른다.`;
+const branchWeightRows=Object.entries(branchWeightComparison).map(([weight,item])=>`| ${weight} | ${item.overall.branchCompletionRate}% | ${item.overall.avgBranchCompletionAt}s | ${item.overall.alternativeBranchOfferRate}% | ${item.overall.avgUniqueCardsOffered} | ${item.overall.repeatOfferRate}% | ${item.overall.tier1AcquisitionRate}% |`).join("\n");
+const branchWeightSection=branchWeightRows?`\n\n## 계열 가중치 비교\n\n| 같은 계열 배율 | 계열 완성률 | 평균 완성 시점 | 반대 계열 제시율 | 고유 카드 노출 | 반복 제시율 | T1 획득률 |\n| ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n${branchWeightRows}`:"";
 const marginalSections=MARGINAL_AUGMENTS.map(([,id,name])=>{
   const levels=marginal[id].levels,baseline=levels[0];
   const rows=[0,1,2,3].map(level=>{const item=levels[level];return`| Lv.${level} | ${item.clearRate}% | ${item.clearRate-baseline.clearRate>=0?"+":""}${round(item.clearRate-baseline.clearRate)}%p | ${item.avgSurvival}s | ${round(item.avgSurvival-baseline.avgSurvival)}s | ${item.avgKills} | ${round(item.avgKills-baseline.avgKills)} |`}).join("\n");
@@ -191,7 +214,7 @@ const cliffs=comparisons.filter(item=>Math.abs(item.clearDelta)>=40).map(item=>i
 const markdown=`# 전체 런 밸런스 시뮬레이션\n\n생성: ${payload.generatedAt}  \n모델: \`${payload.model}\`  \n난이도: \`${difficultyName}\`  \n시나리오별 반복: ${runs.toLocaleString()}회  \n기준 시드: ${baseSeed}\n\n## 해석 범위\n\n이 결과는 브라우저 조작 결과가 아니라 현재 게임의 스폰 증가식, 적 체력, 보스 시점, 카드 성장, 직업별 공격 주기와 새 증강 수치를 사용한 헤드리스 거시 모델이다. Canvas 좌표 충돌, 실제 투사체 명중, 플레이어의 순간 판단은 평균화되어 있으므로 절대적인 클리어율보다 직업·레벨 간 상대 차이를 우선해서 본다.\n\n## 자연 진행 비교\n\n| 목표 장기 | 클리어율 | 평균 생존 | 중앙 생존 | 평균 처치 | 평균 보스 | 평균 레벨 | 평균 각성 |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n${naturalRows}\n\n## 새 레벨 한계효과\n\n각성 시 같은 직업의 다른 증강은 Lv.1로 고정하고 대상 증강만 Lv.0~3으로 바꿨다. 같은 시드를 레벨별로 재사용해 난수 차이를 줄였다.\n\n${marginalSections}\n\n## 자동 판독\n\n| 증강 | Lv.3 생존 변화 | Lv.3 처치 변화 | 클리어율 변화 | 레벨별 추가 처치량 |\n| --- | ---: | ---: | ---: | --- |\n${comparisonRows}\n\n- 처치 영향이 가장 큰 증강: **${largest}**\n- 처치 영향이 가장 작은 증강: **${smallest}**\n- 클리어 임계점을 40%p 이상 넘긴 증강: **${cliffs}**\n- 클리어율 급변은 최종 보스 도달 임계점의 영향일 수 있으므로 생존시간과 처치량을 함께 본다.\n\n## 평가 시 주의\n\n- 이 단계에서는 티어가 없으므로 강한 증강 자체를 오류로 판정하지 않는다.\n- Lv.1→2와 Lv.2→3의 증가폭이 지나치게 급격하거나 결과 변화가 거의 없는지를 우선 확인한다.\n- 최종 수치 결정 전 실제 플레이 5~10회로 모델의 직업별 생존시간을 보정해야 한다.\n`;
 
 await mkdir(path.dirname(path.join(root,reportBase)),{recursive:true});
-const finalizedMarkdown=markdown.replace("- 이 단계에서는 티어가 없으므로 강한 증강 자체를 오류로 판정하지 않는다.","- 강한 증강이라는 이유만으로 문제로 판정하지 않고 티어별 획득 빈도와 함께 평가한다.");
+const finalizedMarkdown=markdown.replace("- 이 단계에서는 티어가 없으므로 강한 증강 자체를 오류로 판정하지 않는다.","- 강한 증강이라는 이유만으로 문제로 판정하지 않고 티어별 획득 빈도와 함께 평가한다.")+branchWeightSection;
 await Promise.all([writeFile(path.join(root,`${reportBase}.json`),JSON.stringify(payload,null,2)+"\n"),writeFile(path.join(root,`${reportBase}.md`),finalizedMarkdown)]);
 console.log(`Saved ${reportBase}.md and ${reportBase}.json`);
 console.table(CLASS_KEYS.map(key=>({class:CLASS_NAMES[key],...natural[key]})));
