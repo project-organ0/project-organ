@@ -7,7 +7,7 @@ import type { OrganKey } from "../game/types";
 
 type Asset = { name:string; file:string; category:"characters"|"monsters"|"maps"|"effects"; size:string; cols?:number; rows?:number; note:string };
 type CardKind = "organ"|"class"|"fusion"|"life"|"common";
-type CardSpec = {name:string;kind:CardKind;organs:string[];effect:string;cost?:string;status:"live"|"planned"};
+type CardSpec = {name:string;kind:CardKind;organs:string[];effect:string;cost?:string;age?:string;status:"live"|"planned"};
 
 const assets:Asset[] = [
   {name:"플레이어 형태 V2",file:"/art/player-forms-v2-clean.png",category:"characters",size:"1536 × 1024",cols:4,rows:2,note:"흰머리 기본형과 장기 에너지 활성 형태"},
@@ -51,9 +51,23 @@ const cardSpecs:CardSpec[] = ([
   {name:"신경 독성",kind:"fusion",organs:["뇌","간"],effect:"중독 대상을 우선 조준하고 독 전염"},
   {name:"독성 폭주",kind:"fusion",organs:["간","심장"],effect:"독 지대 3킬마다 영역 폭발"},
   {name:"추적 독성",kind:"fusion",organs:["간","뇌"],effect:"독성 코어가 적을 추적해 새 지대 생성"},
-  {name:"밤샘 공부",kind:"life",organs:["뇌"],effect:"자동 공격 연쇄 +1 · 공격 주기 감소",cost:"최대 체력 -15%"},
-  {name:"운동부 입단",kind:"life",organs:["심장"],effect:"근접 범위 증가 · 근거리 처치 후 가속",cost:"원거리 피해 -10%"},
-  {name:"회식의 제왕",kind:"life",organs:["간"],effect:"독 지대 범위와 지속시간 증가",cost:"회복 효과 -25%"},
+  {name:"밤샘 공부",kind:"life",organs:["뇌"],age:"0—20세 학교",effect:"연쇄 +1 · 공격 주기 -15%",cost:"최대 체력 -15%"},
+  {name:"운동부 입단",kind:"life",organs:["심장"],age:"0—20세 학교",effect:"근접 범위 +20% · 근거리 처치 이동 +15%",cost:"원거리·코어 피해 -10%"},
+  {name:"매점 단골",kind:"life",organs:["간"],age:"0—20세 학교",effect:"회복 효과 +30%",cost:"방어 -1.5"},
+  {name:"자전거 통학",kind:"life",organs:["폐"],age:"0—20세 학교",effect:"이동 속도 +12%",cost:"최대 체력 -10"},
+  {name:"짐 나르기 알바",kind:"life",organs:["근육"],age:"0—20세 학교",effect:"공격력 +3",cost:"이동 속도 -8%"},
+  {name:"동아리 뒤풀이",kind:"life",organs:["간"],age:"20—40세 회사",effect:"독 범위·지속시간 +25%",cost:"회복 효과 -25%"},
+  {name:"신입 야근",kind:"life",organs:["뇌"],age:"20—40세 회사",effect:"투사체 +1",cost:"조준 흔들림 증가"},
+  {name:"헬스장 등록",kind:"life",organs:["근육"],age:"20—40세 회사",effect:"공격력 +4",cost:"공격 주기 +10%"},
+  {name:"출퇴근 러닝",kind:"life",organs:["폐"],age:"20—40세 회사",effect:"이동 속도 +15%",cost:"방어 -1.5"},
+  {name:"회식의 제왕",kind:"life",organs:["간"],age:"40—60세 아파트",effect:"독 지속시간 +30% · 공격력 +2",cost:"최대 체력 -12%"},
+  {name:"만성 불면",kind:"life",organs:["뇌"],age:"40—60세 아파트",effect:"공격 주기 -18%",cost:"방어 -2"},
+  {name:"주말 등산",kind:"life",organs:["폐"],age:"40—60세 아파트",effect:"최대 체력 +18%",cost:"이동 속도 -10%"},
+  {name:"혈압약 복용",kind:"life",organs:["심장"],age:"40—60세 아파트",effect:"방어 +2",cost:"공격력 -2"},
+  {name:"새벽 산책",kind:"life",organs:["심장"],age:"60—80세 병원",effect:"회복 효과 +35%",cost:"이동 속도 -10%"},
+  {name:"재활 운동",kind:"life",organs:["근육"],age:"60—80세 병원",effect:"최대 체력 +20%",cost:"공격 주기 +10%"},
+  {name:"처방약 의존",kind:"life",organs:["뇌"],age:"60—80세 병원",effect:"공격 주기 -20%",cost:"최대 체력 -18%"},
+  {name:"산소 치료",kind:"life",organs:["폐"],age:"60—80세 병원",effect:"대시 충전 +1",cost:"공격력 -3"},
   {name:"세포 분열",kind:"common",organs:["공용"],effect:"사망 시 체력 40%로 1회 부활"},
   {name:"재생 인자",kind:"common",organs:["공용"],effect:"20킬마다 최대 체력의 8% 회복"},
   {name:"세포막 강화",kind:"common",organs:["공용"],effect:"8초간 무피해 시 보호막 생성"},
@@ -94,7 +108,7 @@ export default function AssetsPage(){
       <div className="asset-preview"><img src={asset.file} alt={asset.name}/></div>
       <div className="asset-info"><div><small>{labels[asset.category]}</small><h2>{asset.name}</h2><p>{asset.note}</p></div><dl><div><dt>FILE</dt><dd>{asset.file}</dd></div><div><dt>SIZE</dt><dd>{asset.size}</dd></div>{asset.cols&&<div><dt>GRID</dt><dd>{asset.cols} × {asset.rows} · {asset.cols*asset.rows!} CELLS</dd></div>}</dl><button onClick={()=>copy(asset.file)}>{copied===asset.file?"복사 완료 ✓":"경로 복사"}</button></div>
     </article>)}</section>
-    <section className="card-board"><header><div><span>CHOICE SYSTEM / MVP 37</span><h2>카드 시스템 명세</h2><p><b className="status-live">LIVE</b> 카드 37장이 현재 전투 시스템에 연결되어 있습니다.</p></div><b>{cardSpecs.length} CARDS</b></header><nav>{Object.entries(cardLabels).map(([key,label])=><button className={cardFilter===key?"active":""} onClick={()=>setCardFilter(key as "all"|CardKind)} key={key}>{label}<small>{key==="all"?cardSpecs.length:cardSpecs.filter(c=>c.kind===key).length}</small></button>)}</nav><div className="card-catalog">{cardSpecs.filter(c=>cardFilter==="all"||c.kind===cardFilter).map((card,index)=><article className={`dev-choice-card ${card.kind} ${card.status}`} key={`${card.kind}-${card.name}-${index}`}><div className="dev-card-top"><small>{cardLabels[card.kind]}</small><span>{card.status.toUpperCase()}</span></div><div className="dev-card-organs">{card.organs.length?card.organs.map(o=><b key={o}>{o}</b>):<b>공용</b>}</div><h3>{card.name}</h3><strong><small>플레이 변화</small>{card.effect}</strong>{card.cost&&<em><small>대가</small>{card.cost}</em>}</article>)}</div></section>
+    <section className="card-board"><header><div><span>CHOICE SYSTEM / CARD SPEC</span><h2>카드 시스템 명세</h2><p><b className="status-live">LIVE</b> 카드 {cardSpecs.length}장이 현재 전투 시스템에 연결되어 있습니다. 생활 카드는 스테이지(연령대)별로 나뉩니다.</p></div><b>{cardSpecs.length} CARDS</b></header><nav>{Object.entries(cardLabels).map(([key,label])=><button className={cardFilter===key?"active":""} onClick={()=>setCardFilter(key as "all"|CardKind)} key={key}>{label}<small>{key==="all"?cardSpecs.length:cardSpecs.filter(c=>c.kind===key).length}</small></button>)}</nav><div className="card-catalog">{cardSpecs.filter(c=>cardFilter==="all"||c.kind===cardFilter).map((card,index)=><article className={`dev-choice-card ${card.kind} ${card.status}`} key={`${card.kind}-${card.name}-${index}`}><div className="dev-card-top"><small>{cardLabels[card.kind]}</small><span>{card.age??card.status.toUpperCase()}</span></div><div className="dev-card-organs">{card.organs.length?card.organs.map(o=><b key={o}>{o}</b>):<b>공용</b>}</div><h3>{card.name}</h3><strong><small>플레이 변화</small>{card.effect}</strong>{card.cost&&<em><small>대가</small>{card.cost}</em>}</article>)}</div></section>
     <section className="tree-board"><header><div><span>SKILL TREE / 티어 해금</span><h2>직업 스킬트리</h2><p>장기를 Lv.3까지 키워 각성하면 <b>T1</b> 카드가 열리고, 그 카드를 획득하면 연결된 <b>T2</b> 카드가 선택지에 등장합니다. 융합은 보조 장기 Lv.2에서 해금됩니다.</p></div></header>
       <div className="tree-rows">{SKILL_TREE.map(t=><article className="tree-row" style={{"--c":t.color} as React.CSSProperties} key={t.cls}>
         <div className="tree-root"><span style={{color:t.color}}><OrganGlyph k={t.k} size={22}/></span><b>{t.cls}</b><small>{t.organ} · Lv.3 각성</small></div>

@@ -11,7 +11,8 @@ export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number
 export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean;damageMul?:number;chain?:number;poison?:number;core?:boolean;source?:string };
 export type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
 export type Drop = {x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number};
-export type Telegraph = {x:number;y:number;tx:number;ty:number;life:number;max:number;kind:"line"|"circle";r:number};
+// owner: 시전자. 시전 중에도 몹이 움직이므로 예고 도형을 시전자에 붙여 따라가게 한다
+export type Telegraph = {x:number;y:number;tx:number;ty:number;life:number;max:number;kind:"line"|"circle";r:number;owner?:Mob};
 export type ToxicField = {x:number;y:number;r:number;life:number;stack:number;kills:number;tick:number};
 // 직업별 스킬 이펙트: 4x2 시트에서 index 프레임 하나를 위치/회전/확대/알파로 재생
 export type SkillFx = {sheet:CoreOrgan;index:number;x:number;y:number;size:number;life:number;max:number;rot:number;spin:number;grow:number};
