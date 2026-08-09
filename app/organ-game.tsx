@@ -39,9 +39,11 @@ const FIRST_CHOICE_AT = 18;
 const LATER_CHOICE_AT = 22;
 const BOSS_AT = 60;
 const RUN_TARGET = STAGE_LENGTH * 3 + BOSS_AT;
+const FINAL_BOSS_ALERT_DURATION = 5;
 const SIMULATION_DT = 1 / 60;
 const BOSS_HP_MULTIPLIER = 18;
 const FINAL_BOSS_HP_MULTIPLIER = 22;
+const FINAL_BOSS_DAMAGE_MULTIPLIER = 1.25;
 const DAMAGE_CAUSE_META: Record<DamageCause, { label: string; hint: string }> = {
 	enemy_contact: { label: "적에게 포위됨", hint: "한 방향으로 빠져나갈 공간을 먼저 확보하세요." },
 	enemy_charge: { label: "돌진 공격", hint: "바닥의 직선 예고가 끝나기 전에 옆으로 피하세요." },
@@ -2874,6 +2876,7 @@ export default function OrganGame() {
 								r: 7,
 								enemy: true,
 								damageCause: "boss_projectile",
+								bossStage: m.bossStage,
 							});
 						}
 						const aim = Math.atan2(m.aimY - m.y, m.aimX - m.x);
@@ -2887,6 +2890,7 @@ export default function OrganGame() {
 								r: 8,
 								enemy: true,
 								damageCause: "boss_projectile",
+								bossStage: m.bossStage,
 							});
 					} else if (m.kind === 1) {
 						m.charge = 0.42;
@@ -2967,7 +2971,8 @@ export default function OrganGame() {
 							: m.elite
 								? "elite_contact"
 								: "enemy_contact";
-					hurtPlayer((m.boss ? 18 : 8) * diff.damage, m.x, m.y, cause);
+					const finalBossDamage = m.boss && m.bossStage === 3 ? FINAL_BOSS_DAMAGE_MULTIPLIER : 1;
+					hurtPlayer((m.boss ? 18 : 8) * diff.damage * finalBossDamage, m.x, m.y, cause);
 					if (m.boss && g.bossWeakTarget) {
 						g.organs[g.bossWeakTarget] = Math.max(0, g.organs[g.bossWeakTarget] - 4);
 						g.effect = `노화 침식 · ${g.bossWeakTarget} -4`;
@@ -3011,7 +3016,8 @@ export default function OrganGame() {
 				if (s.enemy) {
 					if (Math.hypot(s.x - g.x, s.y - g.y) < s.r + (coarse ? 11 : 15) && g.inv <= 0) {
 						s.life = 0;
-						hurtPlayer(7 * diff.damage, s.x, s.y, s.damageCause ?? "enemy_projectile");
+						const finalBossDamage = s.bossStage === 3 ? FINAL_BOSS_DAMAGE_MULTIPLIER : 1;
+						hurtPlayer(7 * diff.damage * finalBossDamage, s.x, s.y, s.damageCause ?? "enemy_projectile");
 						if (g.bossWeakTarget && g.mobs.some((m) => m.boss)) {
 							g.organs[g.bossWeakTarget] = Math.max(0, g.organs[g.bossWeakTarget] - 2);
 							g.effect = `노화 탄막 · ${g.bossWeakTarget} -2`;
@@ -4026,7 +4032,9 @@ export default function OrganGame() {
 	const activeChem = CHEMISTRY.find((c) => c.id === hud.chemistries[hud.chemistries.length - 1]);
 	const activeClass = hud.mainClass ? CORE_META[hud.mainClass] : null;
 	// 상단 HUD에는 장소만 칩으로 남기고 "0—20세" 연령대는 스테이지 전환 오버레이에서만 크게 보여준다
-	const stagePlace = STAGES[hud.stage][0].split(" · ")[1] ?? STAGES[hud.stage][0];
+	const stagePlace = STAGES[hud.stage][0].split(" · ")[1] ?? STAGES[hud.stage][0],
+		finalBossAlert = hud.stage === 3 && hud.t >= RUN_TARGET && hud.t < RUN_TARGET + FINAL_BOSS_ALERT_DURATION,
+		finalBossTimer = hud.stage === 3 && hud.t >= RUN_TARGET + FINAL_BOSS_ALERT_DURATION;
 	// 인체도 헤더를 "각성까지 근육 2/3"처럼 진행형으로 만들기 위한 선두 장기
 	const leadCore = CORE_ORDER.reduce((a, b) => (hud.organLevels[b] > hud.organLevels[a] ? b : a));
 	const actionName = activeClass?.action ?? "DASH";
@@ -4375,8 +4383,12 @@ export default function OrganGame() {
 									{stagePlace}
 								</div>
 								<div>
-									<div className="clock">
-										{fmt(hud.t)} <small>/ 6:00</small>
+									<div className={`clock ${finalBossAlert ? "boss-alert" : finalBossTimer ? "final-boss" : ""}`}>
+										{finalBossAlert ? (
+											<>최종 보스 · 노화 등장</>
+										) : (
+											<>{fmt(hud.t)} <small>/ 6:00</small></>
+										)}
 									</div>
 								</div>
 							</div>

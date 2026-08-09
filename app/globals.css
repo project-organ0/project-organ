@@ -341,7 +341,11 @@ canvas { display: block; width: 100%; height: 100%; }
   78% { opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0) }
   100% { opacity:0;transform:translate(-50%,calc(-50% - 14px)) scale(1);filter:blur(0) }
 }
-.clock { font: 900 32px/1 var(--font-mono); }
+.clock { min-width:230px;text-align:right;font:900 32px/1 var(--font-mono); }
+.clock.boss-alert { color:#ff715b;font:950 21px/1.2 var(--font-sans);text-shadow:0 0 18px rgba(255,113,91,.65);animation:boss-clock-pulse .72s ease-in-out infinite alternate; }
+.clock.final-boss { color:#ff5f46;text-shadow:0 0 15px rgba(255,95,70,.5); }
+.clock.final-boss small { color:#ff9a89; }
+@keyframes boss-clock-pulse { from { opacity:.72 } to { opacity:1 } }
 @keyframes hp-blink { 50% { opacity: .35 } }
 .organs { position: absolute; z-index: 6; left: 18px; bottom: 17px; display: flex; gap: 7px; }
 @keyframes loot-pop { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
