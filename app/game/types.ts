@@ -4,11 +4,12 @@ export type MainClass = CoreOrgan | null;
 export type Organs = Record<OrganKey, number>;
 export type Mode = "start" | "play" | "choice" | "pause" | "report";
 export type Difficulty = "easy" | "normal" | "hard";
+export type DamageCause = "enemy_contact" | "enemy_charge" | "elite_contact" | "boss_contact" | "enemy_projectile" | "elite_projectile" | "boss_projectile";
 export type CardKind = "organ" | "class" | "fusion" | "life" | "common" | "awakening";
 export type AugmentTier = 1 | 2 | 3 | 4;
 export type Choice = { id?:string;name:string;desc:string;effect:string;cost?:string;apply:(g:Game)=>void;organs?:OrganKey[];chemistry?:string;organLevel?:CoreOrgan;awakening?:CoreOrgan|"hold";kind?:CardKind;maxLevel?:number;tier?:AugmentTier };
 export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number;poisonStacks:number;poisonTick:number;overloadHits:number;heartMark:number;kbX:number;kbY:number;collideCd:number };
-export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean;damageMul?:number;chain?:number;poison?:number;core?:boolean;source?:string };
+export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean;damageMul?:number;chain?:number;poison?:number;core?:boolean;source?:string;damageCause?:DamageCause };
 export type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
 export type Drop = {x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number};
 // owner: 시전자. 시전 중에도 몹이 움직이므로 예고 도형을 시전자에 붙여 따라가게 한다
@@ -19,7 +20,7 @@ export type SkillFx = {sheet:CoreOrgan;index:number;x:number;y:number;size:numbe
 export type TelemetryChoice = {id:string|null;name:string;kind:CardKind|null;tier:AugmentTier|null;choiceType:string;time:number;stage:number;playerLevel:number;cardLevel:number|null};
 export type BossTelemetry = {stage:number;killTime:number;playerLevel:number;hpPercent:number};
 export type TelemetryState = {runId:string;startedAt:string;damageDealt:number;damageBySource:Record<string,number>;damageTaken:number;damageBlocked:number;hitsTaken:number;healingReceived:number;distanceTraveled:number;actionsUsed:number;choices:TelemetryChoice[];bossResults:BossTelemetry[]};
-export type RunTelemetry = {schemaVersion:1;runId:string;startedAt:string;endedAt:string;difficulty:Difficulty;debug:boolean;benchmark:boolean;benchmarkTarget:CoreOrgan|null;benchmarkSpeed:number;benchmarkSeed:number;result:"clear"|"defeat";class:MainClass;survivalSeconds:number;stage:number;playerLevel:number;kills:number;bossKills:number;damageDealt:number;damageBySource:Record<string,number>;damageTaken:number;damageBlocked:number;hitsTaken:number;healingReceived:number;distanceTraveled:number;actionsUsed:number;choices:TelemetryChoice[];bossResults:BossTelemetry[];cardLevels:Record<string,number>};
+export type RunTelemetry = {schemaVersion:1;runId:string;startedAt:string;endedAt:string;difficulty:Difficulty;debug:boolean;benchmark:boolean;benchmarkTarget:CoreOrgan|null;benchmarkSpeed:number;benchmarkSeed:number;result:"clear"|"defeat";class:MainClass;survivalSeconds:number;stage:number;playerLevel:number;kills:number;bossKills:number;damageDealt:number;damageBySource:Record<string,number>;damageTaken:number;damageBlocked:number;hitsTaken:number;healingReceived:number;distanceTraveled:number;actionsUsed:number;deathCause:DamageCause|null;choices:TelemetryChoice[];bossResults:BossTelemetry[];cardLevels:Record<string,number>};
 export type Game = {
   w:number;h:number;worldW:number;worldH:number;t:number;stage:number;stageT:number;hp:number;maxHp:number;
   x:number;y:number;vx:number;vy:number;touchX:number;touchY:number;dash:number;dashCharges:number;maxDash:number;inv:number;fire:number;kills:number;
@@ -36,5 +37,5 @@ export type Game = {
   debug:boolean;benchmark:boolean;benchmarkTarget:CoreOrgan|null;benchmarkSpeed:number;benchmarkStopAt:number;benchmarkActionCooldown:number;invuln:boolean;
   galeMomentum:number;windTrailDist:number;galeKillLock:number;impactCharge:number;
   telemetry:TelemetryState;
-  hurtT:number;hurtDir:number;lowHpWarned:boolean;
+  hurtT:number;hurtDir:number;lowHpWarned:boolean;lastDamageCause:DamageCause|null;
 };

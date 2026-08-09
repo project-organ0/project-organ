@@ -9,6 +9,7 @@ import {
 	pickTieredAugment,
 	recordAugmentPick,
 } from "./game/augment-selection";
+import { lungBenchmarkDirection } from "./game/benchmark-autoplay";
 import { createSoundEngine } from "./game/audio";
 import { OrganGlyph, SoundGlyph, FullscreenGlyph, ShieldGlyph, SurvivalGlyph } from "./game/icons";
 import type {
@@ -16,6 +17,7 @@ import type {
 	CardKind,
 	Choice,
 	CoreOrgan,
+	DamageCause,
 	Difficulty,
 	Game,
 	MainClass,
@@ -38,6 +40,17 @@ const LATER_CHOICE_AT = 22;
 const BOSS_AT = 60;
 const RUN_TARGET = STAGE_LENGTH * 3 + BOSS_AT;
 const SIMULATION_DT = 1 / 60;
+const BOSS_HP_MULTIPLIER = 18;
+const FINAL_BOSS_HP_MULTIPLIER = 22;
+const DAMAGE_CAUSE_META: Record<DamageCause, { label: string; hint: string }> = {
+	enemy_contact: { label: "적에게 포위됨", hint: "한 방향으로 빠져나갈 공간을 먼저 확보하세요." },
+	enemy_charge: { label: "돌진 공격", hint: "바닥의 직선 예고가 끝나기 전에 옆으로 피하세요." },
+	elite_contact: { label: "엘리트 적의 접촉", hint: "붉은 오라와 체력바가 있는 적을 먼저 처리하세요." },
+	boss_contact: { label: "보스의 직접 충돌", hint: "보스와 거리를 벌리고 공격 예고 밖으로 이동하세요." },
+	enemy_projectile: { label: "적의 투사체", hint: "탄환 사이의 빈 공간을 따라 이동하세요." },
+	elite_projectile: { label: "엘리트 적의 투사체", hint: "붉은 표식이 있는 적의 조준선에서 먼저 벗어나세요." },
+	boss_projectile: { label: "보스의 탄막", hint: "탄막이 퍼지기 전에 보스 측면으로 이동하세요." },
+};
 const levelValue = (values: number[], level: number) => values[Math.max(0, Math.min(values.length - 1, level - 1))];
 const percentLevels = (values: number[]) => values.map((value) => Math.round(value * 100)).join("/");
 const ORGAN_KEYS: OrganKey[] = ["뇌", "심장", "폐", "간", "근육"];
@@ -1528,6 +1541,7 @@ function fresh(difficulty: Difficulty = "normal"): Game {
 		hurtT: 0,
 		hurtDir: 0,
 		lowHpWarned: false,
+		lastDamageCause: null,
 	};
 }
 function dealDamage(g: Game, mob: Mob, amount: number, source: string) {
@@ -1574,6 +1588,7 @@ function finalizeTelemetry(g: Game, win: boolean): RunTelemetry {
 		healingReceived: Number(g.telemetry.healingReceived.toFixed(2)),
 		distanceTraveled: Number(g.telemetry.distanceTraveled.toFixed(1)),
 		actionsUsed: g.telemetry.actionsUsed,
+		deathCause: win ? null : g.lastDamageCause,
 		choices: [...g.telemetry.choices],
 		bossResults: [...g.telemetry.bossResults],
 		cardLevels: { ...g.cardLevels },
@@ -2281,7 +2296,8 @@ export default function OrganGame() {
 						? { r: 0.78, hp: 0.64, spd: 1.34 }
 						: { r: 1, hp: 1, spd: 1 };
 			const mr = (boss ? (g.stage === 3 ? 52 : 38) : (10 + gameRandom(g) * 8) * km.r) * (coarse ? 0.8 : 1);
-			const mhp = boss ? base * 18 : base * km.hp;
+			const bossHpMultiplier = g.stage === 3 ? FINAL_BOSS_HP_MULTIPLIER : BOSS_HP_MULTIPLIER;
+			const mhp = boss ? base * bossHpMultiplier : base * km.hp;
 			const mspd = (boss ? 58 : (65 + gameRandom(g) * 44 + g.stage * 8) * km.spd) * diff.speed;
 			g.mobs.push({
 				x,
@@ -2424,8 +2440,19 @@ export default function OrganGame() {
 						d = Math.hypot(tx, ty) || 1,
 						nx = tx / d,
 						ny = ty / d,
-						role = g.mainClass ?? g.benchmarkTarget;
-					if (role === "heart" || role === "muscle") {
+						role = g.mainClass;
+					if (role === "lung") {
+						const lungDirection = lungBenchmarkDirection({
+							playerX: g.x,
+							playerY: g.y,
+							velocityX: g.vx,
+							velocityY: g.vy,
+							targetX: target.x,
+							targetY: target.y,
+						});
+						dx = lungDirection.dx;
+						dy = lungDirection.dy;
+					} else if (role === "heart" || role === "muscle") {
 						const desired = role === "heart" ? 105 : 150,
 							radial = d > desired ? 1 : d < desired * 0.72 ? -1 : 0.15;
 						dx = nx * radial - ny * 0.72;
@@ -2560,11 +2587,12 @@ export default function OrganGame() {
 					Math.round((26 + g.stage * 18 + Math.floor(g.stageT / 3)) * diff.count * (coarse ? 0.78 : 1)),
 				);
 			const takeDamage = (raw: number) => (raw * 100) / (100 + g.armor * 5);
-			const hurtPlayer = (raw: number, srcX?: number, srcY?: number) => {
+			const hurtPlayer = (raw: number, srcX?: number, srcY?: number, cause: DamageCause = "enemy_contact") => {
 				if (g.invuln) return false;
 				let amount = takeDamage(raw);
 				g.noDamage = 0;
 				g.hurtT = 0.55;
+				g.lastDamageCause = cause;
 				if (srcX !== undefined && srcY !== undefined) g.hurtDir = Math.atan2(srcY - g.y, srcX - g.x);
 				g.telemetry.hitsTaken++;
 				if (g.mainClass === "muscle") {
@@ -2844,6 +2872,7 @@ export default function OrganGame() {
 								life: 3.2,
 								r: 7,
 								enemy: true,
+								damageCause: "boss_projectile",
 							});
 						}
 						const aim = Math.atan2(m.aimY - m.y, m.aimX - m.x);
@@ -2856,12 +2885,22 @@ export default function OrganGame() {
 								life: 2.5,
 								r: 8,
 								enemy: true,
+								damageCause: "boss_projectile",
 							});
 					} else if (m.kind === 1) {
 						m.charge = 0.42;
 					} else {
 						const a = Math.atan2(m.aimY - m.y, m.aimX - m.x);
-						g.shots.push({ x: m.x, y: m.y, vx: Math.cos(a) * 285, vy: Math.sin(a) * 285, life: 3, r: 7, enemy: true });
+						g.shots.push({
+							x: m.x,
+							y: m.y,
+							vx: Math.cos(a) * 285,
+							vy: Math.sin(a) * 285,
+							life: 3,
+							r: 7,
+							enemy: true,
+							damageCause: m.elite ? "elite_projectile" : "enemy_projectile",
+						});
 					}
 				}
 				const distanceToPlayer = Math.hypot(g.x - m.x, g.y - m.y);
@@ -2893,7 +2932,7 @@ export default function OrganGame() {
 					m.charge <= 0 &&
 					distanceToPlayer < 400
 				) {
-					m.skill = 3.2 + Math.random() * 2;
+					m.skill = 3.2 + gameRandom(g) * 2;
 					m.cast = 0.45;
 					m.aimX = g.x;
 					m.aimY = g.y;
@@ -2920,7 +2959,14 @@ export default function OrganGame() {
 				m.y = Math.max(edge, Math.min(g.worldH - edge, m.y));
 				const d = Math.hypot(m.x - g.x, m.y - g.y);
 				if (d < m.r + (coarse ? 12 : 16) && g.inv <= 0) {
-					hurtPlayer((m.boss ? 18 : 8) * diff.damage, m.x, m.y);
+					const cause: DamageCause = m.boss
+						? "boss_contact"
+						: m.charge > 0
+							? "enemy_charge"
+							: m.elite
+								? "elite_contact"
+								: "enemy_contact";
+					hurtPlayer((m.boss ? 18 : 8) * diff.damage, m.x, m.y, cause);
 					if (m.boss && g.bossWeakTarget) {
 						g.organs[g.bossWeakTarget] = Math.max(0, g.organs[g.bossWeakTarget] - 4);
 						g.effect = `노화 침식 · ${g.bossWeakTarget} -4`;
@@ -2964,7 +3010,7 @@ export default function OrganGame() {
 				if (s.enemy) {
 					if (Math.hypot(s.x - g.x, s.y - g.y) < s.r + (coarse ? 11 : 15) && g.inv <= 0) {
 						s.life = 0;
-						hurtPlayer(7 * diff.damage, s.x, s.y);
+						hurtPlayer(7 * diff.damage, s.x, s.y, s.damageCause ?? "enemy_projectile");
 						if (g.bossWeakTarget && g.mobs.some((m) => m.boss)) {
 							g.organs[g.bossWeakTarget] = Math.max(0, g.organs[g.bossWeakTarget] - 2);
 							g.effect = `노화 탄막 · ${g.bossWeakTarget} -2`;
@@ -3524,7 +3570,7 @@ export default function OrganGame() {
 				const atlas = stageArt[g.stage],
 					idx = m.boss ? 3 : m.kind;
 				const cell = (atlas.complete && atlas.naturalWidth ? atlas.naturalWidth : 1254) / 4,
-					size = (m.boss ? (g.stage === 3 ? 126 : 118) : 68) * renderScale;
+					size = (m.boss ? (g.stage === 3 ? 126 : 118) : 68 * (m.elite ? 1.14 : 1)) * renderScale;
 				const frame = Math.floor(g.t * (m.boss ? 4.5 : 7) + (m.x + m.y) * 0.008) % 4,
 					bob = Math.sin(g.t * (m.boss ? 9 : 14) + (m.x + m.y) * 0.01) * (m.boss ? 2 : 3);
 				const facingRight = g.x >= m.x;
@@ -3540,6 +3586,19 @@ export default function OrganGame() {
 					6.28,
 				);
 				ctx.fill();
+				if (m.elite && !m.boss) {
+					const pulse = 0.65 + Math.sin(g.t * 7 + m.x * 0.01) * 0.18;
+					ctx.globalAlpha = pulse;
+					ctx.strokeStyle = "#ff5f46";
+					ctx.lineWidth = 3 * renderScale;
+					ctx.shadowColor = "#ff5f46";
+					ctx.shadowBlur = 18 * renderScale;
+					ctx.beginPath();
+					ctx.ellipse(0, size * 0.26, size * 0.4, size * 0.14, 0, 0, Math.PI * 2);
+					ctx.stroke();
+					ctx.shadowBlur = 0;
+					ctx.globalAlpha = 1;
+				}
 				ctx.translate(0, bob);
 				ctx.rotate(Math.sin(g.t * 7 + (m.x + m.y) * 0.01) * 0.018);
 				// 몬스터 아틀라스 원본이 왼쪽을 보고 있으므로, 플레이어가 오른쪽에 있을 때 뒤집어야 마주 본다
@@ -3572,13 +3631,6 @@ export default function OrganGame() {
 					ctx.stroke();
 					ctx.globalAlpha = 1;
 				}
-				if (m.elite && !m.boss) {
-					ctx.strokeStyle = "#ff715b";
-					ctx.lineWidth = 2;
-					ctx.beginPath();
-					ctx.arc(0, -size * 0.26, 6, 0, Math.PI * 2);
-					ctx.stroke();
-				}
 				if (m.boss) {
 					ctx.fillStyle = "rgba(0,0,0,.55)";
 					ctx.fillRect(-m.r, -m.r - 13, m.r * 2, 5);
@@ -3586,6 +3638,25 @@ export default function OrganGame() {
 					ctx.fillRect(-m.r, -m.r - 13, m.r * 2 * (m.hp / m.max), 5);
 				}
 				ctx.restore();
+				if (m.elite && !m.boss) {
+					ctx.save();
+					ctx.translate(m.x, m.y - size * 0.62);
+					const barWidth = 48 * renderScale;
+					ctx.fillStyle = "rgba(7,12,12,.88)";
+					ctx.fillRect(-barWidth / 2, -7 * renderScale, barWidth, 6 * renderScale);
+					ctx.fillStyle = "#ff5f46";
+					ctx.fillRect(-barWidth / 2, -7 * renderScale, barWidth * (m.hp / m.max), 6 * renderScale);
+					ctx.beginPath();
+					ctx.arc(0, -15 * renderScale, 8 * renderScale, 0, Math.PI * 2);
+					ctx.fillStyle = "#ff5f46";
+					ctx.fill();
+					ctx.fillStyle = "#101515";
+					ctx.font = `900 ${10 * renderScale}px monospace`;
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					ctx.fillText("!", 0, -15 * renderScale);
+					ctx.restore();
+				}
 				if (m.hit > 0) drawVfx(3, m.x, m.y, (m.boss ? 92 : 52) * renderScale, Math.min(1, m.hit * 12), g.t * 2);
 			}
 			for (const fx of g.skillFx) if (visible(fx.x, fx.y, fx.size * 2)) drawSkill(fx);
@@ -4629,6 +4700,13 @@ export default function OrganGame() {
 							<div>
 								<div className="eyebrow">LIFE REPORT / COMPLETE</div>
 								<h1>{report.win ? "노화를 넘어섰습니다." : "생애가 끝났습니다."}</h1>
+								{!report.win && report.telemetry?.deathCause && (
+									<div className="death-cause-report">
+										<small>사망 원인</small>
+										<b>{DAMAGE_CAUSE_META[report.telemetry.deathCause].label}</b>
+										<span>{DAMAGE_CAUSE_META[report.telemetry.deathCause].hint}</span>
+									</div>
+								)}
 								<p className="report-copy">
 									{mainName ? (
 										<>

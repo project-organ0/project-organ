@@ -1,0 +1,923 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-08-09T02:37:15.438Z",
+  "runs": [
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786243007237-t5sfa4",
+      "startedAt": "2026-08-09T02:36:47.237Z",
+      "endedAt": "2026-08-09T02:36:56.926Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "benchmarkSpeed": 60,
+      "benchmarkSeed": 20263900,
+      "result": "clear",
+      "class": "lung",
+      "survivalSeconds": 411.83,
+      "stage": 4,
+      "playerLevel": 17,
+      "kills": 3676,
+      "bossKills": 4,
+      "damageDealt": 203881.67,
+      "damageBySource": {
+        "lung_basic": 51572,
+        "lung_bladewind": 42961.09,
+        "lung_afterimage": 36837.27,
+        "poison_aura": 25286.2,
+        "lung_eyestorm": 19707.21,
+        "lung_action": 19536.23,
+        "muscle_collision": 5158.12,
+        "basic_projectile": 2179,
+        "brain_chain": 644.54
+      },
+      "damageTaken": 2650.48,
+      "damageBlocked": 0,
+      "hitsTaken": 373,
+      "healingReceived": 2641.8,
+      "distanceTraveled": 125146.4,
+      "actionsUsed": 218,
+      "choices": [
+        {
+          "id": "life_night_study",
+          "name": "밤샘 공부",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 41.58,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 49.12,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 72.92,
+          "stage": 1,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "awaken_lung",
+          "name": "질풍술사로 각성",
+          "kind": null,
+          "tier": null,
+          "choiceType": "장기 각성",
+          "time": 72.92,
+          "stage": 1,
+          "playerLevel": 4,
+          "cardLevel": null
+        },
+        {
+          "id": "lung_circulation",
+          "name": "순환 가속",
+          "kind": "class",
+          "tier": 4,
+          "choiceType": "세포 진화",
+          "time": 74.13,
+          "stage": 1,
+          "playerLevel": 5,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_circulation",
+          "name": "순환 가속",
+          "kind": "class",
+          "tier": 4,
+          "choiceType": "세포 진화",
+          "time": 80.97,
+          "stage": 1,
+          "playerLevel": 6,
+          "cardLevel": 2
+        },
+        {
+          "id": "common_regen",
+          "name": "재생 인자",
+          "kind": "common",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 88.65,
+          "stage": 1,
+          "playerLevel": 7,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "전투 증강",
+          "time": 93.32,
+          "stage": 1,
+          "playerLevel": 7,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_sports",
+          "name": "운동부 입단",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 97,
+          "stage": 1,
+          "playerLevel": 8,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "세포 진화",
+          "time": 109.82,
+          "stage": 2,
+          "playerLevel": 9,
+          "cardLevel": 2
+        },
+        {
+          "id": "life_commute_run",
+          "name": "출퇴근 러닝",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 122.02,
+          "stage": 2,
+          "playerLevel": 9,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "세포 진화",
+          "time": 133.3,
+          "stage": 2,
+          "playerLevel": 10,
+          "cardLevel": 3
+        },
+        {
+          "id": "lung_afterimage",
+          "name": "잔상 호흡",
+          "kind": "class",
+          "tier": 3,
+          "choiceType": "세포 진화",
+          "time": 155.5,
+          "stage": 2,
+          "playerLevel": 11,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_eyestorm",
+          "name": "태풍의 눈",
+          "kind": "class",
+          "tier": 1,
+          "choiceType": "전투 증강",
+          "time": 178.48,
+          "stage": 2,
+          "playerLevel": 11,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_afterimage",
+          "name": "잔상 호흡",
+          "kind": "class",
+          "tier": 3,
+          "choiceType": "세포 진화",
+          "time": 179.13,
+          "stage": 2,
+          "playerLevel": 12,
+          "cardLevel": 2
+        },
+        {
+          "id": "lung_eyestorm",
+          "name": "태풍의 눈",
+          "kind": "class",
+          "tier": 1,
+          "choiceType": "세포 진화",
+          "time": 207.77,
+          "stage": 3,
+          "playerLevel": 13,
+          "cardLevel": 2
+        },
+        {
+          "id": "life_hiking",
+          "name": "주말 등산",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 222,
+          "stage": 3,
+          "playerLevel": 13,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_eyestorm",
+          "name": "태풍의 눈",
+          "kind": "class",
+          "tier": 1,
+          "choiceType": "세포 진화",
+          "time": 247.95,
+          "stage": 3,
+          "playerLevel": 14,
+          "cardLevel": 3
+        },
+        {
+          "id": "lung_afterimage",
+          "name": "잔상 호흡",
+          "kind": "class",
+          "tier": 3,
+          "choiceType": "전투 증강",
+          "time": 278.75,
+          "stage": 3,
+          "playerLevel": 14,
+          "cardLevel": 3
+        },
+        {
+          "id": "lung_circulation",
+          "name": "순환 가속",
+          "kind": "class",
+          "tier": 4,
+          "choiceType": "세포 진화",
+          "time": 291.13,
+          "stage": 3,
+          "playerLevel": 15,
+          "cardLevel": 3
+        },
+        {
+          "id": "life_morning_walk",
+          "name": "새벽 산책",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 322,
+          "stage": 4,
+          "playerLevel": 15,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_meds",
+          "name": "처방약 의존",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 334.6,
+          "stage": 4,
+          "playerLevel": 16,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_rehab",
+          "name": "재활 운동",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 375.82,
+          "stage": 4,
+          "playerLevel": 17,
+          "cardLevel": 1
+        }
+      ],
+      "bossResults": [
+        {
+          "stage": 1,
+          "killTime": 93.32,
+          "playerLevel": 7,
+          "hpPercent": 70
+        },
+        {
+          "stage": 2,
+          "killTime": 178.48,
+          "playerLevel": 11,
+          "hpPercent": 92
+        },
+        {
+          "stage": 3,
+          "killTime": 278.75,
+          "playerLevel": 14,
+          "hpPercent": 93
+        },
+        {
+          "stage": 4,
+          "killTime": 411.83,
+          "playerLevel": 17,
+          "hpPercent": 100
+        }
+      ],
+      "cardLevels": {
+        "life_night_study": 1,
+        "lung_circulation": 3,
+        "common_regen": 1,
+        "lung_bladewind": 3,
+        "life_sports": 1,
+        "life_commute_run": 1,
+        "lung_afterimage": 3,
+        "lung_eyestorm": 3,
+        "life_hiking": 1,
+        "life_morning_walk": 1,
+        "life_meds": 1,
+        "life_rehab": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786243017448-e1q3n3",
+      "startedAt": "2026-08-09T02:36:57.448Z",
+      "endedAt": "2026-08-09T02:36:59.130Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "benchmarkSpeed": 60,
+      "benchmarkSeed": 20263901,
+      "result": "defeat",
+      "class": null,
+      "survivalSeconds": 82.53,
+      "stage": 1,
+      "playerLevel": 3,
+      "kills": 75,
+      "bossKills": 0,
+      "damageDealt": 1766.44,
+      "damageBySource": {
+        "basic_projectile": 1704.07,
+        "poison_aura": 62.37
+      },
+      "damageTaken": 133.24,
+      "damageBlocked": 0,
+      "hitsTaken": 17,
+      "healingReceived": 33.24,
+      "distanceTraveled": 18076.9,
+      "actionsUsed": 0,
+      "choices": [
+        {
+          "id": "life_sports",
+          "name": "운동부 입단",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 33.4,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 56.48,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        }
+      ],
+      "bossResults": [],
+      "cardLevels": {
+        "life_sports": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786243019647-f6jeqs",
+      "startedAt": "2026-08-09T02:36:59.647Z",
+      "endedAt": "2026-08-09T02:37:03.214Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "benchmarkSpeed": 60,
+      "benchmarkSeed": 20263902,
+      "result": "defeat",
+      "class": null,
+      "survivalSeconds": 189.63,
+      "stage": 2,
+      "playerLevel": 3,
+      "kills": 146,
+      "bossKills": 0,
+      "damageDealt": 4408.84,
+      "damageBySource": {
+        "basic_projectile": 4395.38,
+        "poison_aura": 13.45
+      },
+      "damageTaken": 154.3,
+      "damageBlocked": 0,
+      "hitsTaken": 24,
+      "healingReceived": 54.3,
+      "distanceTraveled": 40435.4,
+      "actionsUsed": 0,
+      "choices": [
+        {
+          "id": "life_sports",
+          "name": "운동부 입단",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 28.4,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 97.88,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        },
+        {
+          "id": "life_dinner",
+          "name": "동아리 뒤풀이",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 122.02,
+          "stage": 2,
+          "playerLevel": 3,
+          "cardLevel": 1
+        }
+      ],
+      "bossResults": [],
+      "cardLevels": {
+        "life_sports": 1,
+        "life_dinner": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786243023730-ywcrlq",
+      "startedAt": "2026-08-09T02:37:03.730Z",
+      "endedAt": "2026-08-09T02:37:13.166Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "benchmarkSpeed": 60,
+      "benchmarkSeed": 20263903,
+      "result": "clear",
+      "class": "lung",
+      "survivalSeconds": 414.02,
+      "stage": 4,
+      "playerLevel": 18,
+      "kills": 4205,
+      "bossKills": 4,
+      "damageDealt": 232840.69,
+      "damageBySource": {
+        "lung_bladewind": 57890.53,
+        "lung_basic": 54672.63,
+        "lung_afterimage": 43797.59,
+        "lung_eyestorm": 31570.79,
+        "poison_aura": 29794.25,
+        "lung_action": 12150.71,
+        "muscle_collision": 1495.65,
+        "basic_projectile": 1468.53
+      },
+      "damageTaken": 3092.24,
+      "damageBlocked": 0,
+      "hitsTaken": 469,
+      "healingReceived": 3088.02,
+      "distanceTraveled": 82528.3,
+      "actionsUsed": 229,
+      "choices": [
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 21.45,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 59.15,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        },
+        {
+          "id": "awaken_lung",
+          "name": "질풍술사로 각성",
+          "kind": null,
+          "tier": null,
+          "choiceType": "장기 각성",
+          "time": 59.15,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "세포 진화",
+          "time": 64.8,
+          "stage": 1,
+          "playerLevel": 4,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "전투 증강",
+          "time": 69.47,
+          "stage": 1,
+          "playerLevel": 4,
+          "cardLevel": 2
+        },
+        {
+          "id": "lung_bladewind",
+          "name": "칼바람",
+          "kind": "class",
+          "tier": 2,
+          "choiceType": "세포 진화",
+          "time": 69.53,
+          "stage": 1,
+          "playerLevel": 5,
+          "cardLevel": 3
+        },
+        {
+          "id": "lung_eyestorm",
+          "name": "태풍의 눈",
+          "kind": "class",
+          "tier": 1,
+          "choiceType": "세포 진화",
+          "time": 73.15,
+          "stage": 1,
+          "playerLevel": 6,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_circulation",
+          "name": "순환 가속",
+          "kind": "class",
+          "tier": 4,
+          "choiceType": "세포 진화",
+          "time": 83.52,
+          "stage": 1,
+          "playerLevel": 7,
+          "cardLevel": 1
+        },
+        {
+          "id": "common_division",
+          "name": "세포 분열",
+          "kind": "common",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 93.47,
+          "stage": 1,
+          "playerLevel": 8,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_circulation",
+          "name": "순환 가속",
+          "kind": "class",
+          "tier": 4,
+          "choiceType": "세포 진화",
+          "time": 107.8,
+          "stage": 2,
+          "playerLevel": 9,
+          "cardLevel": 2
+        },
+        {
+          "id": "life_gym",
+          "name": "헬스장 등록",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 122.02,
+          "stage": 2,
+          "playerLevel": 9,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_eyestorm",
+          "name": "태풍의 눈",
+          "kind": "class",
+          "tier": 1,
+          "choiceType": "세포 진화",
+          "time": 127.03,
+          "stage": 2,
+          "playerLevel": 10,
+          "cardLevel": 2
+        },
+        {
+          "id": "lung_circulation",
+          "name": "순환 가속",
+          "kind": "class",
+          "tier": 4,
+          "choiceType": "세포 진화",
+          "time": 148.43,
+          "stage": 2,
+          "playerLevel": 11,
+          "cardLevel": 3
+        },
+        {
+          "id": "lung_eyestorm",
+          "name": "태풍의 눈",
+          "kind": "class",
+          "tier": 1,
+          "choiceType": "전투 증강",
+          "time": 162.32,
+          "stage": 2,
+          "playerLevel": 11,
+          "cardLevel": 3
+        },
+        {
+          "id": "lung_afterimage",
+          "name": "잔상 호흡",
+          "kind": "class",
+          "tier": 3,
+          "choiceType": "세포 진화",
+          "time": 168.13,
+          "stage": 2,
+          "playerLevel": 12,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_afterimage",
+          "name": "잔상 호흡",
+          "kind": "class",
+          "tier": 3,
+          "choiceType": "세포 진화",
+          "time": 198.53,
+          "stage": 2,
+          "playerLevel": 13,
+          "cardLevel": 2
+        },
+        {
+          "id": "life_company_dinner",
+          "name": "회식의 제왕",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 222,
+          "stage": 3,
+          "playerLevel": 13,
+          "cardLevel": 1
+        },
+        {
+          "id": "lung_afterimage",
+          "name": "잔상 호흡",
+          "kind": "class",
+          "tier": 3,
+          "choiceType": "세포 진화",
+          "time": 231.73,
+          "stage": 3,
+          "playerLevel": 14,
+          "cardLevel": 3
+        },
+        {
+          "id": "common_regen",
+          "name": "재생 인자",
+          "kind": "common",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 261.83,
+          "stage": 3,
+          "playerLevel": 15,
+          "cardLevel": 1
+        },
+        {
+          "id": "common_membrane",
+          "name": "세포막 강화",
+          "kind": "common",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 297.53,
+          "stage": 3,
+          "playerLevel": 16,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_oxygen",
+          "name": "산소 치료",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "전투 증강",
+          "time": 304.5,
+          "stage": 4,
+          "playerLevel": 16,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_morning_walk",
+          "name": "새벽 산책",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 322,
+          "stage": 4,
+          "playerLevel": 16,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_meds",
+          "name": "처방약 의존",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 339.62,
+          "stage": 4,
+          "playerLevel": 17,
+          "cardLevel": 1
+        },
+        {
+          "id": "life_rehab",
+          "name": "재활 운동",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 393.05,
+          "stage": 4,
+          "playerLevel": 18,
+          "cardLevel": 1
+        }
+      ],
+      "bossResults": [
+        {
+          "stage": 1,
+          "killTime": 69.47,
+          "playerLevel": 4,
+          "hpPercent": 77
+        },
+        {
+          "stage": 2,
+          "killTime": 162.32,
+          "playerLevel": 11,
+          "hpPercent": 72
+        },
+        {
+          "stage": 4,
+          "killTime": 304.5,
+          "playerLevel": 16,
+          "hpPercent": 93
+        },
+        {
+          "stage": 4,
+          "killTime": 414.02,
+          "playerLevel": 18,
+          "hpPercent": 100
+        }
+      ],
+      "cardLevels": {
+        "lung_bladewind": 3,
+        "lung_eyestorm": 3,
+        "lung_circulation": 3,
+        "common_division": 1,
+        "life_gym": 1,
+        "lung_afterimage": 3,
+        "life_company_dinner": 1,
+        "common_regen": 1,
+        "common_membrane": 1,
+        "life_oxygen": 1,
+        "life_morning_walk": 1,
+        "life_meds": 1,
+        "life_rehab": 1
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "run-1786243033682-e1tdqt",
+      "startedAt": "2026-08-09T02:37:13.682Z",
+      "endedAt": "2026-08-09T02:37:15.430Z",
+      "difficulty": "normal",
+      "debug": false,
+      "benchmark": true,
+      "benchmarkTarget": "lung",
+      "benchmarkSpeed": 60,
+      "benchmarkSeed": 20263904,
+      "result": "defeat",
+      "class": null,
+      "survivalSeconds": 86.77,
+      "stage": 1,
+      "playerLevel": 3,
+      "kills": 83,
+      "bossKills": 0,
+      "damageDealt": 2155.45,
+      "damageBySource": {
+        "basic_projectile": 2136,
+        "poison_aura": 19.45
+      },
+      "damageTaken": 138.19,
+      "damageBlocked": 0,
+      "hitsTaken": 21,
+      "healingReceived": 48.19,
+      "distanceTraveled": 18817.1,
+      "actionsUsed": 0,
+      "choices": [
+        {
+          "id": "life_bike",
+          "name": "자전거 통학",
+          "kind": "life",
+          "tier": null,
+          "choiceType": "생활 선택",
+          "time": 18,
+          "stage": 1,
+          "playerLevel": 1,
+          "cardLevel": 1
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 38.97,
+          "stage": 1,
+          "playerLevel": 2,
+          "cardLevel": null
+        },
+        {
+          "id": "organ_lung",
+          "name": "폐활량 강화",
+          "kind": "organ",
+          "tier": null,
+          "choiceType": "세포 진화",
+          "time": 72.45,
+          "stage": 1,
+          "playerLevel": 3,
+          "cardLevel": null
+        }
+      ],
+      "bossResults": [],
+      "cardLevels": {
+        "life_bike": 1
+      }
+    }
+  ],
+  "source": "browser benchmark after lung autoplay fix, normal, speed=60"
+}
