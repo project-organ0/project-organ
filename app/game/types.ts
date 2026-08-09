@@ -8,7 +8,7 @@ export type DamageCause = "enemy_contact" | "enemy_charge" | "elite_contact" | "
 export type CardKind = "organ" | "class" | "fusion" | "life" | "common" | "awakening";
 export type AugmentTier = 1 | 2 | 3 | 4;
 export type Choice = { id?:string;name:string;desc:string;effect:string;cost?:string;apply:(g:Game)=>void;organs?:OrganKey[];chemistry?:string;organLevel?:CoreOrgan;awakening?:CoreOrgan|"hold";kind?:CardKind;maxLevel?:number;tier?:AugmentTier };
-export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number;poisonStacks:number;poisonTick:number;overloadHits:number;heartMark:number;kbX:number;kbY:number;collideCd:number };
+export type Mob = { x:number;y:number;r:number;hp:number;max:number;speed:number;boss?:boolean;bossStage?:number;elite:boolean;kind:number;hit:number;skill:number;cast:number;charge:number;aimX:number;aimY:number;toxin:number;poisonStacks:number;poisonTick:number;overloadHits:number;heartMark:number;kbX:number;kbY:number;collideCd:number };
 export type Shot = { x:number;y:number;vx:number;vy:number;life:number;r:number;enemy?:boolean;damageMul?:number;chain?:number;poison?:number;core?:boolean;source?:string;damageCause?:DamageCause };
 export type Particle = {x:number;y:number;vx:number;vy:number;life:number;color:string};
 export type Drop = {x:number;y:number;vx:number;vy:number;kind:"xp"|"heal"|"organ";organ?:OrganKey;value:number;life:number;phase:number};

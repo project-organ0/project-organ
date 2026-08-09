@@ -2307,6 +2307,7 @@ export default function OrganGame() {
 				max: mhp,
 				speed: mspd,
 				boss,
+				bossStage: boss ? g.stage : undefined,
 				elite: boss || gameRandom(g) < 0.08 + g.stage * 0.025,
 				kind,
 				hit: 0,
@@ -3229,13 +3230,14 @@ export default function OrganGame() {
 					});
 				}
 				if (m.boss) {
+					const defeatedBossStage = m.bossStage ?? g.stage;
 					g.telemetry.bossResults.push({
-						stage: g.stage + 1,
+						stage: defeatedBossStage + 1,
 						killTime: Number(g.t.toFixed(2)),
 						playerLevel: g.level,
 						hpPercent: Math.max(0, Math.round((g.hp / g.maxHp) * 100)),
 					});
-					if (g.stage === 3 && g.stageT > BOSS_AT) {
+					if (defeatedBossStage === 3) {
 						endGame(true);
 					} else if (!g.augmentDone) {
 						g.augmentDone = true;
