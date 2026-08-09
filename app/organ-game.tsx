@@ -4806,7 +4806,7 @@ export default function OrganGame() {
 									<br />
 									증강: {report.augments.join(" · ") || "기록 없음"}
 								</p>
-								{report.telemetry && (
+								{report.telemetry && (report.telemetry.debug || report.telemetry.benchmark) && (
 									<div className="telemetry-export">
 										<div>
 											<small>RUN TELEMETRY</small>
